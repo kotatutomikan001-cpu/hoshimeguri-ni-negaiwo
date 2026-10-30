@@ -6,10 +6,8 @@
     <title>氷室うつろ Vstreamerすごろく</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase Libraries -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- PeerJS for Easy Online Multiplayer (No Firebase Config Needed) -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -245,28 +243,16 @@
 
         const audio = new SimpleAudioEngine();
 
-        // --- Firebase 通信設定 ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'utsuro-sugoroku-app';
-        let db = null;
-        let auth = null;
-        let roomUnsubscribe = null;
-        let myPlayerIndex = 0;
+        // --- P2P WebRTC 通信設定 (PeerJS) ---
+        let peer = null;
+        let conn = null;
+        let myPlayerIndex = 0; // 0 = 1P(Host), 1 = 2P(Guest)
         let currentRoomCode = null;
 
-        function initFirebase() {
-            try {
-                if (typeof __firebase_config !== 'undefined') {
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    auth = firebase.auth();
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        auth.signInWithCustomToken(__initial_auth_token);
-                    } else {
-                        auth.signInAnonymously();
-                    }
-                }
-            } catch(e) { console.log('Firebase offline mode:', e); }
+        // --- シード値付き疑似乱数（同じ部屋番号なら同一マップを確定生成） ---
+        function seededRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
         }
 
         // --- キャラクター仕様設定 ---
@@ -305,14 +291,21 @@
 
         let boardEvents = [];
 
-        function generateBoardEvents() {
+        // 部屋コードをもとに全員共通の固定マップを作成
+        function generateBoardEvents(roomCode = 'default') {
             boardEvents = new Array(TOTAL_TILES);
             boardEvents[0] = { title: '【スタート】', desc: '100マス先のゴールを目指そう！', type: EVENT_TYPES.START, baseListeners: 0 };
             boardEvents[TOTAL_TILES - 1] = { title: '【ゴール！！】', desc: '一番乗りでゴール到達！伝説のVstreamerに！', type: EVENT_TYPES.GOAL, baseListeners: 10000 };
 
+            // 文字列シード数値変換
+            let seedNum = 12345;
+            if (roomCode) {
+                seedNum = 0;
+                for (let c = 0; c < roomCode.length; c++) seedNum += roomCode.charCodeAt(c) * (c + 1);
+            }
+
             for (let i = 1; i < TOTAL_TILES - 1; i++) {
-                // 黄色(ITEM): 8%, 赤(MINUS): 22%, 青(PLUS): 40%, 白(DAILY): 30%
-                const rand = Math.random();
+                const rand = seededRandom(seedNum + i * 13);
                 if (rand < 0.08) {
                     boardEvents[i] = { title: '【配信アイテム獲得】', desc: '役立つ配信アイテムをゲット！サイコロ前に使えるぞ！', type: EVENT_TYPES.ITEM, baseListeners: 0 };
                 } else if (rand < 0.30) {
@@ -320,11 +313,11 @@
                     boardEvents[i] = { ...template };
                 } else if (rand < 0.70) {
                     const plusTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.PLUS);
-                    const template = plusTemplates[Math.floor(Math.random() * plusTemplates.length)];
+                    const template = plusTemplates[Math.floor(seededRandom(seedNum + i * 17) * plusTemplates.length)];
                     boardEvents[i] = { ...template };
                 } else {
                     const dailyTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.DAILY);
-                    const template = dailyTemplates[Math.floor(Math.random() * dailyTemplates.length)];
+                    const template = dailyTemplates[Math.floor(seededRandom(seedNum + i * 19) * dailyTemplates.length)];
                     boardEvents[i] = { ...template };
                 }
             }
@@ -359,7 +352,7 @@
         let cameraX = 0, cameraY = 0;
         let typeWriterTimer = null;
 
-        // --- キャンバスリサイズ (修復箇所) ---
+        // --- キャンバスリサイズ ---
         function resizeCanvas() {
             if (!boardCanvas) return;
             const container = boardCanvas.parentElement;
@@ -374,8 +367,7 @@
 
         // --- DOM読み込み完了初期化 ---
         window.addEventListener('DOMContentLoaded', () => {
-            initFirebase();
-            generateBoardEvents();
+            generateBoardEvents('12345');
 
             boardCanvas = document.getElementById('boardCanvas');
             ctx = boardCanvas.getContext('2d');
@@ -401,151 +393,121 @@
             requestAnimationFrame(gameLoop);
         });
 
-        // --- オンライン対戦ルーム接続処理 (修復箇所) ---
+        // --- オンライン対戦（PeerJS P2P通信）接続処理 ---
         function startOnlineRoom() {
             const input = document.getElementById('roomCodeInput');
-            const code = input ? input.value.trim() : '';
+            const rawCode = input ? input.value.trim() : '';
 
-            if (!code) {
+            if (!rawCode) {
                 alert('部屋コード（数字や英字）を入力してください！');
                 return;
             }
 
-            currentRoomCode = code;
-            gameState.mode = 'online';
+            currentRoomCode = rawCode;
+            generateBoardEvents(currentRoomCode); // 共通マップ生成
 
-            // Firebase環境がない、または初期化失敗時はオフライン2P対戦としてそのままスタートできるようにフォールバック
-            if (!db || typeof firebase === 'undefined') {
-                alert(`🌐 部屋コード [${code}] でローカル2人対戦（交代プレイ）を開始します！\n(※オンライン同期にはWeb公開・Firebase接続が必要です)`);
-                startLocalPassAndPlay();
-                return;
-            }
+            const cleanCode = 'vstreamer-room-' + rawCode.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-            try {
-                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('rooms').doc(currentRoomCode);
+            document.getElementById('gameStatusText').innerText = `🌐 接続中... [部屋: ${currentRoomCode}]`;
 
-                roomRef.get().then(doc => {
-                    if (!doc.exists) {
-                        // ホスト (1P) として作成
-                        myPlayerIndex = 0;
-                        gameState.activePlayer = 0;
-                        gameState.players[0].charKey = selectedCharId;
-                        gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+            // PeerJS インスタンス初期化
+            peer = new Peer();
 
-                        const initialData = {
-                            turn: 1,
-                            activePlayer: 0,
-                            phase: 'MOVE_ROLL',
-                            p1Char: selectedCharId,
-                            p1Name: CHAR_CONFIG[selectedCharId].name,
-                            p1Pos: 0,
-                            p1Listeners: 1000,
-                            p2Char: 'kuringo',
-                            p2Name: '2P待機中...',
-                            p2Pos: 0,
-                            p2Listeners: 1000,
-                            joinedCount: 1,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        };
+            peer.on('open', (id) => {
+                // 1. まず自分でそのID（部屋）を作成してみる
+                const hostPeer = new Peer(cleanCode);
 
-                        roomRef.set(initialData).then(() => {
-                            listenRoomData(roomRef);
-                            alert(`🌐 ルーム [${currentRoomCode}] を作成しました！対戦相手の参加を待っています...`);
-                            if (startModal) startModal.classList.add('hidden');
-                            updateUI();
-                        }).catch(err => {
-                            console.error("Room set error:", err);
-                            startLocalPassAndPlay();
-                        });
-                    } else {
-                        // ゲスト (2P) として参加
-                        myPlayerIndex = 1;
-                        gameState.players[1].charKey = selectedCharId;
-                        gameState.players[1].name = CHAR_CONFIG[selectedCharId].name;
+                hostPeer.on('open', () => {
+                    // 自分が ホスト (1P) として部屋を開設完了！
+                    myPlayerIndex = 0;
+                    gameState.mode = 'online';
+                    gameState.activePlayer = 0;
 
-                        roomRef.update({
-                            p2Char: selectedCharId,
-                            p2Name: CHAR_CONFIG[selectedCharId].name,
-                            joinedCount: 2,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => {
-                            listenRoomData(roomRef);
-                            alert(`🌐 ルーム [${currentRoomCode}] に参加しました！`);
-                            if (startModal) startModal.classList.add('hidden');
-                            updateUI();
-                        }).catch(err => {
-                            console.error("Room update error:", err);
-                            startLocalPassAndPlay();
-                        });
-                    }
-                }).catch(err => {
-                    console.error('ルーム取得エラー:', err);
-                    startLocalPassAndPlay();
+                    gameState.players[0].charKey = selectedCharId;
+                    gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+
+                    document.getElementById('gameStatusText').innerText = `🌐 [1P] 部屋作成成功！相手の参加待ち... (部屋: ${currentRoomCode})`;
+                    if (startModal) startModal.classList.add('hidden');
+                    updateUI();
+
+                    hostPeer.on('connection', (c) => {
+                        conn = c;
+                        setupConnection();
+                        alert('🎉 対戦相手が参加しました！ゲームを開始します！');
+                        document.getElementById('gameStatusText').innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}]`;
+                        // 1Pから状態送信
+                        sendSyncData();
+                    });
                 });
-            } catch(e) {
-                console.error("Firebase Exception:", e);
-                startLocalPassAndPlay();
-            }
-        }
 
-        // オフライン交代プレイフォールバック
-        function startLocalPassAndPlay() {
-            gameState.mode = 'local2p';
-            gameState.turn = 1;
-            gameState.activePlayer = 0;
-            gameState.phase = 'MOVE_ROLL';
+                hostPeer.on('error', (err) => {
+                    // 部屋が既に存在する ＝ 自分が ゲスト (2P) として参加！
+                    myPlayerIndex = 1;
+                    gameState.mode = 'online';
 
-            gameState.players[0].charKey = selectedCharId;
-            gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
-            gameState.players[0].pos = 0;
-            gameState.players[0].listeners = 1000;
+                    gameState.players[1].charKey = selectedCharId;
+                    gameState.players[1].name = CHAR_CONFIG[selectedCharId].name;
 
-            const otherKeys = Object.keys(CHAR_CONFIG).filter(k => k !== selectedCharId);
-            const rivalKey = otherKeys[0];
-            gameState.players[1].charKey = rivalKey;
-            gameState.players[1].name = CHAR_CONFIG[rivalKey].name + ' (2P)';
-            gameState.players[1].pos = 0;
-            gameState.players[1].listeners = 1000;
+                    conn = peer.connect(cleanCode);
+                    setupConnection();
 
-            if (startModal) startModal.classList.add('hidden');
-            const statusText = document.getElementById('gameStatusText');
-            if (statusText) statusText.innerText = `👥 2人対戦中 (部屋: ${currentRoomCode || 'ローカル'})`;
-            
-            updateUI();
-            showEventText('【ゲームスタート！】', '好きなキャラクターを選んで100マス先のゴールを目指そう！', '-');
-        }
-
-        // --- リアルタイム同期リスナー ---
-        function listenRoomData(roomRef) {
-            if (roomUnsubscribe) roomUnsubscribe();
-
-            roomUnsubscribe = roomRef.onSnapshot(doc => {
-                if (!doc.exists) return;
-                const data = doc.data();
-
-                gameState.turn = data.turn || 1;
-                gameState.activePlayer = data.activePlayer || 0;
-                gameState.phase = data.phase || 'MOVE_ROLL';
-
-                // 1P同期
-                gameState.players[0].charKey = data.p1Char || 'utsuro';
-                gameState.players[0].name = data.p1Name || '1P';
-                gameState.players[0].pos = data.p1Pos || 0;
-                gameState.players[0].listeners = data.p1Listeners || 1000;
-
-                // 2P同期
-                gameState.players[1].charKey = data.p2Char || 'kuringo';
-                gameState.players[1].name = data.p2Name || '2P';
-                gameState.players[1].pos = data.p2Pos || 0;
-                gameState.players[1].listeners = data.p2Listeners || 1000;
-
-                const statusText = document.getElementById('gameStatusText');
-                if (statusText) {
-                    statusText.innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}] (${data.joinedCount || 1}/2人)`;
-                }
-
-                updateUI();
+                    if (startModal) startModal.classList.add('hidden');
+                    document.getElementById('gameStatusText').innerText = `🌐 [2P] ルームに参加しました！ (部屋: ${currentRoomCode})`;
+                    updateUI();
+                });
             });
+        }
+
+        // P2P通信データ受信イベントハンドラ
+        function setupConnection() {
+            if (!conn) return;
+
+            conn.on('data', (data) => {
+                if (data.type === 'SYNC_STATE') {
+                    // 相手からの状態同期を自分に適用
+                    const incomingState = data.state;
+                    gameState.turn = incomingState.turn;
+                    gameState.activePlayer = incomingState.activePlayer;
+                    gameState.phase = incomingState.phase;
+
+                    for (let i = 0; i < 2; i++) {
+                        gameState.players[i].pos = incomingState.players[i].pos;
+                        gameState.players[i].listeners = incomingState.players[i].listeners;
+                        gameState.players[i].charKey = incomingState.players[i].charKey;
+                        gameState.players[i].name = incomingState.players[i].name;
+                        gameState.players[i].items = incomingState.players[i].items || [];
+                    }
+
+                    updateUI();
+                } else if (data.type === 'ROLL_MOVE') {
+                    // 相手のサイコロ移動演出同期
+                    executeRollMoveSync(data.diceValue);
+                } else if (data.type === 'ROLL_EVENT') {
+                    // 相手の判定サイコロ演出同期
+                    executeRollEventSync(data.diceValue);
+                }
+            });
+        }
+
+        // 状態を対戦相手に自動送信
+        function sendSyncData() {
+            if (conn && conn.open) {
+                conn.send({
+                    type: 'SYNC_STATE',
+                    state: {
+                        turn: gameState.turn,
+                        activePlayer: gameState.activePlayer,
+                        phase: gameState.phase,
+                        players: gameState.players.map(p => ({
+                            pos: p.pos,
+                            listeners: p.listeners,
+                            charKey: p.charKey,
+                            name: p.name,
+                            items: p.items
+                        }))
+                    }
+                });
+            }
         }
 
         // --- キャラ選択 ---
@@ -567,6 +529,8 @@
             gameState.activePlayer = 0;
             gameState.phase = 'MOVE_ROLL';
 
+            generateBoardEvents('single');
+
             // 1P選択キャラ
             gameState.players[0].charKey = selectedCharId;
             gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
@@ -586,7 +550,7 @@
             gameState.players[1].items = [];
 
             startModal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = mode === 'cpu' ? '🤖 VS CPU 対戦中' : '🌐 オンライン対戦中';
+            document.getElementById('gameStatusText').innerText = '🤖 VS CPU 対戦中';
             
             updateUI();
             showEventText('【ゲームスタート！】', '好きなキャラクターを選んで100マス先のゴールを目指そう！', '-');
@@ -612,6 +576,30 @@
             gameState.isRolling = true;
             btnRoll.disabled = true;
 
+            const player = gameState.players[gameState.activePlayer];
+            let finalVal = Math.floor(Math.random() * 6) + 1;
+
+            if (player.activeBuffs.highDice) {
+                finalVal = Math.floor(Math.random() * 3) + 4; // 4~6
+                player.activeBuffs.highDice = false;
+            }
+
+            if (player.activeBuffs.boost > 0) {
+                finalVal += player.activeBuffs.boost;
+                player.activeBuffs.boost = 0;
+            }
+
+            if (gameState.mode === 'online' && conn && conn.open) {
+                conn.send({ type: 'ROLL_MOVE', diceValue: finalVal });
+            }
+
+            executeRollMoveSync(finalVal);
+        }
+
+        function executeRollMoveSync(finalVal) {
+            gameState.isRolling = true;
+            btnRoll.disabled = true;
+
             let rolls = 0;
             const rollInterval = setInterval(() => {
                 const tempVal = Math.floor(Math.random() * 6) + 1;
@@ -620,20 +608,6 @@
                 rolls++;
                 if (rolls > 12) {
                     clearInterval(rollInterval);
-                    
-                    const player = gameState.players[gameState.activePlayer];
-                    let finalVal = Math.floor(Math.random() * 6) + 1;
-
-                    if (player.activeBuffs.highDice) {
-                        finalVal = Math.floor(Math.random() * 3) + 4; // 4~6
-                        player.activeBuffs.highDice = false;
-                    }
-
-                    if (player.activeBuffs.boost > 0) {
-                        finalVal += player.activeBuffs.boost;
-                        player.activeBuffs.boost = 0;
-                    }
-
                     drawDice(finalVal);
                     document.getElementById('diceResultText').innerText = `${finalVal} の目が出た！`;
                     gameState.isRolling = false;
@@ -658,7 +632,6 @@
                     player.pos = startPos + currentStep;
                     audio.playStep();
 
-                    // ピョンピョン跳ねるアニメーション
                     let jumpProgress = 0;
                     const jumpInterval = setInterval(() => {
                         jumpProgress += 0.2;
@@ -684,23 +657,19 @@
             showEventText(ev.title, ev.desc, '-');
 
             if (tileIndex === TOTAL_TILES - 1) {
-                // ゴール到達！
                 applyTileEvent(playerIndex, tileIndex, 6);
                 return;
             }
 
             if (ev.type === EVENT_TYPES.ITEM) {
-                // アイテム獲得
                 const getRandomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
                 player.items.push(getRandomItem);
                 showEventText(ev.title, ev.desc, `🎁 [アイテム獲得] 「${getRandomItem.name}」を入手した！`);
                 audio.playPositive();
                 finishTurnDelay(tileIndex);
             } else if (ev.type === EVENT_TYPES.DAILY || ev.type === EVENT_TYPES.START) {
-                // 白色（日常）マス：判定ダイスなしでスムーズ進行
                 applyTileEvent(playerIndex, tileIndex, 1);
             } else {
-                // 青（プラス）・赤（マイナス）マス：2回目の判定ダイス要求
                 gameState.phase = 'EVENT_ROLL';
                 document.getElementById('diceResultText').innerText = '判定ダイスを振ろう！';
                 updateUI();
@@ -715,6 +684,19 @@
             gameState.isRolling = true;
             btnRoll.disabled = true;
 
+            const eventDice = Math.floor(Math.random() * 6) + 1;
+
+            if (gameState.mode === 'online' && conn && conn.open) {
+                conn.send({ type: 'ROLL_EVENT', diceValue: eventDice });
+            }
+
+            executeRollEventSync(eventDice);
+        }
+
+        function executeRollEventSync(eventDice) {
+            gameState.isRolling = true;
+            btnRoll.disabled = true;
+
             let rolls = 0;
             const rollInterval = setInterval(() => {
                 const tempVal = Math.floor(Math.random() * 6) + 1;
@@ -723,7 +705,6 @@
                 rolls++;
                 if (rolls > 12) {
                     clearInterval(rollInterval);
-                    const eventDice = Math.floor(Math.random() * 6) + 1;
                     drawDice(eventDice);
                     gameState.isRolling = false;
                     document.getElementById('diceResultText').innerText = `判定結果: ${eventDice}!`;
@@ -795,6 +776,9 @@
                 gameState.phase = 'MOVE_ROLL';
                 document.getElementById('diceResultText').innerText = '準備完了';
 
+                // 同期データを送信
+                sendSyncData();
+
                 updateUI();
 
                 // CPU自動手番
@@ -823,6 +807,8 @@
 
             audio.playPositive();
             showEventText('【アイテム使用】', `「${item.name}」を使用した！`, item.desc);
+            
+            sendSyncData();
             updateUI();
         }
 
@@ -848,6 +834,8 @@
         }
 
         function updateUI() {
+            document.getElementById('p1Name').innerText = gameState.players[0].name;
+            document.getElementById('p2Name').innerText = gameState.players[1].name;
             document.getElementById('p1Listeners').innerText = `${gameState.players[0].listeners.toLocaleString()}人`;
             document.getElementById('p2Listeners').innerText = `${gameState.players[1].listeners.toLocaleString()}人`;
             document.getElementById('turnCounter').innerText = `${gameState.turn} / ${gameState.maxTurns}`;
@@ -885,7 +873,7 @@
 
             if (gameState.mode === 'online' && gameState.activePlayer !== myPlayerIndex) {
                 btnRoll.disabled = true;
-                btnRoll.innerText = '相手のターン';
+                btnRoll.innerText = '相手の行動待ち...';
             } else if (!gameState.isRolling && !gameState.isMoving && gameState.phase !== 'PROCESSING') {
                 btnRoll.disabled = false;
             }
