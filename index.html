@@ -410,57 +410,70 @@
 
             document.getElementById('gameStatusText').innerText = `🌐 接続中... [部屋: ${currentRoomCode}]`;
 
-            // PeerJS インスタンス初期化
-            peer = new Peer();
+            // 既存のPeer接続があればクローズ
+            if (peer) peer.destroy();
+
+            // 1. まず 1P (ホスト) としてそのIDで部屋を作成してみる
+            peer = new Peer(cleanCode);
 
             peer.on('open', (id) => {
-                // 1. まず自分でそのID（部屋）を作成してみる
-                const hostPeer = new Peer(cleanCode);
+                // 自分が 1P (ホスト)
+                myPlayerIndex = 0;
+                gameState.mode = 'online';
+                gameState.activePlayer = 0;
 
-                hostPeer.on('open', () => {
-                    // 自分が ホスト (1P) として部屋を開設完了！
-                    myPlayerIndex = 0;
-                    gameState.mode = 'online';
-                    gameState.activePlayer = 0;
+                gameState.players[0].charKey = selectedCharId;
+                gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
 
-                    gameState.players[0].charKey = selectedCharId;
-                    gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+                document.getElementById('gameStatusText').innerText = `🌐 [1P] 部屋作成成功！対戦相手の参加待ち... (部屋: ${currentRoomCode})`;
+                if (startModal) startModal.classList.add('hidden');
+                updateUI();
 
-                    document.getElementById('gameStatusText').innerText = `🌐 [1P] 部屋作成成功！相手の参加待ち... (部屋: ${currentRoomCode})`;
-                    if (startModal) startModal.classList.add('hidden');
-                    updateUI();
-
-                    hostPeer.on('connection', (c) => {
-                        conn = c;
-                        setupConnection();
-                        alert('🎉 対戦相手が参加しました！ゲームを開始します！');
-                        document.getElementById('gameStatusText').innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}]`;
-                        // 1Pから状態送信
-                        sendSyncData();
-                    });
-                });
-
-                hostPeer.on('error', (err) => {
-                    // 部屋が既に存在する ＝ 自分が ゲスト (2P) として参加！
-                    myPlayerIndex = 1;
-                    gameState.mode = 'online';
-
-                    gameState.players[1].charKey = selectedCharId;
-                    gameState.players[1].name = CHAR_CONFIG[selectedCharId].name;
-
-                    conn = peer.connect(cleanCode);
+                // 2Pからの接続を待機
+                peer.on('connection', (c) => {
+                    conn = c;
                     setupConnection();
-
-                    if (startModal) startModal.classList.add('hidden');
-                    document.getElementById('gameStatusText').innerText = `🌐 [2P] ルームに参加しました！ (部屋: ${currentRoomCode})`;
-                    updateUI();
+                    document.getElementById('gameStatusText').innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}]`;
+                    
+                    // 2Pが参加してきたら1Pから同期データを送信
+                    setTimeout(() => {
+                        sendSyncData();
+                    }, 500);
                 });
+            });
+
+            peer.on('error', (err) => {
+                // 部屋IDが既に使われている＝自分が 2P (ゲスト) として参加！
+                if (err.type === 'unavailable-id' || err.type === 'peer-unavailable' || err.type === 'network') {
+                    // ID指定なしでPeerを作成してホストへ接続
+                    const guestPeer = new Peer();
+                    
+                    guestPeer.on('open', () => {
+                        myPlayerIndex = 1;
+                        gameState.mode = 'online';
+
+                        gameState.players[1].charKey = selectedCharId;
+                        gameState.players[1].name = CHAR_CONFIG[selectedCharId].name;
+
+                        conn = guestPeer.connect(cleanCode);
+                        setupConnection();
+
+                        if (startModal) startModal.classList.add('hidden');
+                        document.getElementById('gameStatusText').innerText = `🌐 [2P] ルームに参加しました！ (部屋: ${currentRoomCode})`;
+                        updateUI();
+                    });
+                }
             });
         }
 
         // P2P通信データ受信イベントハンドラ
         function setupConnection() {
             if (!conn) return;
+
+            conn.on('open', () => {
+                document.getElementById('gameStatusText').innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}]`;
+                sendSyncData();
+            });
 
             conn.on('data', (data) => {
                 if (data.type === 'SYNC_STATE') {
