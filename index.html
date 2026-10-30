@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>氷室うつろ Vstreamerすごろく</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+        
+        body {
+            font-family: 'DotGothic16', sans-serif;
+            user-select: none;
+            background-color: #090d16;
+            color: #ffffff;
+        }
+
+        /* レトロRPG風枠線 */
+        .pixel-box {
+            border: 4px solid #7c3aed;
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.5), inset 0 0 8px rgba(0,0,0,0.8);
+            background: #120e24;
+        }
+
+        /* レトロボタン */
+        .pixel-btn {
+            background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
+            border: 2px solid #c084fc;
+            box-shadow: 0 4px 0 #3b0764;
+            transition: all 0.1s ease;
+        }
+        .pixel-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #3b0764;
+            filter: brightness(1.1);
+        }
+        .pixel-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #3b0764;
+        }
+        .pixel-btn:disabled {
+            background: #374151;
+            border-color: #6b7280;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* ドット絵 Canvas アンテイエリアス無効 */
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* スクロールバー非表示 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden text-white bg-slate-950">
+
+    <!-- メイン1画面コンテナ -->
+    <main class="flex flex-col h-full w-full max-w-5xl mx-auto p-1.5 sm:p-3 gap-2 overflow-hidden">
+        
+        <!-- ヘッダー：タイトル＆スコア -->
+        <header class="flex-none flex items-center justify-between pixel-box p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-sm sm:text-lg flex-none">
+                    ❄️
+                </div>
+                <div>
+                    <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
+                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">準備中... モードを選択してください</p>
+                </div>
+            </div>
+
+            <!-- リスナー数比較 -->
+            <div class="flex items-center gap-2 sm:gap-6 text-xs sm:text-sm font-bold">
+                <div class="flex items-center gap-1 bg-purple-900/60 px-2 py-1 rounded border border-purple-500/50">
+                    <span id="p1Badge" class="text-purple-300">1P</span>
+                    <span id="p1Name" class="text-white max-w-[60px] sm:max-w-[120px] truncate">1P</span>
+                    <span id="p1Listeners" class="text-yellow-400 font-mono font-black ml-0.5">1,000人</span>
+                </div>
+                <div class="flex items-center gap-1 bg-indigo-900/60 px-2 py-1 rounded border border-indigo-500/50">
+                    <span id="p2Badge" class="text-indigo-300">2P</span>
+                    <span id="p2Name" class="text-white max-w-[60px] sm:max-w-[120px] truncate">2P</span>
+                    <span id="p2Listeners" class="text-cyan-400 font-mono font-black ml-0.5">1,000人</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 中央エリア：すごろくマップ (Canvas) -->
+        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-0 bg-slate-900 flex items-center justify-center">
+            <canvas id="boardCanvas" class="w-full h-full object-contain"></canvas>
+            
+            <!-- ターン表示オーバーレイ -->
+            <div class="absolute top-2 left-2 bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
+                <span class="text-purple-300 font-bold">TURN</span>
+                <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1 / 30</span>
+            </div>
+
+            <!-- 現在の手番 -->
+            <div class="absolute top-2 right-2 bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
+                <span class="text-gray-300">手番:</span>
+                <span id="activePlayerTag" class="font-bold text-yellow-300">1P (氷室うつろ)</span>
+            </div>
+
+            <!-- 所持アイテムUI -->
+            <div class="absolute bottom-2 left-2 right-2 bg-black/85 border border-yellow-500/70 rounded-lg p-1.5 flex items-center justify-between gap-2 backdrop-blur-sm">
+                <div class="flex items-center gap-1 text-xs text-yellow-300 font-bold flex-none">
+                    <span>🎒 アイテム:</span>
+                </div>
+                <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5 px-1 flex-1">
+                    <span id="noItemText" class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 下部コントロール＆現在イベント表示枠 -->
+        <section class="flex-none flex flex-row gap-2 h-32 sm:h-40">
+            
+            <!-- サイコロ操作エリア -->
+            <div class="pixel-box p-2 sm:p-3 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-indigo-950/80 border-2 border-purple-500 w-28 sm:w-44 flex-none">
+                <canvas id="diceCanvas" width="48" height="48" class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-950 border-2 border-purple-400 rounded-lg shadow-inner flex-none"></canvas>
+                
+                <div class="flex flex-col items-center gap-1 w-full">
+                    <button id="btnRoll" class="pixel-btn w-full py-1.5 px-1 text-xs sm:text-sm font-bold text-white rounded cursor-pointer disabled:opacity-50">
+                        🎲 移動！
+                    </button>
+                    <span id="diceResultText" class="text-[10px] sm:text-xs text-purple-300 font-bold h-3 truncate">準備完了</span>
+                </div>
+            </div>
+
+            <!-- 現在のマス目イベント枠 -->
+            <div class="pixel-box p-2.5 sm:p-4 rounded-lg flex-1 flex flex-col justify-start items-start bg-purple-950/90 border-2 border-purple-500 min-h-0 relative overflow-hidden">
+                <div class="text-xs font-bold text-purple-400 tracking-widest uppercase mb-1 flex items-center gap-1">
+                    <span>✨ 現在発生中のイベント ✨</span>
+                </div>
+                <div id="currentEventCard" class="w-full flex flex-col items-start justify-start space-y-1 p-0.5 text-left overflow-y-auto">
+                    <div id="currentEventTitle" class="text-sm sm:text-lg font-bold text-yellow-300 tracking-wide border-b border-purple-700/60 pb-0.5 w-full text-left">
+                        【スタート】
+                    </div>
+                    <div id="currentEventDesc" class="text-xs sm:text-base text-purple-100 leading-relaxed font-bold w-full text-left min-h-[2.5rem]">
+                        好きなキャラクターを選んでゲームスタート！100マス先のゴールを目指そう！
+                    </div>
+                    <div id="currentEventEffect" class="text-xs sm:text-sm font-bold text-cyan-300 text-left w-full">
+                        -
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- スタート＆キャラ選択ダイアログ -->
+    <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
+        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-sm sm:max-w-md w-full bg-slate-900 border-4 border-purple-500 flex flex-col items-center gap-3 text-center max-h-[95vh] overflow-y-auto">
+            
+            <h2 class="text-base sm:text-xl font-black text-purple-300">キャラクター選択</h2>
+            <p class="text-xs text-purple-200">プレイするキャラクターを選んでください<br><span class="text-yellow-400">（お供のごしゅが常に一緒についてきます！）</span></p>
+
+            <!-- キャラクターリスト -->
+            <div class="grid grid-cols-3 gap-2 w-full my-1">
+                <button onclick="selectChar('utsuro')" id="charBtn_utsuro" class="char-select-btn p-2 rounded-lg border-2 border-purple-400 bg-purple-900/60 hover:bg-purple-800 transition flex flex-col items-center gap-1 cursor-pointer">
+                    <canvas id="prevUtsuro" width="36" height="36"></canvas>
+                    <span class="text-xs font-bold text-purple-200">氷室うつろ</span>
+                    <span class="text-[9px] text-purple-400">& ごしゅ</span>
+                </button>
+                <button onclick="selectChar('kuringo')" id="charBtn_kuringo" class="char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 hover:bg-slate-700 transition flex flex-col items-center gap-1 cursor-pointer">
+                    <canvas id="prevKuringo" width="36" height="36"></canvas>
+                    <span class="text-xs font-bold text-gray-300">繰言語</span>
+                    <span class="text-[9px] text-gray-400">& ごしゅ</span>
+                </button>
+                <button onclick="selectChar('tomoko')" id="charBtn_tomoko" class="char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 hover:bg-slate-700 transition flex flex-col items-center gap-1 cursor-pointer">
+                    <canvas id="prevTomoko" width="36" height="36"></canvas>
+                    <span class="text-xs font-bold text-gray-300">トモコ</span>
+                    <span class="text-[9px] text-gray-400">& ごしゅ</span>
+                </button>
+            </div>
+
+            <!-- モード切り替え -->
+            <div class="flex flex-col gap-2 w-full mt-1">
+                <button id="btnStartCpu" onclick="startGame('cpu')" class="pixel-btn py-2.5 px-3 font-bold text-white rounded-lg text-xs sm:text-sm w-full">
+                    🤖 VS CPU対戦（ソロ）
+                </button>
+                <div class="flex gap-2 w-full">
+                    <input id="roomCodeInput" type="text" placeholder="部屋コード(例: 123456)" class="bg-slate-800 border-2 border-purple-500 rounded px-2 py-2 text-xs w-full text-center font-mono focus:outline-none focus:border-purple-300 text-white" maxlength="6">
+                    <button id="btnStartOnline" onclick="startOnlineRoom()" class="pixel-btn py-2 px-3 font-bold text-white rounded text-xs whitespace-nowrap">
+                        🌐 ルーム作成/参加
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ゲームエンジン JavaScript -->
+    <script>
+        // --- サウンドエンジン ---
+        class SimpleAudioEngine {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.1) {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            playDiceRoll() { this.playTone(400 + Math.random() * 200, 'square', 0.05, 0.05); }
+            playStep() { this.playTone(280, 'triangle', 0.05, 0.08); }
+            playPositive() {
+                this.playTone(523.25, 'square', 0.1, 0.1);
+                setTimeout(() => this.playTone(659.25, 'square', 0.12, 0.1), 80);
+                setTimeout(() => this.playTone(783.99, 'square', 0.18, 0.1), 160);
+            }
+            playNegative() {
+                this.playTone(320, 'sawtooth', 0.12, 0.1);
+                setTimeout(() => this.playTone(220, 'sawtooth', 0.2, 0.1), 100);
+            }
+        }
+
+        const audio = new SimpleAudioEngine();
+
+        // --- Firebase 通信設定 ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'utsuro-sugoroku-app';
+        let db = null;
+        let auth = null;
+        let roomUnsubscribe = null;
+        let myPlayerIndex = 0;
+        let currentRoomCode = null;
+
+        function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        auth.signInWithCustomToken(__initial_auth_token);
+                    } else {
+                        auth.signInAnonymously();
+                    }
+                }
+            } catch(e) { console.log('Firebase offline mode:', e); }
+        }
+
+        // --- キャラクター仕様設定 ---
+        const CHAR_CONFIG = {
+            utsuro: { name: '氷室うつろ', mainColor: '#a855f7', hairColor: '#8b5cf6', bowColor: '#ef4444' },
+            kuringo: { name: '繰言語', mainColor: '#10b981', hairColor: '#059669', bowColor: '#3b82f6' },
+            tomoko: { name: 'トモコ', mainColor: '#ec4899', hairColor: '#f43f5e', bowColor: '#eab308' }
+        };
+
+        // --- マス目イベント定義 ---
+        const EVENT_TYPES = {
+            START: 'start',
+            GOAL: 'goal',
+            PLUS: 'plus',
+            MINUS: 'minus',
+            ITEM: 'item',
+            DAILY: 'daily'
+        };
+
+        const TOTAL_TILES = 100;
+        let selectedCharId = 'utsuro';
+
+        // 100マス用イベントマスター
+        const EVENT_POOL = [
+            { title: '【雑談配信で長考】', desc: 'まったり雑談。コメント拾いに夢中で時間が溶ける！', type: EVENT_TYPES.DAILY, baseListeners: 80 },
+            { title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', type: EVENT_TYPES.PLUS, baseListeners: 250 },
+            { title: '【12時間耐久配信】', desc: '限界突破の12時間耐久！同勤リスナーの結束が高まる！', type: EVENT_TYPES.PLUS, baseListeners: 350 },
+            { title: '【機材トラブル発生】', desc: '配信開始直前にマイク認識せず大あわて！', type: EVENT_TYPES.MINUS, baseListeners: -150 },
+            { title: '【新機材導入！】', desc: '黄色いマスで便利配信グッズを発見・獲得！', type: EVENT_TYPES.ITEM, baseListeners: 0 },
+            { title: '【配信部屋の模様替え】', desc: '部屋を片付けて気分一新！良い雰囲気でスタート。', type: EVENT_TYPES.DAILY, baseListeners: 50 },
+            { title: '【赤スパチャ投下！】', desc: 'リスナーからの愛のある赤スパチャが炸裂！', type: EVENT_TYPES.PLUS, baseListeners: 300 },
+            { title: '【回線落ちトラブル】', desc: 'いいところでネットが切断…！', type: EVENT_TYPES.MINUS, baseListeners: -200 },
+            { title: '【コラボ配信の打診】', desc: '仲良しVtuberとのコラボ企画が持ち上がる！', type: EVENT_TYPES.DAILY, baseListeners: 100 },
+            { title: '【歌ってみた動画投稿】', desc: '超高品質な歌ってみた動画を投稿して絶賛の嵐！', type: EVENT_TYPES.PLUS, baseListeners: 400 }
+        ];
+
+        let boardEvents = [];
+
+        function generateBoardEvents() {
+            boardEvents = new Array(TOTAL_TILES);
+            boardEvents[0] = { title: '【スタート】', desc: '100マス先のゴールを目指そう！', type: EVENT_TYPES.START, baseListeners: 0 };
+            boardEvents[TOTAL_TILES - 1] = { title: '【ゴール！！】', desc: '一番乗りでゴール到達！伝説のVstreamerに！', type: EVENT_TYPES.GOAL, baseListeners: 10000 };
+
+            for (let i = 1; i < TOTAL_TILES - 1; i++) {
+                // 黄色(ITEM): 8%, 赤(MINUS): 22%, 青(PLUS): 40%, 白(DAILY): 30%
+                const rand = Math.random();
+                if (rand < 0.08) {
+                    boardEvents[i] = { title: '【配信アイテム獲得】', desc: '役立つ配信アイテムをゲット！サイコロ前に使えるぞ！', type: EVENT_TYPES.ITEM, baseListeners: 0 };
+                } else if (rand < 0.30) {
+                    const template = EVENT_POOL.filter(e => e.type === EVENT_TYPES.MINUS)[0];
+                    boardEvents[i] = { ...template };
+                } else if (rand < 0.70) {
+                    const plusTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.PLUS);
+                    const template = plusTemplates[Math.floor(Math.random() * plusTemplates.length)];
+                    boardEvents[i] = { ...template };
+                } else {
+                    const dailyTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.DAILY);
+                    const template = dailyTemplates[Math.floor(Math.random() * dailyTemplates.length)];
+                    boardEvents[i] = { ...template };
+                }
+            }
+        }
+
+        // --- アイテム定義 ---
+        const ITEMS = [
+            { id: 'boost', name: 'ブースト機材', icon: '🚀', desc: 'サイコロの目に+2加算！' },
+            { id: 'highDice', name: 'ハイダイス', icon: '🎲', desc: '出目が4〜6確定になる！' },
+            { id: 'barrier', name: 'アンチバリア', icon: '🛡️', desc: '次のマイナスマスを無効化！' },
+            { id: 'tweet', name: '告知ツイート', icon: '📢', desc: '即座にリスナー+500人！' }
+        ];
+
+        // --- ゲーム状態変数 ---
+        const gameState = {
+            mode: 'cpu',
+            turn: 1,
+            maxTurns: 30,
+            activePlayer: 0,
+            phase: 'MOVE_ROLL', // 'MOVE_ROLL' | 'EVENT_ROLL' | 'PROCESSING'
+            isRolling: false,
+            isMoving: false,
+            players: [
+                { id: 'p1', name: '1P', charKey: 'utsuro', pos: 0, targetPos: 0, renderPos: 0, jumpOffset: 0, listeners: 1000, items: [], activeBuffs: { boost: 0, highDice: false, barrier: false } },
+                { id: 'p2', name: '2P', charKey: 'kuringo', pos: 0, targetPos: 0, renderPos: 0, jumpOffset: 0, listeners: 1000, items: [], activeBuffs: { boost: 0, highDice: false, barrier: false } }
+            ]
+        };
+
+        // --- Element References & Globals ---
+        let boardCanvas, ctx, diceCanvas, diceCtx;
+        let btnRoll, btnStartCpu, btnStartOnline, startModal;
+        let cameraX = 0, cameraY = 0;
+        let typeWriterTimer = null;
+
+        // --- キャンバスリサイズ (修復箇所) ---
+        function resizeCanvas() {
+            if (!boardCanvas) return;
+            const container = boardCanvas.parentElement;
+            if (!container) return;
+
+            const rect = container.getBoundingClientRect();
+            boardCanvas.width = rect.width * window.devicePixelRatio;
+            boardCanvas.height = rect.height * window.devicePixelRatio;
+            
+            if (ctx) ctx.imageSmoothingEnabled = false;
+        }
+
+        // --- DOM読み込み完了初期化 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            generateBoardEvents();
+
+            boardCanvas = document.getElementById('boardCanvas');
+            ctx = boardCanvas.getContext('2d');
+            
+            diceCanvas = document.getElementById('diceCanvas');
+            diceCtx = diceCanvas.getContext('2d');
+
+            btnRoll = document.getElementById('btnRoll');
+            btnStartCpu = document.getElementById('btnStartCpu');
+            btnStartOnline = document.getElementById('btnStartOnline');
+            startModal = document.getElementById('startModal');
+
+            btnStartCpu.addEventListener('click', () => startGame('cpu'));
+            btnStartOnline.addEventListener('click', startOnlineRoom);
+            btnRoll.addEventListener('click', handleRollClick);
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            renderCharacterPreviews();
+            drawDice(1);
+
+            requestAnimationFrame(gameLoop);
+        });
+
+        // --- オンライン対戦ルーム接続処理 (修復箇所) ---
+        function startOnlineRoom() {
+            const input = document.getElementById('roomCodeInput');
+            const code = input ? input.value.trim() : '';
+
+            if (!code) {
+                alert('部屋コード（数字や英字）を入力してください！');
+                return;
+            }
+
+            currentRoomCode = code;
+            gameState.mode = 'online';
+
+            // Firebase環境がない、または初期化失敗時はオフライン2P対戦としてそのままスタートできるようにフォールバック
+            if (!db || typeof firebase === 'undefined') {
+                alert(`🌐 部屋コード [${code}] でローカル2人対戦（交代プレイ）を開始します！\n(※オンライン同期にはWeb公開・Firebase接続が必要です)`);
+                startLocalPassAndPlay();
+                return;
+            }
+
+            try {
+                const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('rooms').doc(currentRoomCode);
+
+                roomRef.get().then(doc => {
+                    if (!doc.exists) {
+                        // ホスト (1P) として作成
+                        myPlayerIndex = 0;
+                        gameState.activePlayer = 0;
+                        gameState.players[0].charKey = selectedCharId;
+                        gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+
+                        const initialData = {
+                            turn: 1,
+                            activePlayer: 0,
+                            phase: 'MOVE_ROLL',
+                            p1Char: selectedCharId,
+                            p1Name: CHAR_CONFIG[selectedCharId].name,
+                            p1Pos: 0,
+                            p1Listeners: 1000,
+                            p2Char: 'kuringo',
+                            p2Name: '2P待機中...',
+                            p2Pos: 0,
+                            p2Listeners: 1000,
+                            joinedCount: 1,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+
+                        roomRef.set(initialData).then(() => {
+                            listenRoomData(roomRef);
+                            alert(`🌐 ルーム [${currentRoomCode}] を作成しました！対戦相手の参加を待っています...`);
+                            if (startModal) startModal.classList.add('hidden');
+                            updateUI();
+                        }).catch(err => {
+                            console.error("Room set error:", err);
+                            startLocalPassAndPlay();
+                        });
+                    } else {
+                        // ゲスト (2P) として参加
+                        myPlayerIndex = 1;
+                        gameState.players[1].charKey = selectedCharId;
+                        gameState.players[1].name = CHAR_CONFIG[selectedCharId].name;
+
+                        roomRef.update({
+                            p2Char: selectedCharId,
+                            p2Name: CHAR_CONFIG[selectedCharId].name,
+                            joinedCount: 2,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }).then(() => {
+                            listenRoomData(roomRef);
+                            alert(`🌐 ルーム [${currentRoomCode}] に参加しました！`);
+                            if (startModal) startModal.classList.add('hidden');
+                            updateUI();
+                        }).catch(err => {
+                            console.error("Room update error:", err);
+                            startLocalPassAndPlay();
+                        });
+                    }
+                }).catch(err => {
+                    console.error('ルーム取得エラー:', err);
+                    startLocalPassAndPlay();
+                });
+            } catch(e) {
+                console.error("Firebase Exception:", e);
+                startLocalPassAndPlay();
+            }
+        }
+
+        // オフライン交代プレイフォールバック
+        function startLocalPassAndPlay() {
+            gameState.mode = 'local2p';
+            gameState.turn = 1;
+            gameState.activePlayer = 0;
+            gameState.phase = 'MOVE_ROLL';
+
+            gameState.players[0].charKey = selectedCharId;
+            gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+            gameState.players[0].pos = 0;
+            gameState.players[0].listeners = 1000;
+
+            const otherKeys = Object.keys(CHAR_CONFIG).filter(k => k !== selectedCharId);
+            const rivalKey = otherKeys[0];
+            gameState.players[1].charKey = rivalKey;
+            gameState.players[1].name = CHAR_CONFIG[rivalKey].name + ' (2P)';
+            gameState.players[1].pos = 0;
+            gameState.players[1].listeners = 1000;
+
+            if (startModal) startModal.classList.add('hidden');
+            const statusText = document.getElementById('gameStatusText');
+            if (statusText) statusText.innerText = `👥 2人対戦中 (部屋: ${currentRoomCode || 'ローカル'})`;
+            
+            updateUI();
+            showEventText('【ゲームスタート！】', '好きなキャラクターを選んで100マス先のゴールを目指そう！', '-');
+        }
+
+        // --- リアルタイム同期リスナー ---
+        function listenRoomData(roomRef) {
+            if (roomUnsubscribe) roomUnsubscribe();
+
+            roomUnsubscribe = roomRef.onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+
+                gameState.turn = data.turn || 1;
+                gameState.activePlayer = data.activePlayer || 0;
+                gameState.phase = data.phase || 'MOVE_ROLL';
+
+                // 1P同期
+                gameState.players[0].charKey = data.p1Char || 'utsuro';
+                gameState.players[0].name = data.p1Name || '1P';
+                gameState.players[0].pos = data.p1Pos || 0;
+                gameState.players[0].listeners = data.p1Listeners || 1000;
+
+                // 2P同期
+                gameState.players[1].charKey = data.p2Char || 'kuringo';
+                gameState.players[1].name = data.p2Name || '2P';
+                gameState.players[1].pos = data.p2Pos || 0;
+                gameState.players[1].listeners = data.p2Listeners || 1000;
+
+                const statusText = document.getElementById('gameStatusText');
+                if (statusText) {
+                    statusText.innerText = `🌐 オンライン対戦中 [部屋: ${currentRoomCode}] (${data.joinedCount || 1}/2人)`;
+                }
+
+                updateUI();
+            });
+        }
+
+        // --- キャラ選択 ---
+        function selectChar(charKey) {
+            selectedCharId = charKey;
+            ['utsuro', 'kuringo', 'tomoko'].forEach(k => {
+                const btn = document.getElementById(`charBtn_${k}`);
+                if (k === charKey) {
+                    btn.className = "char-select-btn p-2 rounded-lg border-2 border-purple-400 bg-purple-900/90 shadow-lg scale-105 transition flex flex-col items-center gap-1 cursor-pointer";
+                } else {
+                    btn.className = "char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 opacity-60 hover:opacity-100 transition flex flex-col items-center gap-1 cursor-pointer";
+                }
+            });
+        }
+
+        function startGame(mode) {
+            gameState.mode = mode;
+            gameState.turn = 1;
+            gameState.activePlayer = 0;
+            gameState.phase = 'MOVE_ROLL';
+
+            // 1P選択キャラ
+            gameState.players[0].charKey = selectedCharId;
+            gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+            gameState.players[0].pos = 0;
+            gameState.players[0].renderPos = 0;
+            gameState.players[0].listeners = 1000;
+            gameState.players[0].items = [];
+
+            // 2Pライバルキャラ決定
+            const otherKeys = Object.keys(CHAR_CONFIG).filter(k => k !== selectedCharId);
+            const rivalKey = otherKeys[Math.floor(Math.random() * otherKeys.length)];
+            gameState.players[1].charKey = rivalKey;
+            gameState.players[1].name = CHAR_CONFIG[rivalKey].name;
+            gameState.players[1].pos = 0;
+            gameState.players[1].renderPos = 0;
+            gameState.players[1].listeners = 1000;
+            gameState.players[1].items = [];
+
+            startModal.classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = mode === 'cpu' ? '🤖 VS CPU 対戦中' : '🌐 オンライン対戦中';
+            
+            updateUI();
+            showEventText('【ゲームスタート！】', '好きなキャラクターを選んで100マス先のゴールを目指そう！', '-');
+        }
+
+        // --- サイコロ・ターンの進行 ---
+        function handleRollClick() {
+            if (gameState.isRolling || gameState.isMoving || gameState.phase === 'PROCESSING') return;
+            
+            if (gameState.mode === 'online' && gameState.activePlayer !== myPlayerIndex) {
+                alert('相手の手番です！');
+                return;
+            }
+
+            if (gameState.phase === 'MOVE_ROLL') {
+                rollDiceForMove();
+            } else if (gameState.phase === 'EVENT_ROLL') {
+                rollDiceForEvent();
+            }
+        }
+
+        function rollDiceForMove() {
+            gameState.isRolling = true;
+            btnRoll.disabled = true;
+
+            let rolls = 0;
+            const rollInterval = setInterval(() => {
+                const tempVal = Math.floor(Math.random() * 6) + 1;
+                drawDice(tempVal);
+                audio.playDiceRoll();
+                rolls++;
+                if (rolls > 12) {
+                    clearInterval(rollInterval);
+                    
+                    const player = gameState.players[gameState.activePlayer];
+                    let finalVal = Math.floor(Math.random() * 6) + 1;
+
+                    if (player.activeBuffs.highDice) {
+                        finalVal = Math.floor(Math.random() * 3) + 4; // 4~6
+                        player.activeBuffs.highDice = false;
+                    }
+
+                    if (player.activeBuffs.boost > 0) {
+                        finalVal += player.activeBuffs.boost;
+                        player.activeBuffs.boost = 0;
+                    }
+
+                    drawDice(finalVal);
+                    document.getElementById('diceResultText').innerText = `${finalVal} の目が出た！`;
+                    gameState.isRolling = false;
+
+                    setTimeout(() => {
+                        movePlayer(gameState.activePlayer, finalVal);
+                    }, 600);
+                }
+            }, 80);
+        }
+
+        function movePlayer(playerIndex, steps) {
+            gameState.isMoving = true;
+            const player = gameState.players[playerIndex];
+            const startPos = player.pos;
+            const targetPos = Math.min(TOTAL_TILES - 1, startPos + steps);
+
+            let currentStep = 0;
+            const moveInterval = setInterval(() => {
+                if (currentStep < (targetPos - startPos)) {
+                    currentStep++;
+                    player.pos = startPos + currentStep;
+                    audio.playStep();
+
+                    // ピョンピョン跳ねるアニメーション
+                    let jumpProgress = 0;
+                    const jumpInterval = setInterval(() => {
+                        jumpProgress += 0.2;
+                        player.jumpOffset = Math.sin(jumpProgress * Math.PI) * 16;
+                        if (jumpProgress >= 1) {
+                            player.jumpOffset = 0;
+                            clearInterval(jumpInterval);
+                        }
+                    }, 20);
+
+                } else {
+                    clearInterval(moveInterval);
+                    gameState.isMoving = false;
+                    onPlayerArrived(playerIndex, player.pos);
+                }
+            }, 320);
+        }
+
+        function onPlayerArrived(playerIndex, tileIndex) {
+            const ev = boardEvents[tileIndex];
+            const player = gameState.players[playerIndex];
+
+            showEventText(ev.title, ev.desc, '-');
+
+            if (tileIndex === TOTAL_TILES - 1) {
+                // ゴール到達！
+                applyTileEvent(playerIndex, tileIndex, 6);
+                return;
+            }
+
+            if (ev.type === EVENT_TYPES.ITEM) {
+                // アイテム獲得
+                const getRandomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                player.items.push(getRandomItem);
+                showEventText(ev.title, ev.desc, `🎁 [アイテム獲得] 「${getRandomItem.name}」を入手した！`);
+                audio.playPositive();
+                finishTurnDelay(tileIndex);
+            } else if (ev.type === EVENT_TYPES.DAILY || ev.type === EVENT_TYPES.START) {
+                // 白色（日常）マス：判定ダイスなしでスムーズ進行
+                applyTileEvent(playerIndex, tileIndex, 1);
+            } else {
+                // 青（プラス）・赤（マイナス）マス：2回目の判定ダイス要求
+                gameState.phase = 'EVENT_ROLL';
+                document.getElementById('diceResultText').innerText = '判定ダイスを振ろう！';
+                updateUI();
+
+                if (gameState.mode === 'cpu' && gameState.activePlayer === 1) {
+                    setTimeout(() => rollDiceForEvent(), 1200);
+                }
+            }
+        }
+
+        function rollDiceForEvent() {
+            gameState.isRolling = true;
+            btnRoll.disabled = true;
+
+            let rolls = 0;
+            const rollInterval = setInterval(() => {
+                const tempVal = Math.floor(Math.random() * 6) + 1;
+                drawDice(tempVal);
+                audio.playDiceRoll();
+                rolls++;
+                if (rolls > 12) {
+                    clearInterval(rollInterval);
+                    const eventDice = Math.floor(Math.random() * 6) + 1;
+                    drawDice(eventDice);
+                    gameState.isRolling = false;
+                    document.getElementById('diceResultText').innerText = `判定結果: ${eventDice}!`;
+
+                    applyTileEvent(gameState.activePlayer, gameState.players[gameState.activePlayer].pos, eventDice);
+                }
+            }, 80);
+        }
+
+        function applyTileEvent(playerIndex, tileIndex, eventDice) {
+            const ev = boardEvents[tileIndex];
+            const player = gameState.players[playerIndex];
+            let actualChange = 0;
+
+            if (tileIndex === 0) {
+                actualChange = 0;
+            } else if (tileIndex === TOTAL_TILES - 1) {
+                actualChange = ev.baseListeners;
+            } else if (ev.type === EVENT_TYPES.DAILY) {
+                actualChange = ev.baseListeners;
+            } else if (ev.baseListeners > 0) {
+                actualChange = ev.baseListeners * eventDice;
+            } else if (ev.baseListeners < 0) {
+                if (player.activeBuffs.barrier) {
+                    player.activeBuffs.barrier = false;
+                    actualChange = 0;
+                } else {
+                    const penaltyFactor = (7 - eventDice);
+                    actualChange = ev.baseListeners * penaltyFactor;
+                }
+            }
+
+            player.listeners = Math.max(0, player.listeners + actualChange);
+            
+            if (actualChange > 0) audio.playPositive();
+            else if (actualChange < 0) audio.playNegative();
+
+            let effectText = '';
+            if (ev.type === EVENT_TYPES.DAILY) {
+                effectText = `✨ ${player.name}のリスナーが +${actualChange}人 増えた！`;
+            } else if (ev.baseListeners < 0 && actualChange === 0) {
+                effectText = '🛡️ [アンチバリア発動] マイナス効果を完全ガードした！';
+            } else {
+                effectText = actualChange !== 0 
+                    ? `✨ [判定ダイス: ${eventDice}] ${player.name}のリスナーが ${actualChange > 0 ? '+' + actualChange : actualChange}人 ${actualChange > 0 ? '増加！' : '減少…'}`
+                    : '変化なし';
+            }
+
+            document.getElementById('currentEventEffect').innerText = effectText;
+            updateUI();
+            finishTurnDelay(tileIndex);
+        }
+
+        function finishTurnDelay(tileIndex) {
+            gameState.phase = 'PROCESSING';
+
+            setTimeout(() => {
+                if (tileIndex === TOTAL_TILES - 1) {
+                    const winner = gameState.players[gameState.activePlayer];
+                    alert(`🎉 ${winner.name} がゴールに到達して大勝利！！`);
+                    return;
+                }
+
+                // ターン切替
+                if (gameState.activePlayer === 1) {
+                    gameState.turn++;
+                }
+                gameState.activePlayer = (gameState.activePlayer + 1) % 2;
+                gameState.phase = 'MOVE_ROLL';
+                document.getElementById('diceResultText').innerText = '準備完了';
+
+                updateUI();
+
+                // CPU自動手番
+                if (gameState.mode === 'cpu' && gameState.activePlayer === 1) {
+                    setTimeout(() => {
+                        rollDiceForMove();
+                    }, 1200);
+                }
+            }, 2800);
+        }
+
+        // --- アイテム使用 ---
+        function useItem(itemId) {
+            const pIndex = (gameState.mode === 'online') ? myPlayerIndex : 0;
+            const player = gameState.players[pIndex];
+            const itemIdx = player.items.findIndex(i => i.id === itemId);
+
+            if (itemIdx === -1) return;
+            const item = player.items[itemIdx];
+            player.items.splice(itemIdx, 1);
+
+            if (itemId === 'boost') player.activeBuffs.boost = 2;
+            if (itemId === 'highDice') player.activeBuffs.highDice = true;
+            if (itemId === 'barrier') player.activeBuffs.barrier = true;
+            if (itemId === 'tweet') player.listeners += 500;
+
+            audio.playPositive();
+            showEventText('【アイテム使用】', `「${item.name}」を使用した！`, item.desc);
+            updateUI();
+        }
+
+        // --- テキスト演出（左から右タイプライター） ---
+        function showEventText(title, desc, effect) {
+            document.getElementById('currentEventTitle').innerText = title;
+            document.getElementById('currentEventEffect').innerText = effect;
+            
+            const descEl = document.getElementById('currentEventDesc');
+            descEl.innerText = '';
+
+            if (typeWriterTimer) clearInterval(typeWriterTimer);
+
+            let charIdx = 0;
+            typeWriterTimer = setInterval(() => {
+                if (charIdx < desc.length) {
+                    descEl.innerText += desc.charAt(charIdx);
+                    charIdx++;
+                } else {
+                    clearInterval(typeWriterTimer);
+                }
+            }, 30);
+        }
+
+        function updateUI() {
+            document.getElementById('p1Listeners').innerText = `${gameState.players[0].listeners.toLocaleString()}人`;
+            document.getElementById('p2Listeners').innerText = `${gameState.players[1].listeners.toLocaleString()}人`;
+            document.getElementById('turnCounter').innerText = `${gameState.turn} / ${gameState.maxTurns}`;
+            
+            const activePlayerObj = gameState.players[gameState.activePlayer];
+            document.getElementById('activePlayerTag').innerText = `${gameState.activePlayer + 1}P (${activePlayerObj.name})`;
+
+            const itemContainer = document.getElementById('itemListContainer');
+            itemContainer.innerHTML = '';
+
+            const isMyTurn = (gameState.mode === 'cpu' || gameState.activePlayer === myPlayerIndex);
+            const canUseItem = (gameState.phase === 'MOVE_ROLL' && !gameState.isRolling && !gameState.isMoving && isMyTurn);
+
+            const pIndex = (gameState.mode === 'online') ? myPlayerIndex : 0;
+            const myPlayer = gameState.players[pIndex];
+
+            if (!myPlayer.items || myPlayer.items.length === 0) {
+                itemContainer.innerHTML = '<span class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>';
+            } else {
+                myPlayer.items.forEach(it => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-2 py-0.5 text-xs rounded border flex items-center gap-1 transition ${canUseItem ? 'bg-yellow-600 border-yellow-300 text-white hover:bg-yellow-500 cursor-pointer' : 'bg-gray-800 border-gray-600 text-gray-400 cursor-not-allowed'}`;
+                    btn.disabled = !canUseItem;
+                    btn.innerText = `${it.icon} ${it.name}`;
+                    btn.onclick = () => useItem(it.id);
+                    itemContainer.appendChild(btn);
+                });
+            }
+
+            if (gameState.phase === 'MOVE_ROLL') {
+                btnRoll.innerText = '🎲 移動！';
+            } else if (gameState.phase === 'EVENT_ROLL') {
+                btnRoll.innerText = '🎲 判定！';
+            }
+
+            if (gameState.mode === 'online' && gameState.activePlayer !== myPlayerIndex) {
+                btnRoll.disabled = true;
+                btnRoll.innerText = '相手のターン';
+            } else if (!gameState.isRolling && !gameState.isMoving && gameState.phase !== 'PROCESSING') {
+                btnRoll.disabled = false;
+            }
+        }
+
+        // --- ドット絵描画エンジン ---
+        function getTileCoords(index) {
+            const cols = 10;
+            const row = Math.floor(index / cols);
+            let col = index % cols;
+            if (row % 2 === 1) col = (cols - 1) - col; // ジグザグ
+            const spacing = 48;
+            return { x: 60 + col * spacing, y: 60 + row * spacing };
+        }
+
+        function gameLoop() {
+            if (ctx && boardCanvas) {
+                // 画面消去
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
+
+                ctx.save();
+
+                // カメラズーム＆追従 (2.4倍)
+                const zoom = 2.4 * (boardCanvas.height / 600);
+                const targetPlayer = gameState.players[gameState.activePlayer];
+                const targetCoords = getTileCoords(targetPlayer.pos);
+
+                cameraX += (targetCoords.x - cameraX) * 0.1;
+                cameraY += (targetCoords.y - cameraY) * 0.1;
+
+                ctx.translate(boardCanvas.width / 2, boardCanvas.height / 2);
+                ctx.scale(zoom, zoom);
+                ctx.translate(-cameraX, -cameraY);
+
+                // 背景芝生
+                ctx.fillStyle = '#15803d';
+                ctx.fillRect(-500, -500, 2000, 2000);
+
+                // --- 1. まず「接続する道路（パス）」を全て描画 ---
+                ctx.strokeStyle = '#fef08a';
+                ctx.lineWidth = 10;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                for (let i = 0; i < TOTAL_TILES; i++) {
+                    const c = getTileCoords(i);
+                    if (i === 0) {
+                        ctx.moveTo(c.x, c.y);
+                    } else {
+                        ctx.lineTo(c.x, c.y);
+                    }
+                }
+                ctx.stroke();
+
+                // 道路の黒フチ
+                ctx.strokeStyle = '#451a03';
+                ctx.lineWidth = 12;
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.beginPath();
+                for (let i = 0; i < TOTAL_TILES; i++) {
+                    const c = getTileCoords(i);
+                    if (i === 0) ctx.moveTo(c.x, c.y);
+                    else ctx.lineTo(c.x, c.y);
+                }
+                ctx.stroke();
+                ctx.globalCompositeOperation = 'source-over';
+
+                // --- 2. 次に「円形マス目」と「アイコンマーク」を描画 ---
+                for (let i = 0; i < TOTAL_TILES; i++) {
+                    const c = getTileCoords(i);
+                    const ev = boardEvents[i];
+
+                    // マス目円形カラー
+                    let tileColor = '#ffffff'; // DAILY (白)
+                    if (ev.type === EVENT_TYPES.START || ev.type === EVENT_TYPES.GOAL) tileColor = '#a855f7'; // 紫
+                    else if (ev.type === EVENT_TYPES.PLUS) tileColor = '#3b82f6'; // 青
+                    else if (ev.type === EVENT_TYPES.MINUS) tileColor = '#ef4444'; // 赤
+                    else if (ev.type === EVENT_TYPES.ITEM) tileColor = '#eab308'; // 黄
+
+                    // 円本体
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, 14, 0, Math.PI * 2);
+                    ctx.fillStyle = tileColor;
+                    ctx.fill();
+                    ctx.lineWidth = 2.5;
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.stroke();
+
+                    // --- アイコンマークをCanvasグラフィックで綺麗に直接描画 ---
+                    ctx.fillStyle = '#ffffff';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+
+                    if (ev.type === EVENT_TYPES.PLUS) {
+                        // 📈 プラス (上向き矢印)
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - 5, c.y + 4);
+                        ctx.lineTo(c.x, c.y - 4);
+                        ctx.lineTo(c.x + 5, c.y + 4);
+                        ctx.stroke();
+                    } else if (ev.type === EVENT_TYPES.MINUS) {
+                        // 📉 マイナス (下向き矢印)
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - 5, c.y - 4);
+                        ctx.lineTo(c.x, c.y + 4);
+                        ctx.lineTo(c.x + 5, c.y - 4);
+                        ctx.stroke();
+                    } else if (ev.type === EVENT_TYPES.ITEM) {
+                        // 🎁 アイテム (リボン箱マーク)
+                        ctx.fillStyle = '#7c2d12';
+                        ctx.fillRect(c.x - 5, c.y - 3, 10, 8);
+                        ctx.fillStyle = '#fef08a';
+                        ctx.fillRect(c.x - 1, c.y - 3, 2, 8);
+                        ctx.fillRect(c.x - 5, c.y, 10, 2);
+                    } else if (ev.type === EVENT_TYPES.DAILY) {
+                        // 💬 日常 (吹き出しドット)
+                        ctx.fillStyle = '#334155';
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y - 1, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillRect(c.x - 4, c.y + 3, 3, 3);
+                    } else if (ev.type === EVENT_TYPES.START) {
+                        // 🚩 スタート (旗)
+                        ctx.strokeStyle = '#fef08a';
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - 4, c.y - 6);
+                        ctx.lineTo(c.x - 4, c.y + 6);
+                        ctx.stroke();
+                        ctx.fillStyle = '#fef08a';
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - 4, c.y - 6);
+                        ctx.lineTo(c.x + 4, c.y - 2);
+                        ctx.lineTo(c.x - 4, c.y + 2);
+                        ctx.fill();
+                    } else if (ev.type === EVENT_TYPES.GOAL) {
+                        // 👑 ゴール (王冠マーク)
+                        ctx.fillStyle = '#fef08a';
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - 6, c.y + 4);
+                        ctx.lineTo(c.x - 6, c.y - 4);
+                        ctx.lineTo(c.x - 2, c.y);
+                        ctx.lineTo(c.x, c.y - 5);
+                        ctx.lineTo(c.x + 2, c.y);
+                        ctx.lineTo(c.x + 6, c.y - 4);
+                        ctx.lineTo(c.x + 6, c.y + 4);
+                        ctx.fill();
+                    }
+                }
+
+                // プレイヤーコマ描画
+                gameState.players.forEach((p, idx) => {
+                    const coords = getTileCoords(p.pos);
+                    const offsetX = (idx === 0) ? -8 : 8;
+                    const drawX = coords.x + offsetX;
+                    const drawY = coords.y - p.jumpOffset;
+
+                    drawPlayerDotModel(ctx, drawX, drawY, p.charKey);
+                });
+
+                ctx.restore();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // キャラクター＋お供ごしゅドット絵描画
+        function drawPlayerDotModel(context, x, y, charKey) {
+            const cfg = CHAR_CONFIG[charKey] || CHAR_CONFIG.utsuro;
+
+            // メインキャラ
+            context.fillStyle = cfg.hairColor;
+            context.fillRect(x - 6, y - 12, 12, 10); // 髪
+            context.fillStyle = '#fde047';
+            context.fillRect(x - 4, y - 6, 8, 6); // 顔
+            context.fillStyle = cfg.bowColor;
+            context.fillRect(x - 8, y - 14, 4, 4); // リボン
+
+            // お供のごしゅ
+            context.fillStyle = '#000000';
+            context.fillRect(x + 8, y - 4, 6, 6); // 体
+            context.fillStyle = '#f97316';
+            context.fillRect(x + 10, y - 2, 3, 2); // クチバシ
+        }
+
+        // モーダル用プレビュー描画
+        function renderCharacterPreviews() {
+            ['utsuro', 'kuringo', 'tomoko'].forEach(key => {
+                const cvs = document.getElementById(`prev${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                if (cvs) {
+                    const c = cvs.getContext('2d');
+                    c.clearRect(0, 0, 36, 36);
+                    drawPlayerDotModel(c, 18, 22, key);
+                }
+            });
+        }
+
+        // サイコロ描画
+        function drawDice(val) {
+            if (!diceCtx) return;
+            diceCtx.clearRect(0, 0, 48, 48);
+            diceCtx.fillStyle = '#f8fafc';
+            diceCtx.fillRect(4, 4, 40, 40);
+            diceCtx.strokeStyle = '#94a3b8';
+            diceCtx.lineWidth = 2;
+            diceCtx.strokeRect(4, 4, 40, 40);
+
+            const dots = {
+                1: [[24, 24]],
+                2: [[14, 14], [34, 34]],
+                3: [[14, 14], [24, 24], [34, 34]],
+                4: [[14, 14], [34, 14], [14, 34], [34, 34]],
+                5: [[14, 14], [34, 14], [24, 24], [14, 34], [34, 34]],
+                6: [[14, 12], [34, 12], [14, 24], [34, 24], [14, 36], [34, 36]]
+            };
+
+            diceCtx.fillStyle = (val === 1) ? '#ef4444' : '#0f172a';
+            (dots[val] || []).forEach(([dx, dy]) => {
+                diceCtx.beginPath();
+                diceCtx.arc(dx, dy, (val === 1) ? 5 : 3.5, 0, Math.PI * 2);
+                diceCtx.fill();
+            });
+        }
+    </script>
+</body>
+</html>
