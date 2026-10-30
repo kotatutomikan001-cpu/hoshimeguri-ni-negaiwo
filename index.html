@@ -480,6 +480,9 @@
                     gameState.players[0].name = CHAR_CONFIG[selectedCharId] ? CHAR_CONFIG[selectedCharId].name : '1P';
 
                     if (statusElem) statusElem.innerText = `🌐 [1P] 部屋作成成功！対戦相手の参加待ち... (部屋: ${currentRoomCode})`;
+                    
+                    // モーダルを閉じて画面を表示する
+                    if (startModal) startModal.classList.add('hidden');
                     updateUI();
 
                     // 2P / 3Pの接続受入ハンドラ
