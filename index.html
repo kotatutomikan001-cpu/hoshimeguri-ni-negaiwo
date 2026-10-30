@@ -446,84 +446,99 @@
 
         // --- オンライン対戦（PeerJS P2P通信）接続処理 ---
         function startOnlineRoom() {
-            const input = document.getElementById('roomCodeInput');
-            const rawCode = input ? input.value.trim() : '';
+            try {
+                const input = document.getElementById('roomCodeInput');
+                const rawCode = input ? input.value.trim() : '';
 
-            if (!rawCode) {
-                alert('部屋コード（数字や英字）を入力してください！');
-                return;
-            }
+                if (!rawCode) {
+                    alert('部屋コード（数字や英字）を入力してください！');
+                    return;
+                }
 
-            currentRoomCode = rawCode;
-            generateBoardEvents(currentRoomCode);
+                currentRoomCode = rawCode;
+                generateBoardEvents(currentRoomCode);
 
-            const cleanCode = 'vstreamer-room-' + rawCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cleanCode = 'vstreamer-room-' + rawCode.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-            document.getElementById('gameStatusText').innerText = `🌐 接続中... [部屋: ${currentRoomCode}]`;
+                const statusElem = document.getElementById('gameStatusText');
+                if (statusElem) statusElem.innerText = `🌐 接続中... [部屋: ${currentRoomCode}]`;
 
-            if (peer) peer.destroy();
-            connections = [];
+                if (peer) {
+                    try { peer.destroy(); } catch(e) {}
+                }
+                connections = [];
 
-            peer = new Peer(cleanCode);
+                peer = new Peer(cleanCode);
 
-            peer.on('open', (id) => {
-                myPlayerIndex = 0;
-                gameState.mode = 'online';
-                gameState.activePlayer = 0;
-                totalPlayerCount = 1;
+                peer.on('open', (id) => {
+                    myPlayerIndex = 0;
+                    gameState.mode = 'online';
+                    gameState.activePlayer = 0;
+                    totalPlayerCount = 1;
 
-                gameState.players[0].charKey = selectedCharId;
-                gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
+                    gameState.players[0].charKey = selectedCharId;
+                    gameState.players[0].name = CHAR_CONFIG[selectedCharId] ? CHAR_CONFIG[selectedCharId].name : '1P';
 
-                document.getElementById('gameStatusText').innerText = `🌐 [1P] 部屋作成成功！対戦相手の参加待ち... (部屋: ${currentRoomCode})`;
-                updateUI();
+                    if (statusElem) statusElem.innerText = `🌐 [1P] 部屋作成成功！対戦相手の参加待ち... (部屋: ${currentRoomCode})`;
+                    updateUI();
 
-                // 2P / 3Pの接続受入ハンドラ
-                peer.on('connection', (c) => {
-                    connections.push(c);
-                    setupConnection(c);
-                    totalPlayerCount = connections.length + 1;
+                    // 2P / 3Pの接続受入ハンドラ
+                    peer.on('connection', (c) => {
+                        connections.push(c);
+                        setupConnection(c);
+                        totalPlayerCount = connections.length + 1;
 
-                    if (totalPlayerCount === 2) {
-                        // 2人集まった瞬間に1Pにダイアログ表示
-                        document.getElementById('confirmWait3PModal').classList.remove('hidden');
-                    } else if (totalPlayerCount === 3) {
-                        // 3人揃ったら自動で対戦開始！
-                        isWaiting3P = false;
-                        document.getElementById('confirmWait3PModal').classList.add('hidden');
-                        document.getElementById('btnCancelWait3P').classList.add('hidden');
-                        if (startModal) startModal.classList.add('hidden');
-                        document.getElementById('gameStatusText').innerText = `🌐 [3人対戦] プレイ中 (部屋: ${currentRoomCode})`;
-                        broadcastSyncData();
+                        if (totalPlayerCount === 2) {
+                            // 2人集まった瞬間に1Pにダイアログ表示
+                            const confirmModal = document.getElementById('confirmWait3PModal');
+                            if (confirmModal) confirmModal.classList.remove('hidden');
+                        } else if (totalPlayerCount === 3) {
+                            // 3人揃ったら自動で対戦開始！
+                            isWaiting3P = false;
+                            const confirmModal = document.getElementById('confirmWait3PModal');
+                            if (confirmModal) confirmModal.classList.add('hidden');
+                            const cancelBtn = document.getElementById('btnCancelWait3P');
+                            if (cancelBtn) cancelBtn.classList.add('hidden');
+                            if (startModal) startModal.classList.add('hidden');
+                            if (statusElem) statusElem.innerText = `🌐 [3人対戦] プレイ中 (部屋: ${currentRoomCode})`;
+                            broadcastSyncData();
+                        }
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    // 既に部屋が存在する場合は2P/3Pとして参加を試みる
+                    if (err.type === 'unavailable-id' || err.type === 'peer-unavailable' || err.type === 'network') {
+                        tryConnectAsGuest(cleanCode);
                     }
                 });
-            });
-
-            peer.on('error', (err) => {
-                if (err.type === 'unavailable-id' || err.type === 'peer-unavailable' || err.type === 'network') {
-                    // 2Pまたは3Pとして部屋に接続を試みる
-                    tryConnectAsGuest(cleanCode, 1);
-                }
-            });
+            } catch (err) {
+                console.error("Online start error:", err);
+                alert("通信接続エラーが発生しました。時間をおいて再試行してください。");
+            }
         }
 
-        function tryConnectAsGuest(cleanCode, guestIndex) {
-            const guestPeer = new Peer();
-            
-            guestPeer.on('open', () => {
-                const connCandidate = guestPeer.connect(cleanCode);
+        function tryConnectAsGuest(cleanCode) {
+            try {
+                const guestPeer = new Peer();
                 
-                connCandidate.on('open', () => {
-                    connections = [connCandidate];
-                    setupConnection(connCandidate);
+                guestPeer.on('open', () => {
+                    const connCandidate = guestPeer.connect(cleanCode);
+                    
+                    connCandidate.on('open', () => {
+                        connections = [connCandidate];
+                        setupConnection(connCandidate);
 
-                    connCandidate.send({ type: 'REQUEST_JOIN', charKey: selectedCharId });
-                });
+                        connCandidate.send({ type: 'REQUEST_JOIN', charKey: selectedCharId });
+                    });
 
-                connCandidate.on('error', () => {
-                    alert('ルームが満員か、接続できませんでした。');
+                    connCandidate.on('error', () => {
+                        alert('ルームが満員か、接続できませんでした。');
+                    });
                 });
-            });
+            } catch(e) {
+                console.error(e);
+            }
         }
 
         function setupConnection(c) {
