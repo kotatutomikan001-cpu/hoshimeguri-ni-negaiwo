@@ -528,26 +528,6 @@
             }
         }
 
-        function playGameBgm() {
-            const selectAudio = document.getElementById('selectBgmAudio');
-            const gameAudio = document.getElementById('gameBgmAudio');
-            if (selectAudio) selectAudio.pause();
-            if (gameAudio) {
-                gameAudio.volume = currentBgmVolume;
-                let playPromise = gameAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        const unlockGameBgm = () => {
-                            gameAudio.volume = currentBgmVolume;
-                            gameAudio.play();
-                            ['pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockGameBgm));
-                        };
-                        ['pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockGameBgm, { once: true }));
-                    });
-                }
-            }
-        }
-
         function renderMapEditorCanvas() {
             if (!mapEditorCtx) return;
             mapEditorCtx.clearRect(0, 0, 384, 384);
