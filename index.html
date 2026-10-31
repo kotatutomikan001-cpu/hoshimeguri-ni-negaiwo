@@ -74,7 +74,9 @@
                     ❄️
                 </div>
                 <div>
-                    <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
+                    </div>
                     <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">準備中... モードを選択してください</p>
                 </div>
             </div>
@@ -103,1125 +105,1145 @@
         <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-0 bg-slate-900 flex items-center justify-center">
             <canvas id="boardCanvas" class="w-full h-full object-contain"></canvas>
             
-            <!-- ターン表示オーバーレイ -->
-            <div class="absolute top-2 left-2 bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
-                <span class="text-purple-300 font-bold">TURN</span>
-                <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1 / 30</span>
-            </div>
-
-            <!-- 現在の手番 -->
-            <div class="absolute top-2 right-2 bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
-                <span class="text-gray-300">手番:</span>
-                <span id="activePlayerTag" class="font-bold text-yellow-300">1P (氷室うつろ)</span>
-            </div>
-
-            <!-- 所持アイテムUI -->
-            <div class="absolute bottom-2 left-2 right-2 bg-black/85 border border-yellow-500/70 rounded-lg p-1.5 flex items-center justify-between gap-2 backdrop-blur-sm">
-                <div class="flex items-center gap-1 text-xs text-yellow-300 font-bold flex-none">
-                    <span>🎒 アイテム:</span>
+            <!-- ターン表示＆カメラ切替オーバーレイ -->
+            <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+                <div class="bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
+                    <span class="text-purple-300 font-bold">TURN</span>
+                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1 / 30</span>
                 </div>
-                <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5 px-1 flex-1">
-                    <span id="noItemText" class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>
-                </div>
+                <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-1 rounded text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
+                    🗺️ 全体表示
+                </button>
             </div>
         </section>
 
-        <!-- 下部コントロール＆現在イベント表示枠 -->
-        <section class="flex-none flex flex-row gap-2 h-32 sm:h-40">
-            
-            <!-- サイコロ操作エリア -->
-            <div class="pixel-box p-2 sm:p-3 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-indigo-950/80 border-2 border-purple-500 w-28 sm:w-44 flex-none">
-                <canvas id="diceCanvas" width="48" height="48" class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-950 border-2 border-purple-400 rounded-lg shadow-inner flex-none"></canvas>
-                
-                <div class="flex flex-col items-center gap-1 w-full">
-                    <button id="btnRoll" class="pixel-btn w-full py-1.5 px-1 text-xs sm:text-sm font-bold text-white rounded cursor-pointer disabled:opacity-50">
-                        🎲 移動！
-                    </button>
-                    <span id="diceResultText" class="text-[10px] sm:text-xs text-purple-300 font-bold h-3 truncate">準備完了</span>
+        <!-- 下部コントローラー＆イベント情報エリア -->
+        <section class="flex-none grid grid-cols-1 md:grid-cols-3 gap-2">
+            <!-- サイコロ＆操作パネル -->
+            <div class="pixel-box p-2 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-2 border-purple-500">
+                <div class="flex items-center gap-3">
+                    <canvas id="diceCanvas" width="48" height="48" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner"></canvas>
+                    <div class="flex flex-col">
+                        <span id="activePlayerTag" class="text-xs font-bold text-purple-300">手番: 1P</span>
+                        <span id="diceResultText" class="text-xs font-bold text-yellow-300">準備完了</span>
+                    </div>
                 </div>
+                <button id="btnRoll" class="pixel-btn py-2 px-6 font-black text-white rounded-lg text-sm sm:text-base w-full shadow-md cursor-pointer">
+                    🎲 移動！
+                </button>
             </div>
 
-            <!-- 現在のマス目イベント枠 -->
-            <div class="pixel-box p-2.5 sm:p-4 rounded-lg flex-1 flex flex-col justify-start items-start bg-purple-950/90 border-2 border-purple-500 min-h-0 relative overflow-hidden">
-                <div class="text-xs font-bold text-purple-400 tracking-widest uppercase mb-1 flex items-center gap-1">
-                    <span>✨ 現在発生中のイベント ✨</span>
-                </div>
-                <div id="currentEventCard" class="w-full flex flex-col items-start justify-start space-y-1 p-0.5 text-left overflow-y-auto">
-                    <div id="currentEventTitle" class="text-sm sm:text-lg font-bold text-yellow-300 tracking-wide border-b border-purple-700/60 pb-0.5 w-full text-left">
-                        【スタート】
+            <!-- イベントログ・解説表示 -->
+            <div class="pixel-box p-2.5 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900 border-2 border-purple-500 min-h-[85px]">
+                <div>
+                    <div class="flex items-center justify-between border-b border-purple-800/60 pb-1 mb-1">
+                        <span id="currentEventTitle" class="text-xs sm:text-sm font-black text-yellow-300 tracking-wide">【スタート！】</span>
+                        <span class="text-[10px] text-purple-400 font-bold">✨ 現在発生中のイベント ✨</span>
                     </div>
-                    <div id="currentEventDesc" class="text-xs sm:text-base text-purple-100 leading-relaxed font-bold w-full text-left min-h-[2.5rem]">
+                    <p id="currentEventDesc" class="text-xs text-purple-100 font-medium leading-relaxed min-h-[2.5em]">
                         好きなキャラクターを選んでゲームスタート！100マス先のゴールを目指そう！
-                    </div>
-                    <div id="currentEventEffect" class="text-xs sm:text-sm font-bold text-cyan-300 text-left w-full">
-                        -
-                    </div>
+                    </p>
+                </div>
+                <div id="currentEventEffect" class="text-xs font-bold text-cyan-300 mt-1 truncate">
+                    -
                 </div>
             </div>
-
         </section>
+
+        <!-- 所持アイテム欄 -->
+        <footer class="flex-none pixel-box p-1.5 rounded-lg bg-slate-900/90 border border-purple-500/70 flex items-center gap-2 overflow-x-auto">
+            <span class="text-xs font-bold text-yellow-300 flex-none flex items-center gap-1">🎒 所持アイテム:</span>
+            <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                <span class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>
+            </div>
+        </footer>
 
     </main>
 
-    <!-- スタート＆キャラ選択ダイアログ -->
-    <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
-        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-sm sm:max-w-md w-full bg-slate-900 border-4 border-purple-500 flex flex-col items-center gap-3 text-center max-h-[95vh] overflow-y-auto">
-            
-            <h2 class="text-base sm:text-xl font-black text-purple-300">キャラクター選択</h2>
-            <p class="text-xs text-purple-200">プレイするキャラクターを選んでください<br><span class="text-yellow-400">（お供のごしゅが常に一緒についてきます！）</span></p>
+    <!-- 🌟 最優先独立レイヤー：画面左上隅のデバッグモード起動ボタン（z-[999999]） -->
+    <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-16 h-16 z-[999999] cursor-pointer flex items-start justify-start p-2.5 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
+        <span class="text-purple-300 text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
+    </button>
 
-            <!-- キャラクターリスト -->
-            <div class="grid grid-cols-3 gap-2 w-full my-1">
-                <button onclick="selectChar('utsuro')" id="charBtn_utsuro" class="char-select-btn p-2 rounded-lg border-2 border-purple-400 bg-purple-900/60 hover:bg-purple-800 transition flex flex-col items-center gap-1 cursor-pointer">
-                    <canvas id="prevUtsuro" width="36" height="36"></canvas>
-                    <span class="text-xs font-bold text-purple-200">氷室うつろ</span>
-                    <span class="text-[9px] text-purple-400">& ごしゅ</span>
+    <!-- キャラクター＆対戦モード選択モーダル -->
+    <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
+        
+        <!-- 背景に大量に散りばめられたダミーの❄️マーク（pointer-events-noneで一切クリックを阻害しない） -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden select-none text-purple-300 z-10">
+            <span class="absolute top-[5%] left-[12%] text-xs opacity-30">❄️</span>
+            <span class="absolute top-[8%] left-[45%] text-lg opacity-40">❄️</span>
+            <span class="absolute top-[15%] left-[82%] text-sm opacity-25">❄️</span>
+            <span class="absolute top-[22%] left-[25%] text-2xl opacity-35">❄️</span>
+            <span class="absolute top-[30%] left-[68%] text-xs opacity-50">❄️</span>
+            <span class="absolute top-[42%] left-[8%] text-lg opacity-30">❄️</span>
+            <span class="absolute top-[55%] left-[88%] text-2xl opacity-40">❄️</span>
+            <span class="absolute top-[65%] left-[18%] text-sm opacity-20">❄️</span>
+            <span class="absolute top-[78%] left-[75%] text-xl opacity-45">❄️</span>
+            <span class="absolute top-[85%] left-[35%] text-xs opacity-30">❄️</span>
+            <span class="absolute top-[92%] left-[58%] text-lg opacity-35">❄️</span>
+            <span class="absolute top-[18%] left-[92%] text-xs opacity-20">❄️</span>
+            <span class="absolute top-[38%] left-[3%] text-2xl opacity-25">❄️</span>
+            <span class="absolute top-[72%] left-[5%] text-sm opacity-40">❄️</span>
+            <span class="absolute top-[88%] left-[92%] text-xl opacity-30">❄️</span>
+        </div>
+
+        <!-- キャラクター選択メインボックス -->
+        <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
+            <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
+            <p class="text-xs text-purple-200 mb-4">プレイするキャラクターを選んでください</p>
+
+            <!-- キャラクター選択ボタン群 -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer">
+                    <canvas id="prevUtsuro" width="32" height="32" class="mb-1"></canvas>
+                    <span class="text-xs font-bold text-white">氷室うつろ</span>
                 </button>
-                <button onclick="selectChar('kuringo')" id="charBtn_kuringo" class="char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 hover:bg-slate-700 transition flex flex-col items-center gap-1 cursor-pointer">
-                    <canvas id="prevKuringo" width="36" height="36"></canvas>
-                    <span class="text-xs font-bold text-gray-300">繰言語</span>
-                    <span class="text-[9px] text-gray-400">& ごしゅ</span>
+                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
+                    <canvas id="prevGengo" width="32" height="32" class="mb-1"></canvas>
+                    <span class="text-xs font-bold text-gray-300">繰言かたる</span>
                 </button>
-                <button onclick="selectChar('tomoko')" id="charBtn_tomoko" class="char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 hover:bg-slate-700 transition flex flex-col items-center gap-1 cursor-pointer">
-                    <canvas id="prevTomoko" width="36" height="36"></canvas>
+                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
+                    <canvas id="prevTomoko" width="32" height="32" class="mb-1"></canvas>
                     <span class="text-xs font-bold text-gray-300">トモコ</span>
-                    <span class="text-[9px] text-gray-400">& ごしゅ</span>
                 </button>
             </div>
 
-            <!-- モード切り替え -->
-            <div class="flex flex-col gap-2 w-full mt-1">
-                <button id="btnStartCpu" onclick="startGame('cpu')" class="pixel-btn py-2.5 px-3 font-bold text-white rounded-lg text-xs sm:text-sm w-full">
-                    🤖 VS CPU対戦（3人プレイ）
+            <!-- モード選択ボタン -->
+            <div class="flex flex-col gap-2 mt-3">
+                <button onclick="startCpuGame()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
+                    <span>🤖 VS CPU対戦 (3人プレイ)</span>
                 </button>
-                <div class="flex gap-2 w-full">
-                    <input id="roomCodeInput" type="text" placeholder="部屋コード(例: 123456)" class="bg-slate-800 border-2 border-purple-500 rounded px-2 py-2 text-xs w-full text-center font-mono focus:outline-none focus:border-purple-300 text-white" maxlength="6">
-                    <button id="btnStartOnline" onclick="startOnlineRoom()" class="pixel-btn py-2 px-3 font-bold text-white rounded text-xs whitespace-nowrap">
-                        🌐 ルーム作成/参加
+
+                <div class="flex items-center gap-2 my-1">
+                    <div class="flex-1 h-px bg-purple-800"></div>
+                    <span class="text-[10px] text-purple-400 font-bold">または オンライン対戦</span>
+                    <div class="flex-1 h-px bg-purple-800"></div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-mono text-center">
+                    <button onclick="startOnlineGame()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none">
+                        参加 / 作成
                     </button>
                 </div>
-                <!-- 待機キャンセルボタン（2人集まり待機中の1P用） -->
-                <button id="btnCancelWait3P" onclick="forceStartTwoPlayers()" class="hidden bg-amber-600 hover:bg-amber-500 border-2 border-amber-300 font-bold text-white py-1.5 px-3 rounded text-xs w-full transition">
-                    🛑 待機を終了して2人で開始する
-                </button>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- 2人集まった時の確認モーダル（1P/ホスト専用） -->
-    <div id="confirmWait3PModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 hidden">
-        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-xs sm:max-w-sm w-full bg-slate-900 border-4 border-yellow-500 flex flex-col items-center gap-3 text-center">
-            <div class="text-2xl">👥</div>
-            <h3 class="text-base font-bold text-yellow-300">対戦相手が2人集まりました！</h3>
-            <p class="text-xs text-purple-200 leading-relaxed">
-                さらに3人目のプレイヤーの参加を待ちますか？<br>
-                <span class="text-gray-400 text-[10px]">※「はい」を選んだ後でも、いつでも2人でゲームを開始できます。</span>
-            </p>
-            <div class="flex gap-2 w-full mt-2">
-                <button onclick="answerWait3P(true)" class="pixel-btn py-2 px-3 font-bold text-white rounded text-xs flex-1">
-                    はい（待つ）
-                </button>
-                <button onclick="answerWait3P(false)" class="bg-slate-700 hover:bg-slate-600 border-2 border-slate-400 font-bold text-white py-2 px-3 rounded text-xs flex-1">
-                    いいえ（2人で開始）
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- ゲームエンジン JavaScript -->
+    <!-- デバッグモーダル (隠し機能) -->
+    <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
+        <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
+            <!-- モーダルヘッダー -->
+            <div class="flex-none flex items-center justify-between p-3 border-b border-purple-800 bg-indigo-950/80">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🛠️</span>
+                    <h3 class="text-sm font-black text-yellow-300">デバッグモード & カスタマイズ</h3>
+                </div>
+                <button onclick="closeDebugMenu()" class="text-gray-400 hover:text-white font-bold px-2 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                    ✕ 閉じる
+                </button>
+            </div>
+
+            <!-- タブ切替 -->
+            <div class="flex-none flex border-b border-purple-800/80 bg-slate-950">
+                <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
+                    📝 イベント内容編集
+                </button>
+                <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                    🎨 ドット絵作成・編集
+                </button>
+            </div>
+
+            <!-- タブコンテンツエリア -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-900/90">
+                <!-- イベント編集パネル -->
+                <div id="debugTabEvents" class="space-y-3">
+                    <p class="text-[11px] text-purple-300">すごろくのマスで発生するイベントの文章やリスナー変動数値をカスタマイズできます。</p>
+                    
+                    <!-- イベントタイプ別フィルター -->
+                    <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap">
+                        <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
+                        <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
+                        <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
+                        <button onclick="filterDebugEvents('minus')" id="filterBtn_minus" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                        <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                        <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                    </div>
+
+                    <div id="debugEventsList" class="space-y-2">
+                        <!-- JavaScriptで動的生成 -->
+                    </div>
+                </div>
+
+                <!-- ドット絵ピクセルエディターパネル -->
+                <div id="debugTabDots" class="hidden flex flex-col items-center gap-3">
+                    <p class="text-[11px] text-purple-300 text-center">編集したいキャラクターまたはお供（ごしゅ）を選択し、ドット絵（16x16）を直接カスタマイズできます。</p>
+                    
+                    <!-- 編集対象選択ドロップダウン -->
+                    <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
+                        <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
+                        <select id="dotTargetSelect" onchange="changeDotTarget(this.value)" class="flex-1 bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                            <option value="utsuro">❄️ 氷室うつろ</option>
+                            <option value="gengo">🟩 繰言かたる</option>
+                            <option value="tomoko">🌸 トモコ</option>
+                            <option value="utsuro_goshu">🟣 氷室うつろのごしゅ</option>
+                            <option value="gengo_goshu">🟢 繰言かたるのごしゅ</option>
+                            <option value="tomoko_goshu">🩷 トモコのごしゅ</option>
+                        </select>
+                    </div>
+
+                    <!-- パレット＆操作 -->
+                    <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-purple-800 flex-wrap justify-center">
+                        <span class="text-xs text-purple-300 font-bold">色:</span>
+                        <input type="color" id="dotColorPicker" value="#9333ea" class="w-7 h-7 bg-transparent cursor-pointer rounded">
+                        
+                        <!-- 🧪 スポイトボタン -->
+                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1">
+                            🧪 スポイト
+                        </button>
+
+                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">
+                            消しゴム
+                        </button>
+                        
+                        <!-- ↩️ アンドゥボタン -->
+                        <button onclick="undoDotCanvas()" id="btnDotUndo" class="px-2 py-1 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600 flex items-center gap-1">
+                            ↩️ 1つ戻す
+                        </button>
+
+                        <button onclick="resetCurrentDotToDefault()" class="px-2 py-1 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">
+                            元に戻す
+                        </button>
+                        <button onclick="clearDotCanvas()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">
+                            クリア
+                        </button>
+
+                        <!-- 📋 データ出力（ワンタップコピー）ボタン -->
+                        <button onclick="copyDotDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded border border-emerald-400 flex items-center gap-1">
+                            📋 データをコピー
+                        </button>
+                    </div>
+
+                    <!-- ピクセルキャンバス -->
+                    <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
+                        <canvas id="dotEditorCanvas" width="256" height="256" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター保存ボタン -->
+            <div class="flex-none p-2.5 border-t border-purple-800 bg-slate-950 flex items-center justify-between">
+                <button onclick="resetDebugDefaults()" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
+                    初期リセット
+                </button>
+                <button onclick="saveDebugSettings()" class="pixel-btn px-5 py-1.5 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
+                    💾 設定・変更を適用
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript ロジック -->
     <script>
-        // --- サウンドエンジン ---
-        class SimpleAudioEngine {
-            constructor() { this.ctx = null; }
-            init() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) this.ctx = new AudioCtx();
-                }
-                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            }
-            playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.1) {
-                try {
-                    this.init();
-                    if (!this.ctx) return;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch(e) {}
-            }
-            playDiceRoll() { this.playTone(400 + Math.random() * 200, 'square', 0.05, 0.05); }
-            playStep() { this.playTone(280, 'triangle', 0.05, 0.08); }
-            playPositive() {
-                this.playTone(523.25, 'square', 0.1, 0.1);
-                setTimeout(() => this.playTone(659.25, 'square', 0.12, 0.1), 80);
-                setTimeout(() => this.playTone(783.99, 'square', 0.18, 0.1), 160);
-            }
-            playNegative() {
-                this.playTone(320, 'sawtooth', 0.12, 0.1);
-                setTimeout(() => this.playTone(220, 'sawtooth', 0.2, 0.1), 100);
-            }
-        }
+        // --- グローバル状態変数 ---
+        let canvas, ctx;
+        let diceCanvas, diceCtx;
+        let dotCanvas, dotCtx;
+        let myChar = 'utsuro';
+        let isFullMapView = false;
+        let activeTab = 'events';
 
-        const audio = new SimpleAudioEngine();
+        // カメラ・ドラッグ制御用 (デフォルト倍率を近接用に 1.8 に設定)
+        let userDragOffsetX = 0;
+        let userDragOffsetY = 0;
+        let userZoomScale = 1.8;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
 
-        // --- P2P WebRTC 通信設定 (PeerJS) ---
-        let peer = null;
-        let connections = []; // 複数接続（最大2接続: 1Pから見た2P, 3P）
-        let myPlayerIndex = 0; // 0 = 1P(Host), 1 = 2P(Guest1), 2 = 3P(Guest2)
-        let currentRoomCode = null;
-        let totalPlayerCount = 2; // 現在の対戦参加人数（2〜3人）
-        let isWaiting3P = false;
-
-        // --- シード値付き疑似乱数（同じ部屋番号なら同一マップを確定生成） ---
-        function seededRandom(seed) {
-            let x = Math.sin(seed++) * 10000;
-            return x - Math.floor(x);
-        }
-
-        // --- キャラクター仕様設定 ---
-        const CHAR_CONFIG = {
-            utsuro: { name: '氷室うつろ', mainColor: '#a855f7', hairColor: '#8b5cf6', bowColor: '#ef4444' },
-            kuringo: { name: '繰言語', mainColor: '#10b981', hairColor: '#059669', bowColor: '#3b82f6' },
-            tomoko: { name: 'トモコ', mainColor: '#ec4899', hairColor: '#f43f5e', bowColor: '#eab308' }
+        // ドット絵エディター用 (16x16)
+        let selectedDotTarget = 'utsuro';
+        let customDotData = {
+            utsuro: null,
+            gengo: null,
+            tomoko: null,
+            utsuro_goshu: null,
+            gengo_goshu: null,
+            tomoko_goshu: null
         };
+        let dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+        let currentColor = '#9333ea';
+        let isDotEraser = false;
+        let isDotEyedropper = false; // 🧪 スポイトモード状態
+        let isDrawingDot = false;
+        let dotHistoryStack = []; // ↩️ 履歴スタック (アンドゥ用)
 
-        // --- マス目イベント定義 ---
-        const EVENT_TYPES = {
-            START: 'start',
-            GOAL: 'goal',
-            PLUS: 'plus',
-            MINUS: 'minus',
-            ITEM: 'item',
-            DAILY: 'daily'
-        };
+        // プレイヤーデータ
+        let players = [
+            { id: 0, name: '1P', char: 'utsuro', pos: 0, listeners: 1000, color: '#a855f7', items: [] },
+            { id: 1, name: '2P (CPU)', char: 'gengo', pos: 0, listeners: 1000, color: '#10b981', items: [] },
+            { id: 2, name: '3P (CPU)', char: 'tomoko', pos: 0, listeners: 1000, color: '#ec4899', items: [] }
+        ];
+        let currentPlayerIndex = 0;
+        let turnCount = 1;
+        let maxTurns = 30;
+        let isRolling = false;
+        let roomSeed = Math.floor(Math.random() * 10000);
 
-        const TOTAL_TILES = 100;
-        let selectedCharId = 'utsuro';
+        // マップコース座標・オブジェクト・イベントデータ
+        let tileCoords = [];
+        let cityObjects = [];
+        let gameEvents = [];
+        let currentEventFilter = 'all';
 
-        // 100マス用イベントマスター
-        const EVENT_POOL = [
-            { title: '【雑談配信で長考】', desc: 'まったり雑談。コメント拾いに夢中で時間が溶ける！', type: EVENT_TYPES.DAILY, baseListeners: 80 },
-            { title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', type: EVENT_TYPES.PLUS, baseListeners: 250 },
-            { title: '【12時間耐久配信】', desc: '限界突破の12時間耐久！同勤リスナーの結束が高まる！', type: EVENT_TYPES.PLUS, baseListeners: 350 },
-            { title: '【機材トラブル発生】', desc: '配信開始直前にマイク認識せず大あわて！', type: EVENT_TYPES.MINUS, baseListeners: -150 },
-            { title: '【新機材導入！】', desc: '黄色いマスで便利配信グッズを発見・獲得！', type: EVENT_TYPES.ITEM, baseListeners: 0 },
-            { title: '【配信部屋の模様替え】', desc: '部屋を片付けて気分一新！良い雰囲気でスタート。', type: EVENT_TYPES.DAILY, baseListeners: 50 },
-            { title: '【赤スパチャ投下！】', desc: 'リスナーからの愛のある赤スパチャが炸裂！', type: EVENT_TYPES.PLUS, baseListeners: 300 },
-            { title: '【回線落ちトラブル】', desc: 'いいところでネットが切断…！', type: EVENT_TYPES.MINUS, baseListeners: -200 },
-            { title: '【コラボ配信の打診】', desc: '仲良しVtuberとのコラボ企画が持ち上がる！', type: EVENT_TYPES.DAILY, baseListeners: 100 },
-            { title: '【歌ってみた動画投稿】', desc: '超高品質な歌ってみた動画を投稿して絶賛の嵐！', type: EVENT_TYPES.PLUS, baseListeners: 400 }
+        // デフォルトイベント定義（プラス・マイナス・アイテム・白色）
+        const defaultEvents = [
+            { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
+            { type: 'plus', title: '【12時間耐久配信】', desc: '限界突破の12時間耐久！同調リスナーの結束が高まる！', val: 400 },
+            { type: 'plus', title: '【赤スパチャ投下！】', desc: 'リスナーからの愛のある赤スパチャが炸裂！', val: 500 },
+            { type: 'minus', title: '【機材トラブル発生】', desc: '配信開始直前にマイク認識せず大あわて！', val: -150 },
+            { type: 'minus', title: '【回線落ちの悲劇】', desc: '良いところで配信が切れてリスナー一時離脱…', val: -200 },
+            { type: 'item', title: '【新機材導入！】', desc: '黄色いマスで便利な配信グッズを獲得！', val: 0 },
+            { type: 'white', title: '【まったり雑談配信】', desc: 'コメント拾いに夢中で時間が溶ける！平穏な日常。', val: 0 },
+            { type: 'white', title: '【配信部屋のお掃除】', desc: '部屋を片付けて気分一新！特に変化なし。', val: 0 }
         ];
 
-        let boardEvents = [];
-
-        // 100マスのジグザグコース座標計算関数
-        function getTileCoords(index) {
-            const cols = 10;
-            const tileSize = 42;
-            const row = Math.floor(index / cols);
-            let col = index % cols;
-            
-            // 奇数行は折り返し（右から左へ）
-            if (row % 2 === 1) {
-                col = cols - 1 - col;
-            }
-
-            return {
-                x: col * tileSize + 20,
-                y: row * tileSize + 20
-            };
-        }
-
-        // 部屋コードをもとに全員共通の固定マップを作成
-        function generateBoardEvents(roomCode = 'default') {
-            boardEvents = new Array(TOTAL_TILES);
-            boardEvents[0] = { title: '【スタート】', desc: '100マス先のゴールを目指そう！', type: EVENT_TYPES.START, baseListeners: 0 };
-            boardEvents[TOTAL_TILES - 1] = { title: '【ゴール！！】', desc: '一番乗りでゴール到達！伝説のVstreamerに！', type: EVENT_TYPES.GOAL, baseListeners: 10000 };
-
-            // 文字列シード数値変換
-            let seedNum = 12345;
-            if (roomCode) {
-                seedNum = 0;
-                for (let c = 0; c < roomCode.length; c++) seedNum += roomCode.charCodeAt(c) * (c + 1);
-            }
-
-            for (let i = 1; i < TOTAL_TILES - 1; i++) {
-                const rand = seededRandom(seedNum + i * 13);
-                if (rand < 0.08) {
-                    boardEvents[i] = { title: '【配信アイテム獲得】', desc: '役立つ配信アイテムをゲット！サイコロ前に使えるぞ！', type: EVENT_TYPES.ITEM, baseListeners: 0 };
-                } else if (rand < 0.30) {
-                    const template = EVENT_POOL.filter(e => e.type === EVENT_TYPES.MINUS)[0];
-                    boardEvents[i] = { ...template };
-                } else if (rand < 0.70) {
-                    const plusTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.PLUS);
-                    const template = plusTemplates[Math.floor(seededRandom(seedNum + i * 17) * plusTemplates.length)];
-                    boardEvents[i] = { ...template };
-                } else {
-                    const dailyTemplates = EVENT_POOL.filter(e => e.type === EVENT_TYPES.DAILY);
-                    const template = dailyTemplates[Math.floor(seededRandom(seedNum + i * 19) * dailyTemplates.length)];
-                    boardEvents[i] = { ...template };
-                }
-            }
-        }
-
-        // --- アイテム定義 ---
-        const ITEMS = [
-            { id: 'boost', name: 'ブースト機材', icon: '🚀', desc: 'サイコロの目に+2加算！' },
-            { id: 'highDice', name: 'ハイダイス', icon: '🎲', desc: '出目が4〜6確定になる！' },
-            { id: 'barrier', name: 'アンチバリア', icon: '🛡️', desc: '次のマイナスマスを無効化！' },
-            { id: 'tweet', name: '告知ツイート', icon: '📢', desc: '即座にリスナー+500人！' }
-        ];
-
-        // --- ゲーム状態変数 ---
-        const gameState = {
-            mode: 'cpu',
-            turn: 1,
-            maxTurns: 30,
-            activePlayer: 0,
-            phase: 'MOVE_ROLL', // 'MOVE_ROLL' | 'EVENT_ROLL' | 'PROCESSING'
-            isRolling: false,
-            isMoving: false,
-            totalPlayers: 3,
-            players: [
-                { id: 'p1', name: '1P', charKey: 'utsuro', pos: 0, targetPos: 0, renderPos: 0, jumpOffset: 0, listeners: 1000, items: [], activeBuffs: { boost: 0, highDice: false, barrier: false } },
-                { id: 'p2', name: '2P', charKey: 'kuringo', pos: 0, targetPos: 0, renderPos: 0, jumpOffset: 0, listeners: 1000, items: [], activeBuffs: { boost: 0, highDice: false, barrier: false } },
-                { id: 'p3', name: '3P', charKey: 'tomoko', pos: 0, targetPos: 0, renderPos: 0, jumpOffset: 0, listeners: 1000, items: [], activeBuffs: { boost: 0, highDice: false, barrier: false } }
-            ]
-        };
-
-        // --- Element References & Globals ---
-        let boardCanvas, ctx, diceCanvas, diceCtx;
-        let btnRoll, btnStartCpu, btnStartOnline, startModal;
-        let cameraX = 0, cameraY = 0;
-        let typeWriterTimer = null;
-
-        // --- キャンバスリサイズ ---
-        function resizeCanvas() {
-            if (!boardCanvas) return;
-            const container = boardCanvas.parentElement;
-            if (!container) return;
-
-            const rect = container.getBoundingClientRect();
-            boardCanvas.width = rect.width * window.devicePixelRatio;
-            boardCanvas.height = rect.height * window.devicePixelRatio;
-            
-            if (ctx) ctx.imageSmoothingEnabled = false;
-        }
-
-        // --- DOM読み込み完了初期化 ---
-        window.addEventListener('DOMContentLoaded', () => {
-            generateBoardEvents('12345');
-
-            boardCanvas = document.getElementById('boardCanvas');
-            ctx = boardCanvas.getContext('2d');
-            
+        window.onload = function() {
+            canvas = document.getElementById('boardCanvas');
+            ctx = canvas.getContext('2d');
             diceCanvas = document.getElementById('diceCanvas');
             diceCtx = diceCanvas.getContext('2d');
+            
+            dotCanvas = document.getElementById('dotEditorCanvas');
+            if (dotCanvas) {
+                dotCtx = dotCanvas.getContext('2d');
+                setupDotEditorEvents();
+            }
 
-            btnRoll = document.getElementById('btnRoll');
-            btnStartCpu = document.getElementById('btnStartCpu');
-            btnStartOnline = document.getElementById('btnStartOnline');
-            startModal = document.getElementById('startModal');
-
-            btnStartCpu.addEventListener('click', () => startGame('cpu'));
-            btnStartOnline.addEventListener('click', startOnlineRoom);
-            btnRoll.addEventListener('click', handleRollClick);
-
-            window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
 
-            renderCharacterPreviews();
+            // ドラッグ＆スクロール操作の設定
+            setupCanvasDrag();
+
+            // 初期ドットテンプレートの読み込み＆ストレージからのデータ復元
+            initDefaultDotGrids();
+            loadDataFromLocalStorage();
+
+            // マップとオブジェクトの生成
+            generateRandomMap(roomSeed);
+
+            // キャラプレビュー・名前表記の即時強制更新
+            drawCharPreviews();
+            updatePlayerNamesAndUI();
+
+            // 初代サイコロ描画
             drawDice(1);
 
+            // アニメーションループ開始
             requestAnimationFrame(gameLoop);
-        });
+        };
 
-        // --- オンライン対戦（PeerJS P2P通信）接続処理 ---
-        function startOnlineRoom() {
+        // --- UI表示プレイヤー名の更新 ---
+        function updatePlayerNamesAndUI() {
+            const p1NameElem = document.getElementById('p1Name');
+            const p2NameElem = document.getElementById('p2Name');
+            const p3NameElem = document.getElementById('p3Name');
+
+            if (p1NameElem) p1NameElem.innerText = players[0].char === 'gengo' ? '繰言かたる' : (players[0].char === 'tomoko' ? 'トモコ' : '氷室うつろ');
+            if (p2NameElem) p2NameElem.innerText = players[1].char === 'gengo' ? '繰言かたる(CPU)' : '繰言かたる(CPU)';
+            if (p3NameElem) p3NameElem.innerText = 'トモコ(CPU)';
+        }
+
+        // --- 💾 localStorage による永続保存・読み込み処理 ---
+        function saveDataToLocalStorage() {
             try {
-                const input = document.getElementById('roomCodeInput');
-                const rawCode = input ? input.value.trim() : '';
-
-                if (!rawCode) {
-                    alert('部屋コード（数字や英字）を入力してください！');
-                    return;
-                }
-
-                currentRoomCode = rawCode;
-                generateBoardEvents(currentRoomCode);
-
-                const cleanCode = 'vstreamer-room-' + rawCode.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                const statusElem = document.getElementById('gameStatusText');
-                if (statusElem) statusElem.innerText = `🌐 接続中... [部屋: ${currentRoomCode}]`;
-
-                if (peer) {
-                    try { peer.destroy(); } catch(e) {}
-                }
-                connections = [];
-
-                peer = new Peer(cleanCode);
-
-                peer.on('open', (id) => {
-                    myPlayerIndex = 0;
-                    gameState.mode = 'online';
-                    gameState.activePlayer = 0;
-                    totalPlayerCount = 1;
-
-                    gameState.players[0].charKey = selectedCharId;
-                    gameState.players[0].name = CHAR_CONFIG[selectedCharId] ? CHAR_CONFIG[selectedCharId].name : '1P';
-
-                    if (statusElem) statusElem.innerText = `🌐 [1P] 部屋作成成功！対戦相手の参加待ち... (部屋: ${currentRoomCode})`;
-                    
-                    // モーダルを閉じて画面を表示する
-                    if (startModal) startModal.classList.add('hidden');
-                    updateUI();
-
-                    // 2P / 3Pの接続受入ハンドラ
-                    peer.on('connection', (c) => {
-                        connections.push(c);
-                        setupConnection(c);
-                        totalPlayerCount = connections.length + 1;
-
-                        if (totalPlayerCount === 2) {
-                            // 2人集まった瞬間に1Pにダイアログ表示
-                            const confirmModal = document.getElementById('confirmWait3PModal');
-                            if (confirmModal) confirmModal.classList.remove('hidden');
-                        } else if (totalPlayerCount === 3) {
-                            // 3人揃ったら自動で対戦開始！
-                            isWaiting3P = false;
-                            const confirmModal = document.getElementById('confirmWait3PModal');
-                            if (confirmModal) confirmModal.classList.add('hidden');
-                            const cancelBtn = document.getElementById('btnCancelWait3P');
-                            if (cancelBtn) cancelBtn.classList.add('hidden');
-                            if (startModal) startModal.classList.add('hidden');
-                            if (statusElem) statusElem.innerText = `🌐 [3人対戦] プレイ中 (部屋: ${currentRoomCode})`;
-                            broadcastSyncData();
-                        }
-                    });
-                });
-
-                peer.on('error', (err) => {
-                    // 既に部屋が存在する場合は2P/3Pとして参加を試みる
-                    if (err.type === 'unavailable-id' || err.type === 'peer-unavailable' || err.type === 'network') {
-                        tryConnectAsGuest(cleanCode);
-                    }
-                });
-            } catch (err) {
-                console.error("Online start error:", err);
-                alert("通信接続エラーが発生しました。時間をおいて再試行してください。");
+                // ドット絵データとイベントデータの保存
+                localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
+                localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
+            } catch (e) {
+                console.error('Failed to save to localStorage:', e);
             }
         }
 
-        function tryConnectAsGuest(cleanCode) {
+        function loadDataFromLocalStorage() {
             try {
-                const guestPeer = new Peer();
-                
-                guestPeer.on('open', () => {
-                    const connCandidate = guestPeer.connect(cleanCode);
-                    
-                    connCandidate.on('open', () => {
-                        connections = [connCandidate];
-                        setupConnection(connCandidate);
-
-                        connCandidate.send({ type: 'REQUEST_JOIN', charKey: selectedCharId });
+                // 1. 保存されたドット絵データの読み込み
+                const savedDots = localStorage.getItem('utsuro_custom_dots');
+                if (savedDots) {
+                    const parsedDots = JSON.parse(savedDots);
+                    Object.keys(parsedDots).forEach(key => {
+                        if (parsedDots[key]) {
+                            customDotData[key] = parsedDots[key];
+                        }
                     });
+                }
 
-                    connCandidate.on('error', () => {
-                        alert('ルームが満員か、接続できませんでした。');
-                    });
-                });
-            } catch(e) {
-                console.error(e);
+                // 2. 保存されたイベントデータの読み込み
+                const savedEvents = localStorage.getItem('utsuro_custom_events');
+                if (savedEvents) {
+                    gameEvents = JSON.parse(savedEvents);
+                } else {
+                    gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+                }
+
+                // 現在選択中のターゲットのグリッド更新
+                loadTargetDotGrid(selectedDotTarget);
+            } catch (e) {
+                console.error('Failed to load from localStorage:', e);
+                gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
         }
 
-        function setupConnection(c) {
-            c.on('data', (data) => {
-                if (data.type === 'REQUEST_JOIN') {
-                    const assignedIndex = connections.indexOf(c) + 1;
-                    gameState.players[assignedIndex].charKey = data.charKey;
-                    gameState.players[assignedIndex].name = CHAR_CONFIG[data.charKey].name;
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
 
-                    c.send({
-                        type: 'JOIN_ACCEPT',
-                        assignedIndex: assignedIndex,
-                        totalPlayers: totalPlayerCount
-                    });
-                    broadcastSyncData();
-                } else if (data.type === 'JOIN_ACCEPT') {
-                    myPlayerIndex = data.assignedIndex;
-                    gameState.mode = 'online';
-                    totalPlayerCount = data.totalPlayers;
+        // --- キャラクター＆お供のデフォルト16x16グリッド生成 ---
+        function initDefaultDotGrids() {
+            // お送りいただいたJSONドット絵データを直接デフォルトとして読み込み設定
+            const defaultExportedData = {"utsuro":[["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]],"gengo":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]],"tomoko":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#be185d","#be185d","#fde047","#fde047","#be185d","#be185d","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#ec4899","#ec4899","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"]],"utsuro_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"gengo_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#ffffff","#ffffff","#34d399","#34d399","#ffffff","#ffffff","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#064e3b","#34d399","#34d399","#34d399","#064e3b","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"tomoko_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#ffffff","#ffffff","#f472b6","#f472b6","#ffffff","#ffffff","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#831843","#f472b6","#f472b6","#f472b6","#831843","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]]};
 
-                    if (startModal) startModal.classList.add('hidden');
-                    document.getElementById('gameStatusText').innerText = `🌐 [${myPlayerIndex + 1}P] ルームに参加しました！ (部屋: ${currentRoomCode})`;
-                    updateUI();
-                } else if (data.type === 'SYNC_STATE') {
-                    const incomingState = data.state;
-                    gameState.turn = incomingState.turn;
-                    gameState.activePlayer = incomingState.activePlayer;
-                    gameState.phase = incomingState.phase;
-                    totalPlayerCount = incomingState.totalPlayers || 2;
-
-                    for (let i = 0; i < 3; i++) {
-                        if (incomingState.players[i]) {
-                            gameState.players[i].pos = incomingState.players[i].pos;
-                            gameState.players[i].listeners = incomingState.players[i].listeners;
-                            gameState.players[i].charKey = incomingState.players[i].charKey;
-                            gameState.players[i].name = incomingState.players[i].name;
-                            gameState.players[i].items = incomingState.players[i].items || [];
-                        }
-                    }
-                    if (startModal) startModal.classList.add('hidden');
-                    updateUI();
-                } else if (data.type === 'ROLL_MOVE') {
-                    executeRollMoveSync(data.diceValue);
-                } else if (data.type === 'ROLL_EVENT') {
-                    executeRollEventSync(data.diceValue);
-                } else if (data.type === 'START_GAME_NOW') {
-                    totalPlayerCount = data.totalPlayers;
-                    if (startModal) startModal.classList.add('hidden');
-                    document.getElementById('gameStatusText').innerText = `🌐 オンライン対戦中 (${totalPlayerCount}人) [部屋: ${currentRoomCode}]`;
-                    updateUI();
-                }
+            Object.keys(defaultExportedData).forEach(key => {
+                customDotData[key] = JSON.parse(JSON.stringify(defaultExportedData[key]));
             });
+
+            // 現在のターゲットのグリッドを選択設定
+            loadTargetDotGrid(selectedDotTarget);
         }
 
-        // 2人集まった時の回答（1P専用）
-        function answerWait3P(waitMore) {
-            document.getElementById('confirmWait3PModal').classList.add('hidden');
+        // --- 本格ドット絵：街並みオブジェクト描画 ---
+        function drawCityObject(context, obj) {
+            context.save();
+            context.translate(obj.x, obj.y);
 
-            if (waitMore) {
-                isWaiting3P = true;
-                document.getElementById('btnCancelWait3P').classList.remove('hidden');
-                document.getElementById('gameStatusText').innerText = `🌐 2人集まりました！3人目を待機中... [部屋: ${currentRoomCode}]`;
+            if (obj.type === 'house') {
+                // 🏠 カラフルな家
+                context.fillStyle = obj.roofColor || '#ef4444'; // 屋根
+                context.beginPath();
+                context.moveTo(0, -18);
+                context.lineTo(-18, -2);
+                context.lineTo(18, -2);
+                context.closePath();
+                context.fill();
+
+                context.fillStyle = '#fef3c7'; // 壁
+                context.fillRect(-14, -2, 28, 18);
+
+                context.fillStyle = '#78350f'; // ドア
+                context.fillRect(-4, 6, 8, 10);
+
+                context.fillStyle = '#38bdf8'; // 窓
+                context.fillRect(-10, 2, 5, 5);
+                context.fillRect(5, 2, 5, 5);
+            } else if (obj.type === 'building') {
+                // 🏢 高層ビル
+                context.fillStyle = obj.wallColor || '#3b82f6'; // ビル外壁
+                context.fillRect(-16, -28, 32, 50);
+
+                context.fillStyle = '#fef08a'; // 光る窓
+                for (let r = 0; r < 5; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        context.fillRect(-12 + c * 9, -24 + r * 9, 6, 5);
+                    }
+                }
+            } else if (obj.type === 'tree') {
+                // 🌲 ドット絵ツリー
+                context.fillStyle = '#78350f'; // 幹
+                context.fillRect(-3, 4, 6, 12);
+
+                context.fillStyle = '#15803d'; // 葉（下層）
+                context.beginPath();
+                context.arc(0, 0, 15, 0, Math.PI * 2);
+                context.fill();
+
+                context.fillStyle = '#22c55e'; // 葉（ハイライト）
+                context.beginPath();
+                context.arc(-3, -3, 10, 0, Math.PI * 2);
+                context.fill();
             } else {
-                forceStartTwoPlayers();
+                // 💡 街灯
+                context.fillStyle = '#64748b'; // 支柱
+                context.fillRect(-2, -10, 4, 20);
+                context.fillStyle = '#fef08a'; // ランプ
+                context.beginPath();
+                context.arc(0, -12, 6, 0, Math.PI * 2);
+                context.fill();
+            }
+
+            context.restore();
+        }
+
+        // --- カスタムドット絵グリッドの描画ヘルパー ---
+        function renderCustomDotGrid(context, gridData, x, y, size = 32) {
+            if (!gridData) return;
+            const pSize = size / 16;
+            context.save();
+            // ドットの輪郭を拡大時も鮮明（くっきり）にする設定
+            context.imageSmoothingEnabled = false;
+            context.translate(x - size/2, y - size/2);
+            
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    const col = gridData[r][c];
+                    if (col && col !== '#00000000') {
+                        context.fillStyle = col;
+                        // 拡大時の浮動小数点計算による隙間（1px以下の目立ち）を防ぐため、僅かにサイズを重ねて描画 (+0.55)
+                        context.fillRect(c * pSize, r * pSize, pSize + 0.55, pSize + 0.55);
+                    }
+                }
+            }
+            context.restore();
+        }
+
+        // --- キャラクター固有のドット絵モデル ---
+        function drawPlayerDotModel(context, charType, x, y, size = 32) {
+            // キャラ本体ドット絵
+            if (customDotData[charType]) {
+                renderCustomDotGrid(context, customDotData[charType], x, y, size);
+            }
+
+            // お供「ごしゅ」ドット絵
+            const goshuKey = charType + '_goshu';
+            if (customDotData[goshuKey]) {
+                renderCustomDotGrid(context, customDotData[goshuKey], x + size * 0.45, y + size * 0.2, size * 0.5);
             }
         }
 
-        // 待機をキャンセルして2人で対戦開始
-        function forceStartTwoPlayers() {
-            totalPlayerCount = 2;
-            isWaiting3P = false;
-            document.getElementById('btnCancelWait3P').classList.add('hidden');
-            if (startModal) startModal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = `🌐 2人対戦スタート！ [部屋: ${currentRoomCode}]`;
-
-            // 全プレイヤーへ即時スタートを通知
-            connections.forEach(c => {
-                if (c && c.open) {
-                    c.send({ type: 'START_GAME_NOW', totalPlayers: 2 });
+        function drawCharPreviews() {
+            ['Utsuro', 'Gengo', 'Tomoko'].forEach(name => {
+                const c = document.getElementById('prev' + name);
+                if (c) {
+                    const cx = c.getContext('2d');
+                    cx.clearRect(0, 0, 32, 32);
+                    drawPlayerDotModel(cx, name.toLowerCase(), 16, 16, 28);
                 }
             });
-            broadcastSyncData();
         }
 
-        function broadcastSyncData() {
-            const payload = {
-                type: 'SYNC_STATE',
-                state: {
-                    turn: gameState.turn,
-                    activePlayer: gameState.activePlayer,
-                    phase: gameState.phase,
-                    totalPlayers: totalPlayerCount,
-                    players: gameState.players.map(p => ({
-                        pos: p.pos,
-                        listeners: p.listeners,
-                        charKey: p.charKey,
-                        name: p.name,
-                        items: p.items
-                    }))
-                }
+        // --- 動的マップ＆街オブジェクト生成 ---
+        function generateRandomMap(seed) {
+            tileCoords = [];
+            cityObjects = [];
+            let x = 0, y = 0;
+            
+            let rng = function() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
             };
-            connections.forEach(c => {
-                if (c && c.open) c.send(payload);
-            });
-        }
 
-        // --- キャラ選択 ---
-        function selectChar(charKey) {
-            selectedCharId = charKey;
-            ['utsuro', 'kuringo', 'tomoko'].forEach(k => {
-                const btn = document.getElementById(`charBtn_${k}`);
-                if (k === charKey) {
-                    btn.className = "char-select-btn p-2 rounded-lg border-2 border-purple-400 bg-purple-900/90 shadow-lg scale-105 transition flex flex-col items-center gap-1 cursor-pointer";
-                } else {
-                    btn.className = "char-select-btn p-2 rounded-lg border-2 border-gray-600 bg-slate-800/60 opacity-60 hover:opacity-100 transition flex flex-col items-center gap-1 cursor-pointer";
-                }
-            });
-        }
+            // 1. 直線性と曲がり角を持つ一本道コース生成 (100マス)
+            let currentDir = 'UP'; // 'UP', 'RIGHT', 'LEFT'
+            let stepInDir = 0;
+            let maxStepInDir = Math.floor(rng() * 4) + 3;
 
-        function startGame(mode) {
-            gameState.mode = mode;
-            gameState.turn = 1;
-            gameState.activePlayer = 0;
-            gameState.phase = 'MOVE_ROLL';
-            totalPlayerCount = 3;
+            for (let i = 0; i < 100; i++) {
+                let tileType = 'white';
+                if (i === 0) tileType = 'start';
+                else if (i === 99) tileType = 'goal';
+                else if (i % 7 === 0) tileType = 'item';
+                else if (i % 3 === 0) tileType = 'plus';
+                else if (i % 3 === 1) tileType = 'minus';
+                else tileType = 'white';
 
-            generateBoardEvents('single');
-
-            // 1P選択キャラ
-            gameState.players[0].charKey = selectedCharId;
-            gameState.players[0].name = CHAR_CONFIG[selectedCharId].name;
-            gameState.players[0].pos = 0;
-            gameState.players[0].listeners = 1000;
-            gameState.players[0].items = [];
-
-            // CPU 2P / 3P
-            const allKeys = Object.keys(CHAR_CONFIG);
-            const p2Key = allKeys[(allKeys.indexOf(selectedCharId) + 1) % 3];
-            const p3Key = allKeys[(allKeys.indexOf(selectedCharId) + 2) % 3];
-
-            gameState.players[1].charKey = p2Key;
-            gameState.players[1].name = CHAR_CONFIG[p2Key].name;
-            gameState.players[1].pos = 0;
-            gameState.players[1].listeners = 1000;
-            gameState.players[1].items = [];
-
-            gameState.players[2].charKey = p3Key;
-            gameState.players[2].name = CHAR_CONFIG[p3Key].name;
-            gameState.players[2].pos = 0;
-            gameState.players[2].listeners = 1000;
-            gameState.players[2].items = [];
-
-            startModal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = '🤖 VS CPU (3人対戦中)';
-            
-            updateUI();
-            showEventText('【ゲームスタート！】', '好きなキャラクターを選んで100マス先のゴールを目指そう！', '-');
-        }
-
-        // --- サイコロ・ターンの進行 ---
-        function handleRollClick() {
-            if (gameState.isRolling || gameState.isMoving || gameState.phase === 'PROCESSING') return;
-            
-            if (gameState.mode === 'online' && gameState.activePlayer !== myPlayerIndex) {
-                alert('相手の手番です！しばらくお待ちください。');
-                return;
-            }
-
-            if (gameState.phase === 'MOVE_ROLL') {
-                rollDiceForMove();
-            } else if (gameState.phase === 'EVENT_ROLL') {
-                rollDiceForEvent();
-            }
-        }
-
-        function rollDiceForMove() {
-            if (gameState.isRolling || gameState.isMoving) return;
-            
-            gameState.isRolling = true;
-            btnRoll.disabled = true;
-
-            const player = gameState.players[gameState.activePlayer];
-            let finalVal = Math.floor(Math.random() * 6) + 1;
-
-            if (player.activeBuffs.highDice) {
-                finalVal = Math.floor(Math.random() * 3) + 4;
-                player.activeBuffs.highDice = false;
-            }
-
-            if (player.activeBuffs.boost > 0) {
-                finalVal += player.activeBuffs.boost;
-                player.activeBuffs.boost = 0;
-            }
-
-            if (gameState.mode === 'online') {
-                connections.forEach(c => {
-                    if (c && c.open) c.send({ type: 'ROLL_MOVE', diceValue: finalVal });
+                tileCoords.push({
+                    x: x,
+                    y: y,
+                    type: tileType
                 });
-            }
 
-            executeRollMoveSync(finalVal);
-        }
-
-        function rollDiceForEvent() {
-            if (gameState.isRolling) return;
-
-            gameState.isRolling = true;
-            btnRoll.disabled = true;
-
-            const eventDice = Math.floor(Math.random() * 6) + 1;
-
-            if (gameState.mode === 'online') {
-                connections.forEach(c => {
-                    if (c && c.open) c.send({ type: 'ROLL_EVENT', diceValue: eventDice });
-                });
-            }
-
-            executeRollEventSync(eventDice);
-        }
-
-        // サイコロ移動アニメーション同期実行
-        function executeRollMoveSync(diceValue) {
-            let rolls = 0;
-            const rollTimer = setInterval(() => {
-                const tempVal = Math.floor(Math.random() * 6) + 1;
-                drawDice(tempVal);
-                audio.playDiceRoll();
-                rolls++;
-                if (rolls >= 10) {
-                    clearInterval(rollTimer);
-                    drawDice(diceValue);
-                    document.getElementById('diceResultText').innerText = `${diceValue} の出目！`;
-                    
-                    setTimeout(() => movePlayer(diceValue), 300);
-                }
-            }, 60);
-        }
-
-        // 判定サイコロ同期実行
-        function executeRollEventSync(eventDice) {
-            let rolls = 0;
-            const rollTimer = setInterval(() => {
-                const tempVal = Math.floor(Math.random() * 6) + 1;
-                drawDice(tempVal);
-                audio.playDiceRoll();
-                rolls++;
-                if (rolls >= 10) {
-                    clearInterval(rollTimer);
-                    drawDice(eventDice);
-                    gameState.isRolling = false;
-                    processEventResult(eventDice);
-                }
-            }, 60);
-        }
-
-        // プレイヤーのジャンプ一歩ずつ歩行移動
-        function movePlayer(steps) {
-            gameState.isMoving = true;
-            const player = gameState.players[gameState.activePlayer];
-            let stepsLeft = steps;
-
-            function step() {
-                if (stepsLeft > 0 && player.pos < TOTAL_TILES - 1) {
-                    player.pos++;
-                    stepsLeft--;
-                    audio.playStep();
-
-                    // ピョンピョン跳ねるアニメーション
-                    let jumpFrame = 0;
-                    const jumpTimer = setInterval(() => {
-                        jumpFrame++;
-                        player.jumpOffset = Math.sin((jumpFrame / 8) * Math.PI) * 12;
-                        if (jumpFrame >= 8) {
-                            clearInterval(jumpTimer);
-                            player.jumpOffset = 0;
-                            setTimeout(step, 80);
-                        }
-                    }, 16);
-                } else {
-                    gameState.isMoving = false;
-                    gameState.isRolling = false;
-                    handleTileArrival(player.pos);
-                }
-            }
-            step();
-        }
-
-        // マス到着時のイベント処理
-        function handleTileArrival(tileIndex) {
-            const ev = boardEvents[tileIndex];
-            const player = gameState.players[gameState.activePlayer];
-
-            if (ev.type === EVENT_TYPES.ITEM) {
-                const acquiredItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-                player.items.push(acquiredItem);
-                audio.playPositive();
-                showEventText(ev.title, ev.desc, `🎁 「${acquiredItem.name}」を入手した！`);
-                finishTurnDelay(tileIndex);
-            } else if (ev.type === EVENT_TYPES.DAILY) {
-                const change = ev.baseListeners;
-                player.listeners = Math.max(0, player.listeners + change);
-                audio.playPositive();
-                showEventText(ev.title, ev.desc, `💬 リスナーが +${change}人 増えた！`);
-                finishTurnDelay(tileIndex);
-            } else if (ev.type === EVENT_TYPES.PLUS) {
-                showEventText(ev.title, ev.desc, '🎲 判定ダイスを振ろう！');
-                gameState.phase = 'EVENT_ROLL';
-                updateUI();
-            } else if (ev.type === EVENT_TYPES.MINUS) {
-                if (player.activeBuffs.barrier) {
-                    player.activeBuffs.barrier = false;
-                    audio.playPositive();
-                    showEventText(ev.title, ev.desc, '🛡️ アンチバリア発動！マイナス効果をブロック！');
-                    finishTurnDelay(tileIndex);
-                } else {
-                    showEventText(ev.title, ev.desc, '🎲 判定ダイスを振ろう！');
-                    gameState.phase = 'EVENT_ROLL';
-                    updateUI();
-                }
-            } else {
-                showEventText(ev.title, ev.desc, '-');
-                finishTurnDelay(tileIndex);
-            }
-        }
-
-        // 判定ダイス後の結果反映
-        function processEventResult(diceVal) {
-            const player = gameState.players[gameState.activePlayer];
-            const ev = boardEvents[player.pos];
-
-            let change = 0;
-            if (ev.type === EVENT_TYPES.PLUS) {
-                change = diceVal * 200;
-                player.listeners += change;
-                audio.playPositive();
-                appendEventEffect(`✨ [判定: ${diceVal}] リスナーが +${change.toLocaleString()}人 増加！`);
-            } else if (ev.type === EVENT_TYPES.MINUS) {
-                change = (7 - diceVal) * 150;
-                player.listeners = Math.max(0, player.listeners - change);
-                audio.playNegative();
-                appendEventEffect(`💥 [判定: ${diceVal}] リスナーが -${change.toLocaleString()}人 減少…`);
-            }
-
-            finishTurnDelay(player.pos);
-        }
-
-        // イベントテキスト表示（左から右へタイピング風）
-        function showEventText(title, desc, effect) {
-            document.getElementById('currentEventTitle').innerText = title;
-            document.getElementById('currentEventEffect').innerText = effect;
-
-            const descElem = document.getElementById('currentEventDesc');
-            descElem.innerText = '';
-            
-            if (typeWriterTimer) clearInterval(typeWriterTimer);
-
-            let charIdx = 0;
-            typeWriterTimer = setInterval(() => {
-                if (charIdx < desc.length) {
-                    descElem.innerText += desc.charAt(charIdx);
-                    charIdx++;
-                } else {
-                    clearInterval(typeWriterTimer);
-                }
-            }, 30);
-        }
-
-        function appendEventEffect(effectText) {
-            document.getElementById('currentEventEffect').innerText = effectText;
-        }
-
-        function finishTurnDelay(tileIndex) {
-            gameState.phase = 'PROCESSING';
-
-            setTimeout(() => {
-                if (tileIndex === TOTAL_TILES - 1) {
-                    const winner = gameState.players[gameState.activePlayer];
-                    alert(`🎉 ${winner.name} がゴールに到達して大勝利！！`);
-                    return;
+                stepInDir++;
+                if (stepInDir >= maxStepInDir && i < 90) {
+                    stepInDir = 0;
+                    maxStepInDir = Math.floor(rng() * 4) + 3;
+                    if (currentDir === 'UP') {
+                        currentDir = rng() > 0.5 ? 'RIGHT' : 'LEFT';
+                    } else {
+                        currentDir = 'UP';
+                    }
                 }
 
-                // 次のプレイヤーへ（2人対戦 or 3人対戦に応じて切り替え）
-                const prevActive = gameState.activePlayer;
-                gameState.activePlayer = (gameState.activePlayer + 1) % totalPlayerCount;
+                if (currentDir === 'UP') y -= 56;
+                else if (currentDir === 'RIGHT') x += 56;
+                else x -= 56;
+            }
 
-                if (gameState.activePlayer === 0) {
-                    gameState.turn++;
+            // 2. コース全体を覆う密度の高い街並みオブジェクト生成
+            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
+            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
+
+            for (let i = -15; i <= 25; i++) {
+                for (let j = -35; j <= 10; j++) {
+                    const ox = i * 64 + (rng() * 20 - 10);
+                    const oy = j * 64 + (rng() * 20 - 10);
+
+                    // マス目と重ならない位置に配置
+                    const tooClose = tileCoords.some(t => Math.hypot(t.x - ox, t.y - oy) < 40);
+                    if (!tooClose && rng() > 0.45) {
+                        const r = rng();
+                        let type = 'tree';
+                        if (r > 0.7) type = 'building';
+                        else if (r > 0.4) type = 'house';
+                        else if (r > 0.3) type = 'light';
+
+                        cityObjects.push({
+                            x: ox,
+                            y: oy,
+                            type: type,
+                            roofColor: roofs[Math.floor(rng() * roofs.length)],
+                            wallColor: walls[Math.floor(rng() * walls.length)]
+                        });
+                    }
                 }
-
-                gameState.phase = 'MOVE_ROLL';
-                document.getElementById('diceResultText').innerText = '準備完了';
-
-                broadcastSyncData();
-                updateUI();
-
-                // CPUの手番（1P以外のプレイヤーがCPUの場合）
-                if (gameState.mode === 'cpu' && gameState.activePlayer !== 0) {
-                    setTimeout(() => {
-                        rollDiceForMove();
-                    }, 1200);
-                }
-            }, 2800);
-        }
-
-        // --- アイテム使用 ---
-        function useItem(itemId) {
-            const pIndex = (gameState.mode === 'online') ? myPlayerIndex : 0;
-            const player = gameState.players[pIndex];
-            const itemIdx = player.items.findIndex(i => i.id === itemId);
-
-            if (itemIdx === -1) return;
-            const item = player.items[itemIdx];
-            player.items.splice(itemIdx, 1);
-
-            if (itemId === 'boost') player.activeBuffs.boost = 2;
-            if (itemId === 'highDice') player.activeBuffs.highDice = true;
-            if (itemId === 'barrier') player.activeBuffs.barrier = true;
-            if (itemId === 'tweet') player.listeners += 500;
-
-            audio.playPositive();
-            showEventText('【アイテム使用】', `「${item.name}」を使用した！`, item.desc);
-            
-            broadcastSyncData();
-            updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('p1Name').innerText = gameState.players[0].name;
-            document.getElementById('p2Name').innerText = gameState.players[1].name;
-            document.getElementById('p3Name').innerText = gameState.players[2].name;
-
-            document.getElementById('p1Listeners').innerText = `${gameState.players[0].listeners.toLocaleString()}人`;
-            document.getElementById('p2Listeners').innerText = `${gameState.players[1].listeners.toLocaleString()}人`;
-            document.getElementById('p3Listeners').innerText = `${gameState.players[2].listeners.toLocaleString()}人`;
-
-            // 2人プレイ時は3P枠を非表示
-            const p3Box = document.getElementById('p3Box');
-            if (totalPlayerCount < 3) p3Box.classList.add('hidden');
-            else p3Box.classList.remove('hidden');
-
-            document.getElementById('turnCounter').innerText = `${gameState.turn} / ${gameState.maxTurns}`;
-            
-            const activePlayerObj = gameState.players[gameState.activePlayer];
-            document.getElementById('activePlayerTag').innerText = `${gameState.activePlayer + 1}P (${activePlayerObj.name})`;
-
-            const itemContainer = document.getElementById('itemListContainer');
-            itemContainer.innerHTML = '';
-
-            const isMyTurn = (gameState.mode === 'cpu' && gameState.activePlayer === 0) || (gameState.mode === 'online' && gameState.activePlayer === myPlayerIndex);
-            const canUseItem = (gameState.phase === 'MOVE_ROLL' && !gameState.isRolling && !gameState.isMoving && isMyTurn);
-
-            const pIndex = (gameState.mode === 'online') ? myPlayerIndex : 0;
-            const myPlayer = gameState.players[pIndex];
-
-            if (!myPlayer.items || myPlayer.items.length === 0) {
-                itemContainer.innerHTML = '<span class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>';
-            } else {
-                myPlayer.items.forEach(it => {
-                    const btn = document.createElement('button');
-                    btn.className = `px-2 py-0.5 text-xs rounded border flex items-center gap-1 transition ${canUseItem ? 'bg-yellow-600 border-yellow-300 text-white hover:bg-yellow-500 cursor-pointer' : 'bg-gray-800 border-gray-600 text-gray-400 cursor-not-allowed'}`;
-                    btn.disabled = !canUseItem;
-                    btn.innerText = `${it.icon} ${it.name}`;
-                    btn.onclick = () => useItem(it.id);
-                    itemContainer.appendChild(btn);
-                });
-            }
-
-            if (gameState.phase === 'MOVE_ROLL') {
-                btnRoll.innerText = '🎲 移動！';
-            } else if (gameState.phase === 'EVENT_ROLL') {
-                btnRoll.innerText = '🎲 判定！';
-            }
-
-            if (gameState.mode === 'online' && gameState.activePlayer !== myPlayerIndex) {
-                btnRoll.disabled = true;
-                btnRoll.innerText = '相手の行動待ち...';
-            } else if (!gameState.isRolling && !gameState.isMoving && gameState.phase !== 'PROCESSING') {
-                btnRoll.disabled = false;
             }
         }
 
-        // --- プレイヤーコマ描画（最大3人） ---
-        function drawBoardPlayers() {
-            const offsets = [-10, 0, 10];
-            for (let i = 0; i < totalPlayerCount; i++) {
-                const p = gameState.players[i];
-                const coords = getTileCoords(p.pos);
-                const drawX = coords.x + offsets[i];
-                const drawY = coords.y - p.jumpOffset;
-
-                drawPlayerDotModel(ctx, drawX, drawY, p.charKey);
-            }
-        }
-
+        // --- メイン描画ループ ---
         function gameLoop() {
-            if (ctx && boardCanvas) {
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                ctx.save();
+            // 明るい芝生グラデーション背景
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                const zoom = 2.4 * (boardCanvas.height / 600);
-                const targetPlayer = gameState.players[gameState.activePlayer];
-                const targetCoords = getTileCoords(targetPlayer.pos);
+            ctx.save();
 
-                cameraX += (targetCoords.x - cameraX) * 0.1;
-                cameraY += (targetCoords.y - cameraY) * 0.1;
+            if (isFullMapView) {
+                // 全体マップ表示：コース100マス全体を自動ズームフィット
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                tileCoords.forEach(t => {
+                    if (t.x < minX) minX = t.x;
+                    if (t.x > maxX) maxX = t.x;
+                    if (t.y < minY) minY = t.y;
+                    if (t.y > maxY) maxY = t.y;
+                });
 
-                ctx.translate(boardCanvas.width / 2, boardCanvas.height / 2);
-                ctx.scale(zoom, zoom);
-                ctx.translate(-cameraX, -cameraY);
+                const mapWidth = (maxX - minX) + 200;
+                const mapHeight = (maxY - minY) + 200;
+                const mapCenterX = (minX + maxX) / 2;
+                const mapCenterY = (minY + maxY) / 2;
 
-                // 背景芝生
-                ctx.fillStyle = '#15803d';
-                ctx.fillRect(-500, -500, 2000, 2000);
+                const scaleX = canvas.width / mapWidth;
+                const scaleY = canvas.height / mapHeight;
+                const autoScale = Math.min(scaleX, scaleY) * 0.9;
 
-                // 1. 道路を描画
-                ctx.strokeStyle = '#fef08a';
-                ctx.lineWidth = 10;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
+                ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
+                ctx.scale(autoScale, autoScale);
+                ctx.translate(-mapCenterX, -mapCenterY);
+            } else {
+                // 近接カメラ追従表示（デフォルトズーム倍率で拡大）
+                const targetPos = tileCoords[players[currentPlayerIndex].pos] || { x: 0, y: 0 };
+                ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
+                ctx.scale(userZoomScale, userZoomScale);
+                ctx.translate(-targetPos.x, -targetPos.y);
+            }
+
+            // 1. 道路の太いライン（ふちどり＆道路）
+            ctx.beginPath();
+            tileCoords.forEach((t, idx) => {
+                if (idx === 0) ctx.moveTo(t.x, t.y);
+                else ctx.lineTo(t.x, t.y);
+            });
+            ctx.lineWidth = 32;
+            ctx.strokeStyle = '#334155';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            ctx.lineWidth = 26;
+            ctx.strokeStyle = '#94a3b8';
+            ctx.stroke();
+
+            // 2. 街並みドット絵オブジェクト
+            cityObjects.forEach(obj => drawCityObject(ctx, obj));
+
+            // 3. マス目（コース）＆イベントマークの描画
+            tileCoords.forEach((tile, idx) => {
+                // マス目の色設定 (プラス:青, マイナス:赤/ピンク, アイテム:黄, 白色:白)
+                ctx.fillStyle = tile.type === 'start' ? '#eab308' 
+                             : (tile.type === 'goal' ? '#ef4444' 
+                             : (tile.type === 'item' ? '#f59e0b' 
+                             : (tile.type === 'plus' ? '#3b82f6' 
+                             : (tile.type === 'minus' ? '#ec4899' : '#ffffff'))));
+                
                 ctx.beginPath();
-                for (let i = 0; i < TOTAL_TILES; i++) {
-                    const c = getTileCoords(i);
-                    if (i === 0) ctx.moveTo(c.x, c.y);
-                    else ctx.lineTo(c.x, c.y);
-                }
+                ctx.arc(tile.x, tile.y, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = tile.type === 'white' ? '#94a3b8' : '#ffffff';
                 ctx.stroke();
 
-                ctx.strokeStyle = '#451a03';
-                ctx.lineWidth = 12;
-                ctx.globalCompositeOperation = 'destination-over';
-                ctx.beginPath();
-                for (let i = 0; i < TOTAL_TILES; i++) {
-                    const c = getTileCoords(i);
-                    if (i === 0) ctx.moveTo(c.x, c.y);
-                    else ctx.lineTo(c.x, c.y);
-                }
-                ctx.stroke();
-                ctx.globalCompositeOperation = 'source-over';
+                // イベント内容を示すマーク記号の決定
+                let markSymbol = '・';
+                if (tile.type === 'start') markSymbol = 'S';
+                else if (tile.type === 'goal') markSymbol = 'G';
+                else if (tile.type === 'item') markSymbol = '🎁';
+                else if (tile.type === 'plus') markSymbol = '↑';
+                else if (tile.type === 'minus') markSymbol = '↓';
+                else markSymbol = '・';
 
-                // 2. 円形マス目とマーク
-                for (let i = 0; i < TOTAL_TILES; i++) {
-                    const c = getTileCoords(i);
-                    const ev = boardEvents[i];
+                ctx.fillStyle = tile.type === 'white' ? '#475569' : '#ffffff';
+                ctx.font = tile.type === 'item' ? '12px sans-serif' : 'bold 12px DotGothic16';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(markSymbol, tile.x, tile.y);
+            });
 
-                    let tileColor = '#ffffff';
-                    if (ev.type === EVENT_TYPES.START || ev.type === EVENT_TYPES.GOAL) tileColor = '#a855f7';
-                    else if (ev.type === EVENT_TYPES.PLUS) tileColor = '#3b82f6';
-                    else if (ev.type === EVENT_TYPES.MINUS) tileColor = '#ef4444';
-                    else if (ev.type === EVENT_TYPES.ITEM) tileColor = '#eab308';
+            // 4. プレイヤーキャラクター
+            players.forEach((p, idx) => {
+                const pos = tileCoords[p.pos] || { x: 0, y: 0 };
+                const offset = (idx - 1) * 12;
+                drawPlayerDotModel(ctx, p.char, pos.x + offset, pos.y - 8, 32);
 
+                // 全体マップ表示時の吹き出しピンマーカー
+                if (isFullMapView) {
+                    ctx.save();
+                    ctx.fillStyle = p.color;
                     ctx.beginPath();
-                    ctx.arc(c.x, c.y, 14, 0, Math.PI * 2);
-                    ctx.fillStyle = tileColor;
+                    ctx.arc(pos.x + offset, pos.y - 38, 14, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.lineWidth = 2.5;
-                    ctx.strokeStyle = '#0f172a';
-                    ctx.stroke();
-
-                    // マーク描画
-                    ctx.fillStyle = '#ffffff';
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 2;
+                    ctx.stroke();
 
-                    if (ev.type === EVENT_TYPES.PLUS) {
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - 5, c.y + 4);
-                        ctx.lineTo(c.x, c.y - 4);
-                        ctx.lineTo(c.x + 5, c.y + 4);
-                        ctx.stroke();
-                    } else if (ev.type === EVENT_TYPES.MINUS) {
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - 5, c.y - 4);
-                        ctx.lineTo(c.x, c.y + 4);
-                        ctx.lineTo(c.x + 5, c.y - 4);
-                        ctx.stroke();
-                    } else if (ev.type === EVENT_TYPES.ITEM) {
-                        ctx.fillStyle = '#7c2d12';
-                        ctx.fillRect(c.x - 5, c.y - 3, 10, 8);
-                        ctx.fillStyle = '#fef08a';
-                        ctx.fillRect(c.x - 1, c.y - 3, 2, 8);
-                        ctx.fillRect(c.x - 5, c.y, 10, 2);
-                    } else if (ev.type === EVENT_TYPES.DAILY) {
-                        ctx.fillStyle = '#334155';
-                        ctx.beginPath();
-                        ctx.arc(c.x, c.y - 1, 6, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.fillRect(c.x - 4, c.y + 3, 3, 3);
-                    } else if (ev.type === EVENT_TYPES.START) {
-                        ctx.strokeStyle = '#fef08a';
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - 4, c.y - 6);
-                        ctx.lineTo(c.x - 4, c.y + 6);
-                        ctx.stroke();
-                        ctx.fillStyle = '#fef08a';
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - 4, c.y - 6);
-                        ctx.lineTo(c.x + 4, c.y - 2);
-                        ctx.lineTo(c.x - 4, c.y + 2);
-                        ctx.fill();
-                    } else if (ev.type === EVENT_TYPES.GOAL) {
-                        ctx.fillStyle = '#fef08a';
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - 6, c.y + 4);
-                        ctx.lineTo(c.x - 6, c.y - 4);
-                        ctx.lineTo(c.x - 2, c.y);
-                        ctx.lineTo(c.x, c.y - 5);
-                        ctx.lineTo(c.x + 2, c.y);
-                        ctx.lineTo(c.x + 6, c.y - 4);
-                        ctx.lineTo(c.x + 6, c.y + 4);
-                        ctx.fill();
-                    }
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px DotGothic16';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(p.name, pos.x + offset, pos.y - 38);
+                    ctx.restore();
                 }
+            });
 
-                // 3. プレイヤーコマ描画
-                drawBoardPlayers();
-
-                ctx.restore();
-            }
+            ctx.restore();
 
             requestAnimationFrame(gameLoop);
         }
 
-        // キャラクター＋お供ごしゅドット絵描画
-        function drawPlayerDotModel(context, x, y, charKey) {
-            const cfg = CHAR_CONFIG[charKey] || CHAR_CONFIG.utsuro;
-
-            // メインキャラ
-            context.fillStyle = cfg.hairColor;
-            context.fillRect(x - 6, y - 12, 12, 10); // 髪
-            context.fillStyle = '#fde047';
-            context.fillRect(x - 4, y - 6, 8, 6); // 顔
-            context.fillStyle = cfg.bowColor;
-            context.fillRect(x - 8, y - 14, 4, 4); // リボン
-
-            // お供のごしゅ
-            context.fillStyle = '#000000';
-            context.fillRect(x + 8, y - 4, 6, 6); // 体
-            context.fillStyle = '#f97316';
-            context.fillRect(x + 10, y - 2, 3, 2); // クチバシ
-        }
-
-        // モーダル用プレビュー描画
-        function renderCharacterPreviews() {
-            ['utsuro', 'kuringo', 'tomoko'].forEach(key => {
-                const cvs = document.getElementById(`prev${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                if (cvs) {
-                    const c = cvs.getContext('2d');
-                    c.clearRect(0, 0, 36, 36);
-                    drawPlayerDotModel(c, 18, 22, key);
-                }
+        // --- ドラッグ＆ズーム操作 ---
+        function setupCanvasDrag() {
+            canvas.addEventListener('mousedown', e => {
+                isDragging = true;
+                dragStartX = e.clientX - userDragOffsetX;
+                dragStartY = e.clientY - userDragOffsetY;
             });
+
+            window.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                userDragOffsetX = e.clientX - dragStartX;
+                userDragOffsetY = e.clientY - dragStartY;
+            });
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                userZoomScale = Math.max(0.5, Math.min(3.5, userZoomScale * zoomFactor));
+            }, { passive: false });
         }
 
-        // サイコロ描画
-        function drawDice(val) {
-            if (!diceCtx) return;
-            diceCtx.clearRect(0, 0, 48, 48);
-            diceCtx.fillStyle = '#f8fafc';
-            diceCtx.fillRect(4, 4, 40, 40);
-            diceCtx.strokeStyle = '#94a3b8';
-            diceCtx.lineWidth = 2;
-            diceCtx.strokeRect(4, 4, 40, 40);
+        function toggleCameraView() {
+            isFullMapView = !isFullMapView;
+            userDragOffsetX = 0;
+            userDragOffsetY = 0;
+            userZoomScale = 1.8;
+            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+        }
 
-            const dots = {
-                1: [[24, 24]],
-                2: [[14, 14], [34, 34]],
-                3: [[14, 14], [24, 24], [34, 34]],
-                4: [[14, 14], [34, 14], [14, 34], [34, 34]],
-                5: [[14, 14], [34, 14], [24, 24], [14, 34], [34, 34]],
-                6: [[14, 12], [34, 12], [14, 24], [34, 24], [14, 36], [34, 36]]
+        // --- モード＆キャラクター選択 ---
+        function selectChar(charType) {
+            myChar = charType;
+            players[0].char = charType;
+            updatePlayerNamesAndUI();
+            document.getElementById('btnSelectUtsuro').className = charType === 'utsuro' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-500/50 bg-purple-950/40 opacity-60';
+            document.getElementById('btnSelectGengo').className = charType === 'gengo' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-400 bg-emerald-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 opacity-60';
+            document.getElementById('btnSelectTomoko').className = charType === 'tomoko' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-400 bg-pink-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 opacity-60';
+        }
+
+        function startCpuGame() {
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
+        }
+
+        function startOnlineGame() {
+            const code = document.getElementById('roomCodeInput').value || '1234';
+            roomSeed = parseInt(code) || 1234;
+            generateRandomMap(roomSeed);
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'ルーム: ' + code;
+        }
+
+        // --- サイコロ＆進行 ---
+        document.getElementById('btnRoll').addEventListener('click', function() {
+            if (isRolling) return;
+            isRolling = true;
+            let count = 0;
+            let interval = setInterval(() => {
+                let roll = Math.floor(Math.random() * 6) + 1;
+                drawDice(roll);
+                count++;
+                if (count > 10) {
+                    clearInterval(interval);
+                    isRolling = false;
+                    movePlayer(currentPlayerIndex, roll);
+                }
+            }, 50);
+        });
+
+        function drawDice(num) {
+            diceCtx.clearRect(0, 0, 48, 48);
+            diceCtx.fillStyle = '#ffffff';
+            diceCtx.fillRect(4, 4, 40, 40);
+            diceCtx.fillStyle = '#ef4444';
+            if (num === 1) {
+                diceCtx.beginPath(); diceCtx.arc(24, 24, 6, 0, Math.PI*2); diceCtx.fill();
+            } else {
+                diceCtx.fillStyle = '#000000';
+                if (num % 2 === 1) { diceCtx.beginPath(); diceCtx.arc(24, 24, 4, 0, Math.PI*2); diceCtx.fill(); }
+                diceCtx.beginPath(); diceCtx.arc(14, 14, 4, 0, Math.PI*2); diceCtx.fill();
+                diceCtx.beginPath(); diceCtx.arc(34, 34, 4, 0, Math.PI*2); diceCtx.fill();
+            }
+        }
+
+        function movePlayer(pIdx, steps) {
+            players[pIdx].pos = Math.min(99, players[pIdx].pos + steps);
+            document.getElementById('diceResultText').innerText = steps + ' の目が出た！';
+            
+            // 🎯 止まったマスのイベントを発動
+            triggerTileEvent(players[pIdx]);
+
+            currentPlayerIndex = (currentPlayerIndex + 1) % 3;
+            document.getElementById('activePlayerTag').innerText = '手番: ' + players[currentPlayerIndex].name;
+        }
+
+        // --- 🎯 マス目イベントの発動・リスナー変動処理 ---
+        function triggerTileEvent(player) {
+            const currentTile = tileCoords[player.pos];
+            if (!currentTile) return;
+
+            let tileType = currentTile.type;
+            let matchingEvents = gameEvents.filter(ev => ev.type === tileType);
+            
+            // 対応するタイプのイベントがない場合はフォールバック
+            if (matchingEvents.length === 0) {
+                matchingEvents = gameEvents.filter(ev => ev.type === 'white');
+            }
+
+            // ランダムにイベントを1つ抽選
+            const ev = matchingEvents[Math.floor(Math.random() * matchingEvents.length)] || {
+                title: '【通常マス】',
+                desc: '特に何も起こらなかった。配信準備を進めよう！',
+                val: 0
             };
 
-            diceCtx.fillStyle = (val === 1) ? '#ef4444' : '#0f172a';
-            (dots[val] || []).forEach(([dx, dy]) => {
-                diceCtx.beginPath();
-                diceCtx.arc(dx, dy, (val === 1) ? 5 : 3.5, 0, Math.PI * 2);
-                diceCtx.fill();
+            // スタート / ゴールマスの場合の特別処理
+            let eventTitle = ev.title;
+            let eventDesc = ev.desc;
+            let listenerChange = ev.val || 0;
+
+            if (tileType === 'start') {
+                eventTitle = '【スタート地点】';
+                eventDesc = 'ここから伝説のVstreamerロードが始まる！';
+                listenerChange = 0;
+            } else if (tileType === 'goal') {
+                eventTitle = '【🎉 100マス達成！ゴール！】';
+                eventDesc = player.name + ' が見事にゴール達成！記念大型配信でリスナー大感謝祭！';
+                listenerChange = 1000;
+            }
+
+            // リスナー数の加減算処理
+            player.listeners = Math.max(0, player.listeners + listenerChange);
+
+            // UIの文字・スコアを更新
+            document.getElementById('currentEventTitle').innerText = eventTitle;
+                document.getElementById('currentEventDesc').innerText = eventDesc;
+            
+            let effectText = '-';
+            if (listenerChange > 0) {
+                effectText = '📈 リスナー数 +' + listenerChange.toLocaleString() + '人！';
+            } else if (listenerChange < 0) {
+                effectText = '📉 リスナー数 ' + listenerChange.toLocaleString() + '人…';
+            } else if (tileType === 'item') {
+                effectText = '🎁 配信便利グッズを獲得！';
+            }
+            document.getElementById('currentEventEffect').innerText = effectText;
+
+            // スコアボード（1P/2P/3P）のリスナー数表示を更新
+            const p1Elem = document.getElementById('p1Listeners');
+            const p2Elem = document.getElementById('p2Listeners');
+            const p3Elem = document.getElementById('p3Listeners');
+            if (p1Elem) p1Elem.innerText = players[0].listeners.toLocaleString() + '人';
+            if (p2Elem) p2Elem.innerText = players[1].listeners.toLocaleString() + '人';
+            if (p3Elem) p3Elem.innerText = players[2].listeners.toLocaleString() + '人';
+        }
+
+        // --- 🛠️ デバッグモード＆🎨 ドット絵ピクセルエディター ---
+        function openDebugMenu() {
+            document.getElementById('debugModal').classList.remove('hidden');
+            renderDebugEvents();
+            loadTargetDotGrid(selectedDotTarget);
+            renderDotCanvas();
+        }
+
+        function closeDebugMenu() {
+            document.getElementById('debugModal').classList.add('hidden');
+        }
+
+        function switchDebugTab(tab) {
+            activeTab = tab;
+            document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
+            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
+            
+            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            
+            if (tab === 'dots') renderDotCanvas();
+        }
+
+        function filterDebugEvents(type) {
+            currentEventFilter = type;
+            ['all', 'plus', 'minus', 'item', 'white'].forEach(t => {
+                const btn = document.getElementById('filterBtn_' + t);
+                if (btn) {
+                    btn.className = t === type 
+                        ? 'px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold' 
+                        : 'px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600';
+                }
             });
+            renderDebugEvents();
+        }
+
+        function renderDebugEvents() {
+            const container = document.getElementById('debugEventsList');
+            const filtered = gameEvents.filter(ev => currentEventFilter === 'all' || ev.type === currentEventFilter);
+            
+            container.innerHTML = filtered.map((ev, originalIndex) => {
+                const realIndex = gameEvents.indexOf(ev);
+                return `
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-purple-800 flex flex-col gap-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-yellow-300">イベント #${realIndex+1}</span>
+                        <select onchange="gameEvents[${realIndex}].type=this.value; renderDebugEvents();" class="bg-slate-900 border border-purple-600 rounded px-1.5 py-0.5 text-white font-bold text-[11px]">
+                            <option value="plus" ${ev.type==='plus'?'selected':''}>🔵 プラス（増）</option>
+                            <option value="minus" ${ev.type==='minus'?'selected':''}>🔴 マイナス（減）</option>
+                            <option value="item" ${ev.type==='item'?'selected':''}>🎁 アイテムマス</option>
+                            <option value="white" ${ev.type==='white'?'selected':''}>⚪ 白色マス</option>
+                        </select>
+                    </div>
+                    <input type="text" value="${ev.title}" onchange="gameEvents[${realIndex}].title=this.value" placeholder="タイトル" class="bg-slate-900 border border-purple-600 rounded px-2 py-1 text-white">
+                    <input type="text" value="${ev.desc}" onchange="gameEvents[${realIndex}].desc=this.value" placeholder="説明文" class="bg-slate-900 border border-purple-600 rounded px-2 py-1 text-gray-300">
+                    <div class="flex items-center gap-2">
+                        <span class="text-purple-300 text-[11px]">リスナー変動数:</span>
+                        <input type="number" value="${ev.val}" onchange="gameEvents[${realIndex}].val=parseInt(this.value)||0" class="w-24 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-yellow-300 font-mono">
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // --- ドット絵編集対象の切替＆操作 ---
+        function changeDotTarget(targetKey) {
+            saveCurrentDotGridToTarget();
+            selectedDotTarget = targetKey;
+            dotHistoryStack = []; // ターゲット変更時に履歴クリア
+            loadTargetDotGrid(targetKey);
+            renderDotCanvas();
+        }
+
+        function saveCurrentDotGridToTarget() {
+            if (selectedDotTarget && customDotData[selectedDotTarget]) {
+                customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
+            }
+        }
+
+        // 操作履歴の保存 (アンドゥ用)
+        function pushDotHistory() {
+            if (dotHistoryStack.length >= 20) dotHistoryStack.shift(); // 最大20回分保存
+            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
+        }
+
+        // ↩️ アンドゥ（1つ前の状態に戻す）
+        function undoDotCanvas() {
+            if (dotHistoryStack.length > 0) {
+                dotGrid = dotHistoryStack.pop();
+                saveCurrentDotGridToTarget();
+                renderDotCanvas();
+                drawCharPreviews();
+            }
+        }
+
+        function loadTargetDotGrid(targetKey) {
+            if (customDotData[targetKey]) {
+                dotGrid = JSON.parse(JSON.stringify(customDotData[targetKey]));
+            } else {
+                dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            }
+        }
+
+        function resetCurrentDotToDefault() {
+            initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
+            renderDotCanvas();
+        }
+
+        // --- ドット絵キャンバスイベント ---
+        function setupDotEditorEvents() {
+            if (!dotCanvas) return;
+
+            // Ctrl+Z でのアンドゥショートカット
+            window.addEventListener('keydown', e => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                    if (activeTab === 'dots' && !document.getElementById('debugModal').classList.contains('hidden')) {
+                        e.preventDefault();
+                        undoDotCanvas();
+                    }
+                }
+            });
+
+            const handleDotCanvasInteraction = (e, isStart = false) => {
+                const rect = dotCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const x = Math.floor((clientX - rect.left) / (rect.width / 16));
+                const y = Math.floor((clientY - rect.top) / (rect.height / 16));
+
+                if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+                    // 🧪 スポイトモードの場合
+                    if (isDotEyedropper) {
+                        const targetColor = dotGrid[y][x];
+                        if (targetColor && targetColor !== '#00000000') {
+                            const picker = document.getElementById('dotColorPicker');
+                            if (picker) picker.value = targetColor;
+                            currentColor = targetColor;
+                        }
+                        toggleDotEyedropper(false); // 色取得後、スポイトをオフにする
+                        return;
+                    }
+
+                    // 書き始め（クリック/タッチ開始時）に履歴を保存
+                    if (isStart) {
+                        pushDotHistory();
+                    }
+
+                    const picker = document.getElementById('dotColorPicker');
+                    currentColor = picker ? picker.value : '#9333ea';
+                    dotGrid[y][x] = isDotEraser ? '#00000000' : currentColor;
+                    saveCurrentDotGridToTarget();
+                    renderDotCanvas();
+                    drawCharPreviews();
+                }
+            };
+
+            dotCanvas.addEventListener('mousedown', e => { isDrawingDot = true; handleDotCanvasInteraction(e, true); });
+            dotCanvas.addEventListener('mousemove', e => { if (isDrawingDot) handleDotCanvasInteraction(e, false); });
+            window.addEventListener('mouseup', () => isDrawingDot = false);
+
+            dotCanvas.addEventListener('touchstart', e => { isDrawingDot = true; handleDotCanvasInteraction(e, true); e.preventDefault(); }, { passive: false });
+            dotCanvas.addEventListener('touchmove', e => { if (isDrawingDot) handleDotCanvasInteraction(e, false); e.preventDefault(); }, { passive: false });
+            window.addEventListener('touchend', () => isDrawingDot = false);
+        }
+
+        // 🧪 スポイトモードの切り替え
+        function toggleDotEyedropper(forceState = null) {
+            isDotEyedropper = forceState !== null ? forceState : !isDotEyedropper;
+            if (isDotEyedropper) isDotEraser = false; // 消しゴムは解除
+            
+            const btn = document.getElementById('btnDotEyedropper');
+            if (btn) {
+                btn.className = isDotEyedropper 
+                    ? 'px-2 py-1 text-xs bg-cyan-600 text-white rounded border border-cyan-300 font-bold flex items-center gap-1 shadow-md' 
+                    : 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1';
+            }
+
+            const eraserBtn = document.getElementById('btnDotEraser');
+            if (eraserBtn) eraserBtn.className = 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+        }
+
+        function renderDotCanvas() {
+            if (!dotCtx) return;
+            const size = 256 / 16;
+            dotCtx.clearRect(0, 0, 256, 256);
+
+            // 16x16のグリッドとドット描画
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    // 背景チェッカー模様
+                    dotCtx.fillStyle = (r + c) % 2 === 0 ? '#1e293b' : '#0f172a';
+                    dotCtx.fillRect(c * size, r * size, size, size);
+
+                    // ピクセル色
+                    if (dotGrid[r][c] !== '#00000000') {
+                        dotCtx.fillStyle = dotGrid[r][c];
+                        dotCtx.fillRect(c * size, r * size, size, size);
+                    }
+
+                    // 枠線
+                    dotCtx.strokeStyle = '#334155';
+                    dotCtx.strokeRect(c * size, r * size, size, size);
+                }
+            }
+        }
+
+        function setDotEraser() {
+            isDotEraser = !isDotEraser;
+            if (isDotEraser) isDotEyedropper = false; // スポイトは解除
+            
+            const btn = document.getElementById('btnDotEraser');
+            if (btn) btn.className = isDotEraser ? 'px-2 py-1 text-xs bg-yellow-600 text-white rounded border border-yellow-400 font-bold' : 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+            
+            const eyeBtn = document.getElementById('btnDotEyedropper');
+            if (eyeBtn) eyeBtn.className = 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1';
+        }
+
+        function clearDotCanvas() {
+            pushDotHistory(); // クリア前の状態を履歴に保存
+            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            saveCurrentDotGridToTarget();
+            renderDotCanvas();
+            drawCharPreviews();
+        }
+
+        // --- 📋 全ドット絵データをクリップボードへ一括コピー ---
+        function copyDotDataToClipboard() {
+            saveCurrentDotGridToTarget();
+            const textData = JSON.stringify(customDotData);
+            
+            // コピー用テキストエリア生成
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textData;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            alert("ドット絵データをコピーしました！チャット欄に貼り付けて教えてください。");
+        }
+
+        function saveDebugSettings() {
+            saveCurrentDotGridToTarget();
+            saveDataToLocalStorage(); // 💾 ブラウザのlocalStorageへ永続保存！
+            drawCharPreviews();
+            closeDebugMenu();
+        }
+
+        function resetDebugDefaults() {
+            try {
+                localStorage.removeItem('utsuro_custom_dots');
+                localStorage.removeItem('utsuro_custom_events');
+            } catch (e) {
+                console.error(e);
+            }
+            gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
+            renderDebugEvents();
+            renderDotCanvas();
+            drawCharPreviews();
+            updatePlayerNamesAndUI();
         }
     </script>
 </body>
