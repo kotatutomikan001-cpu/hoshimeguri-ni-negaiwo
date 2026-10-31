@@ -449,6 +449,9 @@
             initDefaultMapGrid();
             loadDataFromLocalStorage();
 
+            // 最新のデフォルトデータで未保存または古いデータを上書き更新
+            saveCurrentDotGridToTarget();
+
             convertCustomGridToTileCoords();
             drawCharPreviews();
             drawDice(1);
@@ -487,19 +490,39 @@
         function playSelectBgm() {
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
-            if (gameAudio) gameAudio.pause();
+            if (gameAudio) { gameAudio.pause(); gameAudio.currentTime = 0; }
             if (selectAudio) {
                 selectAudio.volume = currentBgmVolume;
                 let playPromise = selectAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(() => {
-                        // ブラウザの自動再生ブロックを即座に解除するためのリスナー
+                        // ブラウザの自動再生制限を解除するイベントリスナー
                         const unlockBgm = () => {
                             selectAudio.volume = currentBgmVolume;
-                            selectAudio.play();
-                            ['pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockBgm));
+                            selectAudio.play().catch(() => {});
+                            ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockBgm));
                         };
-                        ['pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockBgm, { once: true }));
+                        ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockBgm, { once: true }));
+                    });
+                }
+            }
+        }
+
+        function playGameBgm() {
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+            if (selectAudio) { selectAudio.pause(); selectAudio.currentTime = 0; }
+            if (gameAudio) {
+                gameAudio.volume = currentBgmVolume;
+                let playPromise = gameAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        const unlockGameBgm = () => {
+                            gameAudio.volume = currentBgmVolume;
+                            gameAudio.play().catch(() => {});
+                            ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockGameBgm));
+                        };
+                        ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockGameBgm, { once: true }));
                     });
                 }
             }
@@ -644,20 +667,20 @@
         }
 
         function initDefaultMapGrid() {
-            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
-            let coords = [
-                { r: 1, c: 1, type: 'start' }, { r: 1, c: 3, type: 'plus' }, { r: 1, c: 5, type: 'white' },
-                { r: 1, c: 7, type: 'minus' }, { r: 1, c: 9, type: 'item' }, { r: 1, c: 10, type: 'plus' },
-                { r: 3, c: 10, type: 'white' }, { r: 5, c: 10, type: 'minus' }, { r: 7, c: 10, type: 'plus' },
-                { r: 9, c: 10, type: 'item' }, { r: 10, c: 10, type: 'white' }, { r: 10, c: 8, type: 'plus' },
-                { r: 10, c: 6, type: 'minus' }, { r: 10, c: 4, type: 'item' }, { r: 10, c: 2, type: 'plus' },
-                { r: 10, c: 1, type: 'white' }, { r: 8, c: 1, type: 'minus' }, { r: 6, c: 1, type: 'plus' },
-                { r: 4, c: 1, type: 'item' }, { r: 3, c: 3, type: 'white' }, { r: 3, c: 5, type: 'plus' },
-                { r: 3, c: 7, type: 'minus' }, { r: 3, c: 8, type: 'white' }, { r: 5, c: 8, type: 'plus' },
-                { r: 7, c: 8, type: 'item' }, { r: 8, c: 6, type: 'white' }, { r: 8, c: 4, type: 'plus' },
-                { r: 6, c: 4, type: 'white' }, { r: 5, c: 6, type: 'goal' }
+            customMapGrid = [
+                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
+                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
+                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
+                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
+                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
+                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
+                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
+                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
+                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
+                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
+                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
+                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
             ];
-            coords.forEach(c => { customMapGrid[c.r][c.c] = c.type; });
         }
 
         function renderDotCanvas() {
@@ -733,20 +756,52 @@
             window.roadConnections = [];
             let pSize = 64;
 
+            // 12x12のエディットマップを走査して配置されている全マスを抽出
+            let rawTiles = [];
             for (let r = 0; r < 12; r++) {
                 for (let c = 0; c < 12; c++) {
                     let type = customMapGrid[r][c];
                     if (type) {
-                        tileCoords.push({
+                        rawTiles.push({
                             x: c * pSize + pSize / 2,
                             y: r * pSize + pSize / 2,
                             type: type,
-                            r: r, c: c
+                            r: r,
+                            c: c,
+                            visited: false
                         });
                     }
                 }
             }
 
+            if (rawTiles.length === 0) return;
+
+            // スタートマスを探す（無ければ先頭）
+            let startIdx = rawTiles.findIndex(t => t.type === 'start');
+            if (startIdx === -1) startIdx = 0;
+
+            // 隣接（最短距離）のマス同士を順にたどって一本道を作成
+            let curr = rawTiles[startIdx];
+            curr.visited = true;
+            tileCoords.push(curr);
+
+            while (tileCoords.length < rawTiles.length) {
+                let unvisited = rawTiles.filter(t => !t.visited);
+                if (unvisited.length === 0) break;
+
+                unvisited.sort((a, b) => {
+                    let distA = Math.hypot(a.r - curr.r, a.c - curr.c);
+                    let distB = Math.hypot(b.r - curr.r, b.c - curr.c);
+                    return distA - distB;
+                });
+
+                let nextTile = unvisited[0];
+                nextTile.visited = true;
+                tileCoords.push(nextTile);
+                curr = nextTile;
+            }
+
+            // 接続ラインの生成
             for (let i = 0; i < tileCoords.length - 1; i++) {
                 let t1 = tileCoords[i];
                 let t2 = tileCoords[i + 1];
@@ -754,44 +809,6 @@
             }
 
             generateCityObjects();
-        }
-
-        function handleRollButtonClick() {
-            if (isRolling || isMoving) return;
-
-            let activeP = players[currentPlayerIndex];
-
-            if (isSubRollPending) {
-                isRolling = true;
-                document.getElementById('btnRoll').disabled = true;
-                let count = 0;
-                let interval = setInterval(() => {
-                    let roll = Math.floor(Math.random() * 6) + 1;
-                    drawDice(roll);
-                    count++;
-                    if (count > 10) {
-                        clearInterval(interval);
-                        isRolling = false;
-                        isSubRollPending = false;
-                        resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
-                    }
-                }, 100);
-                return;
-            }
-
-            isRolling = true;
-            document.getElementById('btnRoll').disabled = true;
-            let count = 0;
-            let interval = setInterval(() => {
-                let roll = Math.floor(Math.random() * 6) + 1;
-                drawDice(roll);
-                count++;
-                if (count > 12) {
-                    clearInterval(interval);
-                    isRolling = false;
-                    movePlayer(currentPlayerIndex, roll);
-                }
-            }, 100);
         }
 
         function saveDebugSettings() {
@@ -802,7 +819,21 @@
                 localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
             } catch (e) {}
 
+            // マップ座標を再計算
             convertCustomGridToTileCoords();
+
+            // マップ変更に合わせてプレイヤー位置と描画座標を同期リセット
+            if (tileCoords.length > 0) {
+                players.forEach(p => {
+                    p.pos = 0;
+                    let t = tileCoords[0];
+                    p.renderX = t.x;
+                    p.renderY = t.y;
+                    p.goshuX = t.x;
+                    p.goshuY = t.y;
+                });
+            }
+
             drawCharPreviews();
             closeDebugMenu();
             alert('設定・変更を適用しました！');
@@ -813,10 +844,22 @@
                 localStorage.removeItem('utsuro_custom_events');
                 localStorage.removeItem('utsuro_custom_dots');
                 localStorage.removeItem('utsuro_custom_map');
-                loadDataFromLocalStorage();
                 initDefaultDotGrids();
                 initDefaultMapGrid();
+                loadDataFromLocalStorage();
                 convertCustomGridToTileCoords();
+                
+                if (tileCoords.length > 0) {
+                    players.forEach(p => {
+                        p.pos = 0;
+                        let t = tileCoords[0];
+                        p.renderX = t.x;
+                        p.renderY = t.y;
+                        p.goshuX = t.x;
+                        p.goshuY = t.y;
+                    });
+                }
+
                 renderDebugEvents();
                 renderDotCanvas();
                 renderMapEditorCanvas();
@@ -1102,6 +1145,36 @@
                     drawGoshuDotModel(gCtx, c, 10, 10, 18);
                 }
             });
+        }
+
+        // --- サイコロクリックイベントハンドラー ---
+        function handleRollButtonClick() {
+            if (isRolling || isMoving) return;
+
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll && btnRoll.disabled) return;
+
+            isRolling = true;
+            if (btnRoll) btnRoll.disabled = true;
+
+            let count = 0;
+            let interval = setInterval(() => {
+                let roll = Math.floor(Math.random() * 6) + 1;
+                drawDice(roll);
+                count++;
+
+                if (count > 12) {
+                    clearInterval(interval);
+                    isRolling = false;
+
+                    if (isSubRollPending) {
+                        isSubRollPending = false;
+                        resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
+                    } else {
+                        movePlayer(currentPlayerIndex, roll);
+                    }
+                }
+            }, 100);
         }
 
         function filterDebugEvents(type) {
