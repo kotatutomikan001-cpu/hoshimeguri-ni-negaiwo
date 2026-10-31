@@ -14,7 +14,6 @@
             user-select: none;
             background-color: #090d16;
             color: #ffffff;
-            overflow-x: hidden;
         }
 
         /* レトロRPG風枠線 */
@@ -60,7 +59,7 @@
         }
     </style>
 </head>
-<body class="flex flex-col h-screen w-screen overflow-hidden text-white bg-slate-950 relative">
+<body class="flex flex-col h-screen w-screen overflow-hidden text-white bg-slate-950">
 
     <!-- メイン1画面コンテナ -->
     <main class="flex flex-col h-full w-full max-w-5xl mx-auto p-1.5 sm:p-3 gap-2 overflow-hidden">
@@ -75,7 +74,7 @@
                     <div class="flex items-center gap-1.5">
                         <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
                     </div>
-                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">VS CPU (3人対戦中)</p>
+                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">準備中... モードを選択してください</p>
                 </div>
             </div>
 
@@ -115,7 +114,7 @@
             </div>
         </section>
 
-        <!-- 下部コントローラー＆イベント情報エリア (メッセージ欄を大きく・見やすく改修) -->
+        <!-- 下部コントローラー＆イベント情報エリア -->
         <section class="flex-none grid grid-cols-1 md:grid-cols-3 gap-2">
             <!-- サイコロ＆操作パネル -->
             <div class="pixel-box p-2 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-2 border-purple-500">
@@ -131,7 +130,7 @@
                 </button>
             </div>
 
-            <!-- イベントログ・解説表示 (高さを拡張＆文字サイズ大) -->
+            <!-- イベントログ・解説表示 -->
             <div class="pixel-box p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[120px] sm:min-h-[135px]">
                 <div>
                     <div class="flex items-center justify-between border-b border-purple-700/80 pb-1.5 mb-1.5">
@@ -158,37 +157,29 @@
 
     </main>
 
-    <!-- 🌟 最優先独立レイヤー：画面左上隅のデバッグモード起動ボタン -->
+    <!-- 🌟 デバッグ用隠し起動ボタン -->
     <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-16 h-16 z-[999999] cursor-pointer flex items-start justify-start p-2.5 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
         <span class="text-purple-300 text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
     </button>
 
     <!-- キャラクター＆対戦モード選択モーダル -->
-    <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
-        
-        <!-- ❄️ モーダル枠の外側（画面全体背景）に散りばめられたカモフラージュ雪の結晶群 -->
-        <div class="absolute inset-0 pointer-events-none select-none z-0 opacity-60">
-            <span class="absolute top-3 left-10 text-xs text-purple-300">❄️</span>
-            <span class="absolute top-6 left-1/4 text-lg text-indigo-300">❄️</span>
-            <span class="absolute top-10 right-12 text-sm text-blue-200">❄️</span>
-            <span class="absolute top-16 right-1/3 text-xs text-purple-200">❄️</span>
-            <span class="absolute top-28 left-6 text-xl text-indigo-200">❄️</span>
-            <span class="absolute top-32 right-8 text-xs text-purple-300">❄️</span>
-            <span class="absolute top-1/2 left-8 text-base text-cyan-300">❄️</span>
-            <span class="absolute top-1/2 right-10 text-lg text-indigo-300">❄️</span>
-            <span class="absolute bottom-20 left-12 text-lg text-purple-200">❄️</span>
-            <span class="absolute bottom-24 right-16 text-sm text-cyan-200">❄️</span>
-            <span class="absolute bottom-8 left-1/3 text-xs text-indigo-300">❄️</span>
-            <span class="absolute bottom-10 right-1/4 text-xl text-purple-300">❄️</span>
-            <span class="absolute bottom-4 left-6 text-sm text-blue-300">❄️</span>
-            <span class="absolute bottom-5 right-8 text-xs text-purple-200">❄️</span>
+    <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
+        <!-- 背景用カモフラージュ雪群 -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
+            <span class="absolute top-5 left-10 text-xl text-white/30">❄️</span>
+            <span class="absolute top-12 left-1/3 text-xs text-white/20">❄️</span>
+            <span class="absolute top-8 right-20 text-lg text-white/40">❄️</span>
+            <span class="absolute top-1/4 left-1/4 text-sm text-white/25">❄️</span>
+            <span class="absolute top-1/3 right-12 text-2xl text-white/30">❄️</span>
+            <span class="absolute bottom-20 left-16 text-lg text-white/35">❄️</span>
+            <span class="absolute bottom-10 right-1/4 text-xs text-white/20">❄️</span>
+            <span class="absolute bottom-1/3 left-1/2 text-xl text-white/25">❄️</span>
         </div>
 
         <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
             <p class="text-xs text-purple-200 mb-4">プレイするキャラクターを選んでください</p>
 
-            <!-- キャラ選択ボタン3種 (復元完備) -->
             <div class="grid grid-cols-3 gap-2 mb-4">
                 <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer ring-4 ring-yellow-400 scale-105">
                     <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
@@ -208,11 +199,6 @@
             </div>
 
             <div class="flex flex-col gap-2 mt-3">
-                <!-- キャラクター選択画面用 BGM (自動再生) -->
-                <div class="text-[11px] text-purple-300 font-bold bg-slate-950 p-2 rounded-lg border border-purple-800 text-center">
-                    🎵 BGM: select_bgm.mp3 (自動ループ再生中)
-                </div>
-
                 <button onclick="startCpuGame()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
                     <span>🤖 VS CPU対戦 (3人対戦)</span>
                 </button>
@@ -233,7 +219,7 @@
         </div>
     </div>
 
-    <!-- デバッグモーダル (隠し機能) -->
+    <!-- デバッグモーダル -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
         <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
             <div class="flex-none flex items-center justify-between p-3 border-b border-purple-800 bg-indigo-950/80">
@@ -263,8 +249,8 @@
             <div class="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-900/90">
                 <!-- イベント編集パネル -->
                 <div id="debugTabEvents" class="space-y-3">
-                    <div class="flex items-center justify-between gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap">
-                        <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap gap-2">
+                        <div class="flex items-center gap-1.5">
                             <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
                             <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
                             <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
@@ -272,16 +258,12 @@
                             <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
                             <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="copyEventDataToClipboard()" class="px-2.5 py-1 text-xs bg-indigo-700 hover:bg-indigo-600 text-white rounded font-bold shadow flex items-center gap-1">
-                                📋 イベントデータをコピー
-                            </button>
-                            <button onclick="addNewDebugEvent()" class="px-2.5 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow flex items-center gap-1">
-                                ➕ 新規イベント追加
-                            </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="copyEventDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">📋 イベントデータをコピー</button>
+                            <button onclick="addNewDebugEvent()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">➕ 新規追加</button>
                         </div>
                     </div>
-                    <div id="debugEventsList" class="space-y-2.5"></div>
+                    <div id="debugEventsList" class="space-y-2"></div>
                 </div>
 
                 <!-- ドット絵ピクセルエディター -->
@@ -292,8 +274,8 @@
                             <option value="utsuro">❄️ 氷室うつろ</option>
                             <option value="gengo">🟩 繰言かたる</option>
                             <option value="tomoko">🌸 トモコ</option>
-                            <option value="utsuro_goshu">🟣 氷室うつろのごしゅ</option>
-                            <option value="gengo_goshu">🟢 繰言かたるのごしゅ</option>
+                            <option value="utsuro_goshu">🟢 氷室うつろのごしゅ (緑)</option>
+                            <option value="gengo_goshu">👑 繰言かたるのごしゅ (水色)</option>
                             <option value="tomoko_goshu">🩷 トモコのごしゅ</option>
                         </select>
                     </div>
@@ -346,6 +328,10 @@
         </div>
     </div>
 
+    <!-- オーディオエレメント (自動再生・ループ設定) -->
+    <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
+    <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
+
     <!-- JavaScript ロジック -->
     <script>
         // --- グローバル状態変数 ---
@@ -357,14 +343,6 @@
         let myChar = 'utsuro';
         let isFullMapView = false;
         let activeTab = 'events';
-
-        // BGMオーディオ要素 (同一フォルダ内の mp3 ファイルを自動ループ再生)
-        let modalAudio = new Audio('./select_bgm.mp3');
-        modalAudio.loop = true;
-        modalAudio.preload = 'auto'; // 最優先先読み
-        let gameAudio = new Audio('./game_bgm.mp3');
-        gameAudio.loop = true;
-        gameAudio.preload = 'auto';
 
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
@@ -385,37 +363,16 @@
         let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
 
         let players = [
-            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, listeners: 1000, color: '#a855f7' },
-            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, listeners: 1000, color: '#10b981' },
-            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, listeners: 1000, color: '#ec4899' }
+            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7' },
+            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981' },
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899' }
         ];
         let currentPlayerIndex = 0;
-        let currentTurn = 1;
-        let maxTurns = 30;
+        let currentTurnNumber = 1;
         let isMoving = false;
         let isRolling = false;
-        let roomSeed = 1234;
-
-        // 青・赤マス専用の追加サイコロ振り待ちフラグ
         let isSubRollPending = false;
         let pendingTileType = null;
-
-        // 跳躍（ぴょんぴょん）移動アニメーション状態
-        let jumpAnimation = {
-            pIndex: -1,
-            fromPos: 0,
-            toPos: 0,
-            progress: 0,
-            startTime: 0,
-            duration: 380
-        };
-
-        // 各ごしゅ（お供）の個別位置・アニメーション追従管理
-        let goshuPositions = [
-            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false },
-            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false },
-            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false }
-        ];
 
         let tileCoords = [];
         let cityObjects = [];
@@ -428,7 +385,7 @@
             { type: 'plus', title: '【赤スパチャ投下！】', desc: 'リスナーからの愛のある赤スパチャが炸裂！', val: 500 },
             { type: 'minus', title: '【機材トラブル発生】', desc: '配信開始直前にマイク認識せず大あわて！', val: -150 },
             { type: 'minus', title: '【回線落ちの悲劇】', desc: '良いところで配信が切れてリスナー一時離脱…', val: -200 },
-            { type: 'item', title: '【新機材導入！】', desc: '黄色いマスで便利な配信グッズを獲得！', val: 0 },
+            { type: 'item', title: '【新機材導入！】', desc: '配信が快適になる特別アイテムを獲得！', val: 0, itemName: '⚡ スパチャブースター' },
             { type: 'white', title: '【まったり雑談配信】', desc: 'コメント拾いに夢中で時間が溶ける！平穏な日常。', val: 0 },
             { type: 'white', title: '【配信部屋のお掃除】', desc: '部屋を片付けて気分一新！特に変化なし。', val: 0 }
         ];
@@ -455,94 +412,112 @@
             initDefaultMapGrid();
             loadDataFromLocalStorage();
 
-            // キャラクター選択画面のBGMをノータイムで即座に自動再生試行
-            modalAudio.play().catch(e => {
-                let instantPlay = () => {
-                    modalAudio.play().catch(err => {});
-                    window.removeEventListener('click', instantPlay);
-                    window.removeEventListener('touchstart', instantPlay);
-                    window.removeEventListener('keydown', instantPlay);
-                };
-                window.addEventListener('click', instantPlay);
-                window.addEventListener('touchstart', instantPlay);
-                window.addEventListener('keydown', instantPlay);
-            });
-
-            generateRandomMap(roomSeed);
+            convertCustomGridToTileCoords();
             drawCharPreviews();
             drawDice(1);
 
-            // キャラクター選択画面オープン時のBGM自動再生トリガー
-            let playModalBgm = () => {
-                modalAudio.play().catch(e => console.log('BGM waiting for user interaction'));
-                window.removeEventListener('click', playModalBgm);
-                window.removeEventListener('keydown', playModalBgm);
-            };
-            window.addEventListener('click', playModalBgm);
-            window.addEventListener('keydown', playModalBgm);
-            modalAudio.play().catch(e => {});
+            // BGM自動再生（選択画面BGM）
+            playSelectBgm();
 
-            document.getElementById('btnRoll').addEventListener('click', function() {
-                if (isRolling || isMoving) return;
+            document.getElementById('btnRoll').addEventListener('click', handleRollButtonClick);
+            requestAnimationFrame(gameLoop);
+        };
 
-                // 青・赤マス到着後のサイコロ振り判定
-                if (isSubRollPending) {
-                    executeSubDiceRoll();
-                    return;
-                }
+        function playSelectBgm() {
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+            if (gameAudio) gameAudio.pause();
+            if (selectAudio) {
+                selectAudio.play().catch(() => {
+                    window.addEventListener('click', () => { selectAudio.play(); }, { once: true });
+                });
+            }
+        }
 
-                if (currentPlayerIndex !== 0) return;
+        function playGameBgm() {
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+            if (selectAudio) selectAudio.pause();
+            if (gameAudio) {
+                gameAudio.play().catch(() => {
+                    window.addEventListener('click', () => { gameAudio.play(); }, { once: true });
+                });
+            }
+        }
 
+        function handleRollButtonClick() {
+            if (isRolling || isMoving) return;
+
+            if (isSubRollPending) {
+                // 赤・青マスの追加入力サイコロ処理
                 isRolling = true;
                 let count = 0;
                 let interval = setInterval(() => {
                     let roll = Math.floor(Math.random() * 6) + 1;
                     drawDice(roll);
                     count++;
-                    if (count > 14) {
+                    if (count > 12) {
+                        clearInterval(interval);
+                        isRolling = false;
+                        isSubRollPending = false;
+                        resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
+                    }
+                }, 100);
+            } else {
+                // 通常の移動サイコロ処理
+                if (currentPlayerIndex !== 0) return;
+                isRolling = true;
+                let count = 0;
+                let interval = setInterval(() => {
+                    let roll = Math.floor(Math.random() * 6) + 1;
+                    drawDice(roll);
+                    count++;
+                    if (count > 12) {
                         clearInterval(interval);
                         isRolling = false;
                         movePlayer(currentPlayerIndex, roll);
                     }
                 }, 100);
-            });
-
-            requestAnimationFrame(gameLoop);
-        };
-
-        function saveDataToLocalStorage() {
-            try {
-                localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
-                localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
-                localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
-            } catch (e) { console.error(e); }
-        }
-
-        function loadDataFromLocalStorage() {
-            try {
-                const savedDots = localStorage.getItem('utsuro_custom_dots');
-                if (savedDots) Object.assign(customDotData, JSON.parse(savedDots));
-
-                const savedEvents = localStorage.getItem('utsuro_custom_events');
-                if (savedEvents) gameEvents = JSON.parse(savedEvents);
-                else gameEvents = JSON.parse(JSON.stringify(defaultEvents));
-
-                const savedMap = localStorage.getItem('utsuro_custom_map');
-                if (savedMap) customMapGrid = JSON.parse(savedMap);
-
-                loadTargetDotGrid(selectedDotTarget);
-            } catch (e) {
-                gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
         }
 
         function initDefaultDotGrids() {
-            customDotData = {"utsuro":[["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]],"gengo":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]],"tomoko":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#be185d","#be185d","#fde047","#fde047","#be185d","#be185d","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#ec4899","#ec4899","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"]],"utsuro_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"gengo_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#ffffff","#ffffff","#34d399","#34d399","#ffffff","#ffffff","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#064e3b","#34d399","#34d399","#34d399","#064e3b","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"tomoko_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#ffffff","#ffffff","#f472b6","#f472b6","#ffffff","#ffffff","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#831843","#f472b6","#f472b6","#f472b6","#831843","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]]};
+            // 氷室うつろのごしゅ（緑色）
+            customDotData.utsuro_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#000000","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
+            
+            // 繰言かたるのごしゅ（水色・王冠付き）
+            customDotData.gengo_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f8b9d5","#f8b9d5","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#f8b9d5","#f8b9d5","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#ff8a8a","#66a8ff","#ff8a8a","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#ff8a8a","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
+
+            // 氷室うつろ
+            customDotData.utsuro = [["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]];
+
+            // 繰言かたる
+            customDotData.gengo = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]];
+
+            // トモコ
+            customDotData.tomoko = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#be185d","#be185d","#fde047","#fde047","#be185d","#be185d","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#ec4899","#ec4899","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"]];
+
+            // トモコのごしゅ
+            customDotData.tomoko_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#ffffff","#ffffff","#f472b6","#f472b6","#ffffff","#ffffff","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#831843","#f472b6","#f472b6","#f472b6","#831843","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
+            
             loadTargetDotGrid(selectedDotTarget);
         }
 
         function initDefaultMapGrid() {
-            customMapGrid = [["start","plus",null,"item","white","white","minus","plus",null,"plus","minus","goal"],[null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],[null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],[null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]];
+            customMapGrid = [
+                [null,"plus",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
+                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
+                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
+                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
+                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
+                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
+                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
+                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
+                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
+                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
+                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
+                ["start","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
+            ];
         }
 
         function convertCustomGridToTileCoords() {
@@ -550,7 +525,6 @@
             let nodes = {};
             let startR = -1, startC = -1;
 
-            // 1. 全配置マスをマップグリッド(12x12)から抽出
             for (let r = 0; r < 12; r++) {
                 for (let c = 0; c < 12; c++) {
                     let type = (gridMap[r] && gridMap[r][c]) ? gridMap[r][c] : null;
@@ -578,22 +552,15 @@
                 nodes[firstKey].type = 'start';
             }
 
-            // 2. スタート(🏁)から隣接マスを一筆書き順路として探索
             let path = [];
             let curr = nodes[`${startR}_${startC}`];
             curr.visited = true;
             path.push(curr);
 
-            let directions = [
-                { dr: 0, dc: 1 },  // 右
-                { dr: 1, dc: 0 },  // 下
-                { dr: 0, dc: -1 }, // 左
-                { dr: -1, dc: 0 }  // 上
-            ];
+            let directions = [{ dr: 0, dc: 1 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: -1, dc: 0 }];
 
             while (path.length < nodeKeys.length) {
                 let nextNode = null;
-
                 for (let d of directions) {
                     let nr = curr.r + d.dr;
                     let nc = curr.c + d.dc;
@@ -628,7 +595,6 @@
                 }
             }
 
-            // 3. 追跡順で tileCoords 生成
             tileCoords = path.map((node, index) => ({
                 id: index,
                 r: node.r,
@@ -638,10 +604,8 @@
                 type: node.type
             }));
 
-            // 4. 隣接する全てのマス同士の間に道路ラインを接続
             window.roadConnections = [];
             let addedKeys = new Set();
-
             for (let i = 0; i < tileCoords.length; i++) {
                 for (let j = i + 1; j < tileCoords.length; j++) {
                     let t1 = tileCoords[i];
@@ -660,10 +624,36 @@
             generateCityObjects();
         }
 
+        function saveDataToLocalStorage() {
+            try {
+                localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
+                localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
+                localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
+            } catch (e) { console.error(e); }
+        }
+
+        function loadDataFromLocalStorage() {
+            try {
+                const savedDots = localStorage.getItem('utsuro_custom_dots');
+                if (savedDots) Object.assign(customDotData, JSON.parse(savedDots));
+
+                const savedEvents = localStorage.getItem('utsuro_custom_events');
+                if (savedEvents) gameEvents = JSON.parse(savedEvents);
+                else gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+
+                const savedMap = localStorage.getItem('utsuro_custom_map');
+                if (savedMap) customMapGrid = JSON.parse(savedMap);
+
+                loadTargetDotGrid(selectedDotTarget);
+            } catch (e) {
+                gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            }
+        }
+
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
             convertCustomGridToTileCoords();
-            players.forEach(p => p.pos = 0);
+            players.forEach(p => { p.pos = 0; p.goshuPos = 0; });
             saveDataToLocalStorage();
             drawCharPreviews();
             closeDebugMenu();
@@ -678,7 +668,7 @@
             gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             initDefaultMapGrid();
             convertCustomGridToTileCoords();
-            players.forEach(p => p.pos = 0);
+            players.forEach(p => { p.pos = 0; p.goshuPos = 0; });
             initDefaultDotGrids();
             loadTargetDotGrid(selectedDotTarget);
             renderDebugEvents();
@@ -687,23 +677,8 @@
             drawCharPreviews();
         }
 
-        // --- ドット絵＆マップエディターの操作用関数群 ---
         function setupDotEditorEvents() {
             if (!dotCanvas) return;
-
-            // カラーピッカーの値変更を即時更新
-            let colorPicker = document.getElementById('dotColorPicker');
-            if (colorPicker) {
-                let updateColor = (e) => {
-                    currentColor = e.target.value;
-                    isDotEraser = false;
-                    let btnEraser = document.getElementById('btnDotEraser');
-                    if (btnEraser) btnEraser.classList.remove('bg-red-500');
-                };
-                colorPicker.addEventListener('input', updateColor);
-                colorPicker.addEventListener('change', updateColor);
-            }
-
             let draw = (e) => {
                 if (!isDrawingDot) return;
                 let rect = dotCanvas.getBoundingClientRect();
@@ -712,20 +687,26 @@
                 if (x >= 0 && x < 16 && y >= 0 && y < 16) {
                     if (isDotEyedropper) {
                         currentColor = dotGrid[y][x];
-                        let picker = document.getElementById('dotColorPicker');
-                        if (picker) picker.value = currentColor === '#00000000' ? '#000000' : currentColor;
+                        document.getElementById('dotColorPicker').value = currentColor === '#00000000' ? '#000000' : currentColor;
                         isDotEyedropper = false;
-                        let btnEyedropper = document.getElementById('btnDotEyedropper');
-                        if (btnEyedropper) btnEyedropper.classList.remove('bg-yellow-500');
+                        document.getElementById('btnDotEyedropper').classList.remove('bg-yellow-500');
                     } else {
                         pushDotHistory();
-                        // 選択中の色を確実に反映
-                        let activeColor = colorPicker ? colorPicker.value : currentColor;
-                        dotGrid[y][x] = isDotEraser ? '#00000000' : activeColor;
+                        dotGrid[y][x] = isDotEraser ? '#00000000' : currentColor;
                         renderDotCanvas();
                     }
                 }
             };
+
+            const colorPicker = document.getElementById('dotColorPicker');
+            if (colorPicker) {
+                colorPicker.addEventListener('input', (e) => {
+                    currentColor = e.target.value;
+                    isDotEraser = false;
+                    document.getElementById('btnDotEraser').classList.remove('bg-red-500');
+                });
+            }
+
             dotCanvas.addEventListener('mousedown', (e) => { isDrawingDot = true; draw(e); });
             dotCanvas.addEventListener('mousemove', draw);
             window.addEventListener('mouseup', () => { isDrawingDot = false; });
@@ -738,11 +719,7 @@
                 let c = Math.floor((e.clientX - rect.left) / (rect.width / 12));
                 let r = Math.floor((e.clientY - rect.top) / (rect.height / 12));
                 if (r >= 0 && r < 12 && c >= 0 && c < 12) {
-                    if (selectedMapTool === 'erase') {
-                        customMapGrid[r][c] = null;
-                    } else {
-                        customMapGrid[r][c] = selectedMapTool;
-                    }
+                    customMapGrid[r][c] = selectedMapTool === 'erase' ? null : selectedMapTool;
                     renderMapEditorCanvas();
                 }
             };
@@ -826,22 +803,19 @@
         function copyEventDataToClipboard() {
             let dataStr = JSON.stringify(gameEvents, null, 2);
             navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
-            alert('イベントデータをクリップボードにコピーしました！チャット欄に貼り付け可能です。');
-        }
-
-        function setMapTool(tool) {
-            selectedMapTool = tool;
-        }
-
-        function clearCustomMap() {
-            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
-            renderMapEditorCanvas();
+            alert('全イベントデータをクリップボードにコピーしました！');
         }
 
         function copyMapDataToClipboard() {
             let dataStr = JSON.stringify(customMapGrid);
             navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
             alert('マップデータをクリップボードにコピーしました！');
+        }
+
+        function setMapTool(tool) { selectedMapTool = tool; }
+        function clearCustomMap() {
+            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+            renderMapEditorCanvas();
         }
 
         function loadTargetDotGrid(target) {
@@ -865,9 +839,9 @@
 
         function resetCurrentDotToDefault() {
             initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
         }
 
-        // --- モーダル・タブ切替・カメラ制御 ---
         function openDebugMenu() {
             document.getElementById('debugModal').classList.remove('hidden');
             renderDebugEvents();
@@ -939,18 +913,13 @@
         function startCpuGame() {
             let modal = document.getElementById('startModal');
             if (modal) modal.classList.add('hidden');
-            
-            // 選択画面BGM停止 & ゲーム用BGM(game_bgm.mp3)を自動ループ再生
-            modalAudio.pause();
-            modalAudio.currentTime = 0;
-            gameAudio.play().catch(e => console.log('Game BGM auto-play blocked', e));
-
             document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
             
-            currentPlayerIndex = 0;
-            currentTurn = 1;
-            document.getElementById('turnCounter').innerText = `${currentTurn} / ${maxTurns}`;
+            playGameBgm();
 
+            currentPlayerIndex = 0;
+            currentTurnNumber = 1;
+            document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
@@ -961,59 +930,18 @@
         function startOnlineGame() {
             let modal = document.getElementById('startModal');
             if (modal) modal.classList.add('hidden');
-            
-            modalAudio.pause();
-            modalAudio.currentTime = 0;
-            gameAudio.play().catch(e => console.log('Game BGM auto-play blocked', e));
-
             document.getElementById('gameStatusText').innerText = 'オンライン対戦中';
 
-            currentPlayerIndex = 0;
-            currentTurn = 1;
-            document.getElementById('turnCounter').innerText = `${currentTurn} / ${maxTurns}`;
+            playGameBgm();
 
+            currentPlayerIndex = 0;
+            currentTurnNumber = 1;
+            document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
             document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
             document.getElementById('btnRoll').disabled = false;
-        }
-
-        // --- 描画・レンダリングルーチン ---
-        function generateRandomMap(seed) {
-            convertCustomGridToTileCoords();
-        }
-
-        function generateCityObjects() {
-            cityObjects = [];
-            if (tileCoords.length === 0) return;
-
-            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
-            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
-
-            tileCoords.forEach((t, i) => {
-                let offsets = [
-                    { dx: 38, dy: 38, type: 'house' },
-                    { dx: -38, dy: -38, type: 'tree' },
-                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' },
-                    { dx: -38, dy: 38, type: (i % 2 === 0) ? 'light' : 'house' }
-                ];
-
-                offsets.forEach(o => {
-                    let ox = t.x + o.dx;
-                    let oy = t.y + o.dy;
-                    let tooClose = tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24);
-                    if (!tooClose) {
-                        cityObjects.push({
-                            x: ox,
-                            y: oy,
-                            type: o.type,
-                            roofColor: roofs[i % roofs.length],
-                            wallColor: walls[i % walls.length]
-                        });
-                    }
-                });
-            });
         }
 
         function drawCityObject(context, obj) {
@@ -1069,6 +997,38 @@
             context.restore();
         }
 
+        function generateCityObjects() {
+            cityObjects = [];
+            if (tileCoords.length === 0) return;
+
+            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
+            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
+
+            tileCoords.forEach((t, i) => {
+                let offsets = [
+                    { dx: 38, dy: 38, type: 'house' },
+                    { dx: -38, dy: -38, type: 'tree' },
+                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' },
+                    { dx: -38, dy: 38, type: (i % 2 === 0) ? 'light' : 'house' }
+                ];
+
+                offsets.forEach(o => {
+                    let ox = t.x + o.dx;
+                    let oy = t.y + o.dy;
+                    let tooClose = tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24);
+                    if (!tooClose) {
+                        cityObjects.push({
+                            x: ox,
+                            y: oy,
+                            type: o.type,
+                            roofColor: roofs[i % roofs.length],
+                            wallColor: walls[i % walls.length]
+                        });
+                    }
+                });
+            });
+        }
+
         function renderCustomDotGrid(context, gridData, x, y, size = 32) {
             if (!gridData) return;
             let pSize = size / 16;
@@ -1086,19 +1046,13 @@
             context.restore();
         }
 
-        function drawPlayerDotModel(context, charType, x, y, size = 32, drawGoshu = true) {
+        function drawPlayerDotModel(context, charType, x, y, size = 32) {
             if (customDotData[charType]) {
                 renderCustomDotGrid(context, customDotData[charType], x, y, size);
             }
-            if (drawGoshu) {
-                let goshuKey = `${charType}_goshu`;
-                if (customDotData[goshuKey]) {
-                    renderCustomDotGrid(context, customDotData[goshuKey], x + size * 0.45, y + size * 0.2, size * 0.5);
-                }
-            }
         }
 
-        function drawGoshuOnly(context, charType, x, y, size = 16) {
+        function drawGoshuDotModel(context, charType, x, y, size = 20) {
             let goshuKey = `${charType}_goshu`;
             if (customDotData[goshuKey]) {
                 renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
@@ -1140,312 +1094,181 @@
 
         function filterDebugEvents(type) {
             currentEventFilter = type;
-            // フィルターボタンのハイライト更新
-            ['all', 'plus', 'minus', 'item', 'white'].forEach(t => {
-                let btn = document.getElementById(`filterBtn_${t}`);
-                if (btn) {
-                    if (t === type) {
-                        btn.className = "px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold";
-                    } else {
-                        btn.className = "px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600";
-                    }
-                }
-            });
             renderDebugEvents();
+        }
+
+        function updateDebugEventValue(idx, field, val) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            if (list[idx]) {
+                list[idx][field] = (field === 'val') ? parseInt(val) || 0 : val;
+            }
+        }
+
+        function deleteDebugEvent(idx) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let targetEv = list[idx];
+            if (targetEv) {
+                let realIdx = gameEvents.indexOf(targetEv);
+                if (realIdx !== -1) {
+                    gameEvents.splice(realIdx, 1);
+                    renderDebugEvents();
+                }
+            }
         }
 
         function addNewDebugEvent() {
-            let targetType = currentEventFilter === 'all' ? 'plus' : currentEventFilter;
+            let type = currentEventFilter === 'all' ? 'plus' : currentEventFilter;
             gameEvents.push({
-                type: targetType,
+                type: type,
                 title: '【新規イベント】',
-                desc: 'イベントの説明文を入力してください。',
-                val: targetType === 'plus' ? 200 : (targetType === 'minus' ? -200 : 0),
-                item: targetType === 'item' ? '⚡スパチャブースター' : ''
+                desc: '新しいイベント効果をここに入力してください。',
+                val: type === 'plus' ? 200 : (type === 'minus' ? -200 : 0),
+                itemName: type === 'item' ? '🎁 特製アイテム' : ''
             });
             renderDebugEvents();
-        }
-
-        function updateEventField(index, field, value) {
-            if (gameEvents[index]) {
-                if (field === 'val') {
-                    gameEvents[index][field] = parseInt(value, 10) || 0;
-                } else {
-                    gameEvents[index][field] = value;
-                }
-            }
-        }
-
-        function deleteDebugEvent(index) {
-            if (confirm('このイベントを削除しますか？')) {
-                gameEvents.splice(index, 1);
-                renderDebugEvents();
-            }
         }
 
         function renderDebugEvents() {
             let container = document.getElementById('debugEventsList');
             if (!container) return;
             container.innerHTML = '';
-
-            gameEvents.forEach((ev, realIdx) => {
-                if (currentEventFilter !== 'all' && ev.type !== currentEventFilter) return;
-
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            
+            list.forEach((ev, idx) => {
                 let div = document.createElement('div');
-                div.className = 'p-2.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-2 shadow';
+                div.className = 'p-2.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-2';
                 
-                let isItem = ev.type === 'item';
+                let typeBadges = { plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色' };
 
                 div.innerHTML = `
-                    <div class="flex items-center justify-between gap-2 border-b border-purple-900/60 pb-1.5">
-                        <div class="flex items-center gap-2">
-                            <select onchange="updateEventField(${realIdx}, 'type', this.value); renderDebugEvents();" class="bg-slate-900 border border-purple-600 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
-                                <option value="plus" ${ev.type === 'plus' ? 'selected' : ''}>🔵 プラス</option>
-                                <option value="minus" ${ev.type === 'minus' ? 'selected' : ''}>🔴 マイナス</option>
-                                <option value="item" ${ev.type === 'item' ? 'selected' : ''}>🎁 アイテム</option>
-                                <option value="white" ${ev.type === 'white' ? 'selected' : ''}>⚪ 白色</option>
-                            </select>
-                            <span class="text-xs text-purple-400 font-bold">#${realIdx + 1}</span>
-                        </div>
-                        <button onclick="deleteDebugEvent(${realIdx})" class="px-2 py-0.5 text-xs bg-red-900/80 hover:bg-red-800 text-red-200 rounded border border-red-600 font-bold">
-                            🗑️ 削除
-                        </button>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
+                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-1 text-xs text-yellow-300 font-bold focus:outline-none">
+                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-1 rounded border border-red-500">🗑️</button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="${isItem ? 'sm:col-span-3' : 'sm:col-span-2'} flex flex-col gap-1">
-                            <label class="text-[10px] text-purple-300 font-bold">タイトル</label>
-                            <input type="text" value="${(ev.title || '').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'title', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400">
-                        </div>
-                        ${!isItem ? `
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] text-purple-300 font-bold">増減数 (リスナー数)</label>
-                            <input type="number" value="${ev.val || 0}" onchange="updateEventField(${realIdx}, 'val', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-cyan-300 font-bold focus:outline-none focus:border-yellow-400">
-                        </div>` : ''}
-                    </div>
-                    ${isItem ? `
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-yellow-300 font-bold">🎁 手に入るアイテム名</label>
-                        <input type="text" value="${(ev.item || '⚡スパチャブースター').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'item', this.value)" class="bg-slate-900 border border-yellow-600 rounded px-2 py-1 text-xs text-yellow-200 focus:outline-none focus:border-yellow-400">
-                    </div>` : ''}
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] text-purple-300 font-bold">説明テキスト</label>
-                        <input type="text" value="${(ev.desc || '').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'desc', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-yellow-400">
+                    <div class="flex items-center gap-2">
+                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none">
+                        ${ev.type === 'item' ? `
+                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-32 bg-slate-900 border border-yellow-500/80 rounded px-2 py-1 text-xs text-yellow-300 font-bold focus:outline-none">
+                        ` : `
+                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-20 bg-slate-900 border border-cyan-500/80 rounded px-2 py-1 text-xs text-cyan-300 font-bold focus:outline-none text-right">
+                        `}
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        // --- 跳躍（ぴょんぴょん）移動制御 ---
+        // --- コマ移動＆順番進行 ---
         function movePlayer(pIndex, steps) {
             if (isMoving) return;
             isMoving = true;
             let p = players[pIndex];
-            let targetPos = Math.min(tileCoords.length - 1, p.pos + steps);
+            let startPos = p.pos;
+            let targetPos = Math.min(tileCoords.length - 1, startPos + steps);
+            let movedSteps = 0;
 
-            function stepJump() {
-                if (p.pos < targetPos) {
-                    let from = p.pos;
-                    let to = p.pos + 1;
-                    jumpAnimation = {
-                        pIndex: pIndex,
-                        fromPos: from,
-                        toPos: to,
-                        progress: 0,
-                        startTime: performance.now(),
-                        duration: 380
-                    };
-
-                    let animate = (now) => {
-                        let elapsed = now - jumpAnimation.startTime;
-                        let progress = Math.min(1, elapsed / jumpAnimation.duration);
-                        jumpAnimation.progress = progress;
-
-                        if (progress < 1) {
-                            requestAnimationFrame(animate);
-                        } else {
-                            p.pos = to;
-                            jumpAnimation.pIndex = -1;
-
-                            // 各プレイヤーが1マス移動完了した180ms後に、ごしゅが遅れて同じマスへぴょんぴょん追従
-                            setTimeout(() => {
-                                startGoshuJump(pIndex, from, to);
-                            }, 180);
-
-                            setTimeout(stepJump, 80);
-                        }
-                    };
-                    requestAnimationFrame(animate);
+            let interval = setInterval(() => {
+                if (p.pos < targetPos && movedSteps < steps) {
+                    p.pos++;
+                    movedSteps++;
+                    setTimeout(() => { p.goshuPos = p.pos; }, 180);
                 } else {
+                    clearInterval(interval);
                     isMoving = false;
                     setTimeout(() => {
                         triggerTileEvent(pIndex);
-                    }, 450);
+                    }, 400);
                 }
-            }
-            stepJump();
-        }
-
-        function startGoshuJump(pIndex, from, to) {
-            let g = goshuPositions[pIndex];
-            g.fromPos = from;
-            g.toPos = to;
-            g.progress = 0;
-            g.startTime = performance.now();
-            g.isJumping = true;
-
-            let animateGoshu = (now) => {
-                let elapsed = now - g.startTime;
-                let progress = Math.min(1, elapsed / g.duration);
-                g.progress = progress;
-
-                if (progress < 1) {
-                    requestAnimationFrame(animateGoshu);
-                } else {
-                    g.pos = to;
-                    g.isJumping = false;
-                }
-            };
-            requestAnimationFrame(animateGoshu);
+            }, 450);
         }
 
         function triggerTileEvent(pIndex) {
             let p = players[pIndex];
             let tile = tileCoords[p.pos];
-            let tileType = tile.type || 'white';
 
-            let matchingEvents = gameEvents.filter(e => e.type === tileType);
-            if (matchingEvents.length === 0) {
-                matchingEvents = gameEvents.filter(e => e.type === 'white');
-            }
-            let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)] || defaultEvents[0];
-
-            let titleStr = event.title;
-            let descStr = event.desc;
-            let effectStr = '-';
-
-            // 青マス・赤マスの場合、自動で振らず手動サイコロ振りの入力待ち状態にする
-            if (tileType === 'plus' || tileType === 'minus') {
+            if (tile.type === 'plus' || tile.type === 'minus') {
                 isSubRollPending = true;
-                pendingTileType = tileType;
+                pendingTileType = tile.type;
 
-                let modeName = tileType === 'plus' ? '🔵 プラスマス' : '🔴 マイナスマス';
-                titleStr = `【${modeName}】`;
-                descStr = `${event.desc} ${p.name}さんの番です。もう一度サイコロを振ってください！`;
-                effectStr = '🎲 サイコロ振り待ち中...';
+                let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
+                let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
 
-                document.getElementById('currentEventTitle').innerText = titleStr;
-                document.getElementById('currentEventDesc').innerText = descStr;
-                document.getElementById('currentEventEffect').innerText = effectStr;
+                document.getElementById('currentEventTitle').innerText = titleText;
+                document.getElementById('currentEventDesc').innerText = descText;
+                document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
+                document.getElementById('btnRoll').innerText = '🎲 サイコロを振る！';
+                document.getElementById('btnRoll').disabled = false;
 
-                let btnRoll = document.getElementById('btnRoll');
-                btnRoll.innerText = '🎲 サイコロを振る！';
-
-                if (currentPlayerIndex === 0) {
-                    btnRoll.disabled = false;
-                } else {
-                    btnRoll.disabled = true;
-                    setTimeout(() => {
-                        executeSubDiceRoll();
-                    }, 1500);
+                if (pIndex !== 0) {
+                    setTimeout(() => { handleRollButtonClick(); }, 1500);
                 }
-                return;
-            }
-
-            if (tileType === 'item') {
-                let gotItem = event.item || '⚡スパチャブースター';
-                effectStr = `アイテム獲得: ${gotItem}`;
-                descStr = `${event.desc} 【${gotItem}】を手に入れました！`;
-
-                if (pIndex === 0) {
-                    let container = document.getElementById('itemListContainer');
-                    if (container) {
-                        let span = document.createElement('span');
-                        span.className = 'text-xs bg-yellow-900/80 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/60 flex-none';
-                        span.innerText = gotItem;
-                        if (container.children[0] && container.children[0].innerText.includes('なし')) {
-                            container.innerHTML = '';
-                        }
-                        container.appendChild(span);
-                    }
-                }
-            } else if (tileType === 'goal') {
-                titleStr = '👑 ゴール到達！';
-                descStr = `おめでとうございます！${p.name}がゴールに一番乗りしました！`;
-                let goalBonus = 1000;
-                p.listeners += goalBonus;
-                effectStr = `🎉 ゴールボーナス: +${goalBonus}人！`;
-                document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
             } else {
-                effectStr = '効果なし（平穏なターン）';
+                let matchingEvents = gameEvents.filter(e => e.type === tile.type);
+                if (matchingEvents.length === 0) matchingEvents = gameEvents;
+                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+
+                document.getElementById('currentEventTitle').innerText = event.title;
+                document.getElementById('currentEventDesc').innerText = event.desc;
+
+                if (tile.type === 'item') {
+                    let itemGot = event.itemName || '⚡ スパチャブースター';
+                    document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
+                    addPlayerItem(itemGot);
+                } else {
+                    document.getElementById('currentEventEffect').innerText = '変化なし';
+                }
+
+                setTimeout(() => { nextTurn(); }, 3000);
             }
-
-            document.getElementById('currentEventTitle').innerText = titleStr;
-            document.getElementById('currentEventDesc').innerText = descStr;
-            document.getElementById('currentEventEffect').innerText = effectStr;
-
-            setTimeout(() => {
-                nextTurn();
-            }, 3500);
         }
 
-        // 青・赤マス用：ボタンを押してサイコロを振る処理
-        function executeSubDiceRoll() {
-            if (!isSubRollPending || isRolling) return;
-            isRolling = true;
-            let p = players[currentPlayerIndex];
-            let count = 0;
-            let rollValue = 1;
+        function resolveSubRollEvent(pIndex, type, diceRoll) {
+            let p = players[pIndex];
+            let matchingEvents = gameEvents.filter(e => e.type === type);
+            if (matchingEvents.length === 0) matchingEvents = gameEvents;
+            let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
 
-            let interval = setInterval(() => {
-                rollValue = Math.floor(Math.random() * 6) + 1;
-                drawDice(rollValue);
-                count++;
-                if (count > 12) {
-                    clearInterval(interval);
-                    isRolling = false;
-                    isSubRollPending = false;
+            let val = 0;
+            if (type === 'plus') {
+                val = diceRoll * 100; // 出目が小さいほど増加が少ない (1→+100, 6→+600)
+            } else {
+                val = -( (7 - diceRoll) * 100 ); // 出目が小さいほど減少が大きい (1→-600, 6→-100)
+            }
 
-                    let changeVal = 0;
-                    let effectStr = '';
-                    if (pendingTileType === 'plus') {
-                        // 青マス: 出目が大きいほど増加が大きい (1->100, 2->200, ..., 6->600)
-                        changeVal = rollValue * 100;
-                        effectStr = `サイコロ【${rollValue}】: リスナー +${changeVal}人 UP!`;
-                    } else {
-                        // 赤マス: 出目が小さいほど減少が大きい (1->-600, 2->-500, ..., 6->-100)
-                        changeVal = -(7 - rollValue) * 100;
-                        effectStr = `サイコロ【${rollValue}】: リスナー ${changeVal}人 DOWN!`;
-                    }
+            p.listeners = Math.max(0, p.listeners + val);
+            document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
 
-                    p.listeners = Math.max(0, p.listeners + changeVal);
-                    document.getElementById(`p${currentPlayerIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
-                    document.getElementById('currentEventEffect').innerText = effectStr;
+            document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
+            document.getElementById('currentEventDesc').innerText = event.desc;
+            document.getElementById('currentEventEffect').innerText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
+            document.getElementById('btnRoll').innerText = '🎲 移動！';
 
-                    document.getElementById('btnRoll').innerText = '🎲 移動！';
+            setTimeout(() => { nextTurn(); }, 3000);
+        }
 
-                    setTimeout(() => {
-                        nextTurn();
-                    }, 3000);
-                }
-            }, 100);
+        function addPlayerItem(itemName) {
+            let container = document.getElementById('itemListContainer');
+            if (!container) return;
+            if (container.innerText.includes('なし')) container.innerHTML = '';
+
+            let badge = document.createElement('span');
+            badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
+            badge.innerText = itemName;
+            container.appendChild(badge);
         }
 
         function nextTurn() {
-            isSubRollPending = false;
-            document.getElementById('btnRoll').innerText = '🎲 移動！';
-
-            let prevPlayerIdx = currentPlayerIndex;
             currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-
-            // 全プレイヤーの手番が1周したらターン数を進める
+            
             if (currentPlayerIndex === 0) {
-                currentTurn = Math.min(maxTurns, currentTurn + 1);
-                document.getElementById('turnCounter').innerText = `${currentTurn} / ${maxTurns}`;
+                currentTurnNumber++;
+                document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
             }
 
             let activePlayer = players[currentPlayerIndex];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('btnRoll').innerText = '🎲 移動！';
 
             if (currentPlayerIndex === 0) {
                 document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
@@ -1453,31 +1276,31 @@
                 document.getElementById('btnRoll').disabled = false;
             } else {
                 document.getElementById('btnRoll').disabled = true;
-                document.getElementById('currentEventTitle').innerText = '【CPUのターン】';
-                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中... サイコロを振ります。`;
-                
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
+
                 setTimeout(() => {
+                    isRolling = true;
                     let count = 0;
-                    let roll = 1;
                     let interval = setInterval(() => {
-                        roll = Math.floor(Math.random() * 6) + 1;
+                        let roll = Math.floor(Math.random() * 6) + 1;
                         drawDice(roll);
                         count++;
-                        if (count > 14) {
+                        if (count > 12) {
                             clearInterval(interval);
+                            isRolling = false;
                             movePlayer(currentPlayerIndex, roll);
                         }
                     }, 100);
-                }, 1000);
+                }, 1500);
             }
         }
 
-        // --- メインゲーム描画ループ ---
+        // --- メイン描画ループ ---
         function gameLoop() {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // 明るい芝生（グリーン）背景を全面描画
                 ctx.fillStyle = '#22c55e';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1504,7 +1327,7 @@
                     ctx.translate(-currTile.x, -currTile.y);
                 }
 
-                // 1. コースライン（道路）描画
+                // 1. 道路ライン描画
                 if (window.roadConnections && window.roadConnections.length > 0) {
                     ctx.beginPath();
                     ctx.strokeStyle = '#1e293b';
@@ -1552,62 +1375,17 @@
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y);
                 });
 
-                // 4. プレイヤーコマ＆お供（ごしゅ）ジャンプ移動描画
+                // 4. プレイヤー＆ごしゅの描画
                 players.forEach((p, idx) => {
-                    let offset = (idx - 1) * 12;
+                    let tile = tileCoords[p.pos];
+                    let goshuTile = tileCoords[p.goshuPos] || tile;
+                    if (tile) {
+                        let offset = (idx - 1) * 12;
+                        drawPlayerDotModel(ctx, p.char, tile.x + offset, tile.y - 6, 30);
 
-                    // VTuber本体の描画位置・高度（跳躍アニメーション）
-                    let currentX, currentY, shadowAlpha = 0.3;
-                    if (jumpAnimation.pIndex === idx) {
-                        let fromTile = tileCoords[jumpAnimation.fromPos];
-                        let toTile = tileCoords[jumpAnimation.toPos];
-                        if (fromTile && toTile) {
-                            let prog = jumpAnimation.progress;
-                            currentX = fromTile.x + (toTile.x - fromTile.x) * prog + offset;
-                            let jumpHeight = Math.sin(prog * Math.PI) * 26;
-                            currentY = fromTile.y + (toTile.y - fromTile.y) * prog - 6 - jumpHeight;
-
-                            // 跳躍中の足元の影描画
-                            ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha * (1 - prog * 0.4)})`;
-                            ctx.beginPath();
-                            ctx.ellipse(fromTile.x + (toTile.x - fromTile.x) * prog + offset, fromTile.y + (toTile.y - fromTile.y) * prog + 10, 10, 4, 0, 0, Math.PI * 2);
-                            ctx.fill();
+                        if (goshuTile) {
+                            drawGoshuDotModel(ctx, p.char, goshuTile.x + offset + 12, goshuTile.y + 4, 18);
                         }
-                    } else {
-                        let tile = tileCoords[p.pos];
-                        if (tile) {
-                            currentX = tile.x + offset;
-                            currentY = tile.y - 6;
-                        }
-                    }
-
-                    if (currentX !== undefined && currentY !== undefined) {
-                        // 本体を描画 (ごしゅは別途遅れて描画するため false)
-                        drawPlayerDotModel(ctx, p.char, currentX, currentY, 32, false);
-                    }
-
-                    // ごしゅ（お供）の遅れてついていく描画
-                    let g = goshuPositions[idx];
-                    let goshuX, goshuY;
-                    if (g.isJumping) {
-                        let gFrom = tileCoords[g.fromPos];
-                        let gTo = tileCoords[g.toPos];
-                        if (gFrom && gTo) {
-                            let gProg = g.progress;
-                            goshuX = gFrom.x + (gTo.x - gFrom.x) * gProg + offset + 14;
-                            let gJumpHeight = Math.sin(gProg * Math.PI) * 18;
-                            goshuY = gFrom.y + (gTo.y - gFrom.y) * gProg + 2 - gJumpHeight;
-                        }
-                    } else {
-                        let gTile = tileCoords[g.pos];
-                        if (gTile) {
-                            goshuX = gTile.x + offset + 14;
-                            goshuY = gTile.y + 2;
-                        }
-                    }
-
-                    if (goshuX !== undefined && goshuY !== undefined) {
-                        drawGoshuOnly(ctx, p.char, goshuX, goshuY, 18);
                     }
                 });
 
