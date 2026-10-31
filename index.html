@@ -383,6 +383,11 @@
         let isSubRollPending = false;
         let pendingTileType = null;
 
+        // キャラクター移動アニメーション用変数
+        let moveAnimProgress = 0;
+        let animStartTile = null;
+        let animEndTile = null;
+
         let tileCoords = [];
         let cityObjects = [];
         let gameEvents = [];
@@ -1180,23 +1185,52 @@
             if (isMoving) return;
             isMoving = true;
             let p = players[pIndex];
-            let startPos = p.pos;
-            let targetPos = Math.min(tileCoords.length - 1, startPos + steps);
-            let movedSteps = 0;
+            let remainingSteps = steps;
 
-            let interval = setInterval(() => {
-                if (p.pos < targetPos && movedSteps < steps) {
+            // 位置座標の初期化（未設定の場合）
+            let currentTile = tileCoords[p.pos];
+            if (p.renderX === undefined) { p.renderX = currentTile.x; p.renderY = currentTile.y; }
+            if (p.goshuX === undefined) { p.goshuX = currentTile.x; p.goshuY = currentTile.y; }
+
+            function stepNext() {
+                if (remainingSteps > 0 && p.pos < tileCoords.length - 1) {
+                    let fromTile = tileCoords[p.pos];
                     p.pos++;
-                    movedSteps++;
-                    setTimeout(() => { p.goshuPos = p.pos; }, 180);
+                    let toTile = tileCoords[p.pos];
+                    remainingSteps--;
+
+                    let duration = 300; // 1マスの移動時間 (ms)
+                    let startTime = performance.now();
+
+                    function animateStep(now) {
+                        let elapsed = now - startTime;
+                        let progress = Math.min(1, elapsed / duration);
+
+                        // マス間の線形補間
+                        p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
+                        p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
+
+                        // 跳躍アニメーション (sin波でぴょんぴょん跳ねる)
+                        p.jumpY = -Math.sin(progress * Math.PI) * 18;
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animateStep);
+                        } else {
+                            p.jumpY = 0;
+                            stepNext();
+                        }
+                    }
+                    requestAnimationFrame(animateStep);
                 } else {
-                    clearInterval(interval);
+                    p.jumpY = 0;
                     isMoving = false;
                     setTimeout(() => {
                         triggerTileEvent(pIndex);
-                    }, 400);
+                    }, 300);
                 }
-            }, 450);
+            }
+
+            stepNext();
         }
 
         function triggerTileEvent(pIndex) {
@@ -1394,14 +1428,28 @@
                 // 4. プレイヤー＆ごしゅの描画
                 players.forEach((p, idx) => {
                     let tile = tileCoords[p.pos];
-                    let goshuTile = tileCoords[p.goshuPos] || tile;
                     if (tile) {
                         let offset = (idx - 1) * 12;
-                        drawPlayerDotModel(ctx, p.char, tile.x + offset, tile.y - 6, 30);
 
-                        if (goshuTile) {
-                            drawGoshuDotModel(ctx, p.char, goshuTile.x + offset + 12, goshuTile.y + 4, 18);
-                        }
+                        // キャラ描画位置（跳躍オフセット適用）
+                        let drawX = (p.renderX !== undefined ? p.renderX : tile.x) + offset;
+                        let drawY = (p.renderY !== undefined ? p.renderY : tile.y) - 6 + (p.jumpY || 0);
+
+                        // ごしゅの位置更新（スムーズに操作キャラの後を追走）
+                        if (p.goshuX === undefined) p.goshuX = tile.x;
+                        if (p.goshuY === undefined) p.goshuY = tile.y;
+
+                        let targetGoshuX = (p.renderX !== undefined ? p.renderX : tile.x) + offset + 12;
+                        let targetGoshuY = (p.renderY !== undefined ? p.renderY : tile.y) + 4;
+
+                        p.goshuX += (targetGoshuX - p.goshuX) * 0.12;
+                        p.goshuY += (targetGoshuY - p.goshuY) * 0.12;
+
+                        // ごしゅも歩調に合わせて少し跳ねる
+                        let goshuJump = Math.sin(Date.now() * 0.01 + idx) * (isMoving ? 3 : 0.8);
+
+                        drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
+                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJump, 18);
                     }
                 });
 
