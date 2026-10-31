@@ -80,6 +80,12 @@
 
             <!-- リスナー数比較 -->
             <div class="flex items-center gap-1.5 sm:gap-4 text-xs sm:text-sm font-bold">
+                <!-- 🎵 音量調整スライダー -->
+                <div class="flex items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
+                    <span class="text-xs text-yellow-300">🎵</span>
+                    <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-14 sm:w-20 accent-purple-400 cursor-pointer">
+                </div>
+
                 <div class="flex items-center gap-1 bg-purple-900/60 px-1.5 py-1 rounded border border-purple-500/50">
                     <span id="p1Badge" class="text-purple-300">1P</span>
                     <span id="p1Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">氷室うつろ</span>
@@ -208,6 +214,13 @@
             </div>
 
             <div class="flex flex-col gap-2 mt-3">
+                <!-- モーダル用音量スライダー -->
+                <div class="flex items-center justify-center gap-2 bg-slate-950/80 p-1.5 rounded border border-purple-800/80">
+                    <span class="text-xs text-purple-300 font-bold">🎵 BGM音量:</span>
+                    <input type="range" id="modalBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-28 accent-purple-400 cursor-pointer">
+                    <span id="bgmVolPercent" class="text-xs font-mono text-yellow-300 w-8 text-right font-bold">30%</span>
+                </div>
+
                 <button onclick="startCpuGame()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
                     <span>🤖 VS CPU対戦 (3人対戦)</span>
                 </button>
@@ -393,6 +406,9 @@
         let gameEvents = [];
         let currentEventFilter = 'all';
 
+        // BGM音量設定値 (デフォルト30%)
+        let currentBgmVolume = 0.3;
+
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
             { type: 'plus', title: '【12時間耐久配信】', desc: '限界突破の12時間耐久！同調リスナーの結束が高まる！', val: 400 },
@@ -416,6 +432,13 @@
             mapEditorCanvas = document.getElementById('mapEditorCanvas');
             if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
 
+            // 保存されている音量設定の読み込み
+            let savedVol = localStorage.getItem('utsuro_bgm_volume');
+            if (savedVol !== null) {
+                currentBgmVolume = parseFloat(savedVol);
+            }
+            updateVolumeControlsUI(currentBgmVolume);
+
             setupDotEditorEvents();
             setupMapEditorEvents();
             setupCanvasDrag();
@@ -437,13 +460,41 @@
             requestAnimationFrame(gameLoop);
         };
 
+        function changeBgmVolume(val) {
+            currentBgmVolume = parseFloat(val);
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+            
+            if (selectAudio) selectAudio.volume = currentBgmVolume;
+            if (gameAudio) gameAudio.volume = currentBgmVolume;
+
+            updateVolumeControlsUI(currentBgmVolume);
+            try {
+                localStorage.setItem('utsuro_bgm_volume', currentBgmVolume);
+            } catch (e) {}
+        }
+
+        function updateVolumeControlsUI(vol) {
+            let headerSlider = document.getElementById('headerBgmVolume');
+            let modalSlider = document.getElementById('modalBgmVolume');
+            let percentText = document.getElementById('bgmVolPercent');
+
+            if (headerSlider) headerSlider.value = vol;
+            if (modalSlider) modalSlider.value = vol;
+            if (percentText) percentText.innerText = `${Math.round(vol * 100)}%`;
+        }
+
         function playSelectBgm() {
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
             if (gameAudio) gameAudio.pause();
             if (selectAudio) {
+                selectAudio.volume = currentBgmVolume;
                 selectAudio.play().catch(() => {
-                    window.addEventListener('click', () => { selectAudio.play(); }, { once: true });
+                    window.addEventListener('click', () => { 
+                        selectAudio.volume = currentBgmVolume;
+                        selectAudio.play(); 
+                    }, { once: true });
                 });
             }
         }
@@ -453,8 +504,12 @@
             const gameAudio = document.getElementById('gameBgmAudio');
             if (selectAudio) selectAudio.pause();
             if (gameAudio) {
+                gameAudio.volume = currentBgmVolume;
                 gameAudio.play().catch(() => {
-                    window.addEventListener('click', () => { gameAudio.play(); }, { once: true });
+                    window.addEventListener('click', () => { 
+                        gameAudio.volume = currentBgmVolume;
+                        gameAudio.play(); 
+                    }, { once: true });
                 });
             }
         }
@@ -1325,6 +1380,7 @@
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
                 document.getElementById('btnRoll').disabled = false;
             } else {
+                // CPU手番時はボタンを完全に無効化状態に保持
                 document.getElementById('btnRoll').disabled = true;
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
@@ -1442,13 +1498,22 @@
                         let targetGoshuX = (p.renderX !== undefined ? p.renderX : tile.x) + offset + 12;
                         let targetGoshuY = (p.renderY !== undefined ? p.renderY : tile.y) + 4;
 
-                        // 補完率を下げて、操作キャラからもっと遅れてゆっくり追従するように調整
-                        p.goshuX += (targetGoshuX - p.goshuX) * 0.04;
-                        p.goshuY += (targetGoshuY - p.goshuY) * 0.04;
+                        let dx = targetGoshuX - p.goshuX;
+                        let dy = targetGoshuY - p.goshuY;
+                        let dist = Math.hypot(dx, dy);
+
+                        // 追従移動ロジック
+                        p.goshuX += dx * 0.04;
+                        p.goshuY += dy * 0.04;
+
+                        // ごしゅが移動中の時だけぴょんぴょん跳ねる（距離がある時にY軸オフセットを加算）
+                        let goshuJumpY = 0;
+                        if (dist > 1.0) {
+                            goshuJumpY = -Math.abs(Math.sin(Date.now() / 100)) * 8;
+                        }
 
                         drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
-                        // 常にゆらゆら揺れるモーションを削除し、完全に静止
-                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY, 18);
+                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJumpY, 18);
                     }
                 });
 
