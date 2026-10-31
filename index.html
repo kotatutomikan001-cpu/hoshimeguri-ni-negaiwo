@@ -6,9 +6,6 @@
     <title>氷室うつろ Vstreamerすごろく</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PeerJS for Easy Online Multiplayer (No Firebase Config Needed) -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
         
@@ -17,6 +14,7 @@
             user-select: none;
             background-color: #090d16;
             color: #ffffff;
+            overflow-x: hidden;
         }
 
         /* レトロRPG風枠線 */
@@ -50,7 +48,7 @@
             opacity: 0.6;
         }
 
-        /* ドット絵 Canvas アンテイエリアス無効 */
+        /* ドット絵 Canvas アンチエイリアス無効 */
         canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
@@ -77,7 +75,7 @@
                     <div class="flex items-center gap-1.5">
                         <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
                     </div>
-                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">準備中... モードを選択してください</p>
+                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">VS CPU (3人対戦中)</p>
                 </div>
             </div>
 
@@ -85,24 +83,24 @@
             <div class="flex items-center gap-1.5 sm:gap-4 text-xs sm:text-sm font-bold">
                 <div class="flex items-center gap-1 bg-purple-900/60 px-1.5 py-1 rounded border border-purple-500/50">
                     <span id="p1Badge" class="text-purple-300">1P</span>
-                    <span id="p1Name" class="text-white max-w-[45px] sm:max-w-[90px] truncate">1P</span>
+                    <span id="p1Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">氷室うつろ</span>
                     <span id="p1Listeners" class="text-yellow-400 font-mono font-black">1,000人</span>
                 </div>
                 <div class="flex items-center gap-1 bg-indigo-900/60 px-1.5 py-1 rounded border border-indigo-500/50">
                     <span id="p2Badge" class="text-indigo-300">2P</span>
-                    <span id="p2Name" class="text-white max-w-[45px] sm:max-w-[90px] truncate">2P</span>
+                    <span id="p2Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">繰言かたる</span>
                     <span id="p2Listeners" class="text-cyan-400 font-mono font-black">1,000人</span>
                 </div>
                 <div id="p3Box" class="flex items-center gap-1 bg-pink-900/60 px-1.5 py-1 rounded border border-pink-500/50">
                     <span id="p3Badge" class="text-pink-300">3P</span>
-                    <span id="p3Name" class="text-white max-w-[45px] sm:max-w-[90px] truncate">3P</span>
+                    <span id="p3Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">トモコ</span>
                     <span id="p3Listeners" class="text-pink-400 font-mono font-black">1,000人</span>
                 </div>
             </div>
         </header>
 
         <!-- 中央エリア：すごろくマップ (Canvas) -->
-        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-0 bg-slate-900 flex items-center justify-center">
+        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[180px] bg-slate-900 flex items-center justify-center">
             <canvas id="boardCanvas" class="w-full h-full object-contain"></canvas>
             
             <!-- ターン表示＆カメラ切替オーバーレイ -->
@@ -117,14 +115,14 @@
             </div>
         </section>
 
-        <!-- 下部コントローラー＆イベント情報エリア -->
+        <!-- 下部コントローラー＆イベント情報エリア (メッセージ欄を大きく・見やすく改修) -->
         <section class="flex-none grid grid-cols-1 md:grid-cols-3 gap-2">
             <!-- サイコロ＆操作パネル -->
             <div class="pixel-box p-2 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-2 border-purple-500">
                 <div class="flex items-center gap-3">
                     <canvas id="diceCanvas" width="48" height="48" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner"></canvas>
                     <div class="flex flex-col">
-                        <span id="activePlayerTag" class="text-xs font-bold text-purple-300">手番: 1P</span>
+                        <span id="activePlayerTag" class="text-xs font-bold text-purple-300">手番: 氷室うつろ</span>
                         <span id="diceResultText" class="text-xs font-bold text-yellow-300">準備完了</span>
                     </div>
                 </div>
@@ -133,18 +131,18 @@
                 </button>
             </div>
 
-            <!-- イベントログ・解説表示 -->
-            <div class="pixel-box p-2.5 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900 border-2 border-purple-500 min-h-[85px]">
+            <!-- イベントログ・解説表示 (高さを拡張＆文字サイズ大) -->
+            <div class="pixel-box p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[120px] sm:min-h-[135px]">
                 <div>
-                    <div class="flex items-center justify-between border-b border-purple-800/60 pb-1 mb-1">
-                        <span id="currentEventTitle" class="text-xs sm:text-sm font-black text-yellow-300 tracking-wide">【スタート！】</span>
-                        <span class="text-[10px] text-purple-400 font-bold">✨ 現在発生中のイベント ✨</span>
+                    <div class="flex items-center justify-between border-b border-purple-700/80 pb-1.5 mb-1.5">
+                        <span id="currentEventTitle" class="text-sm sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1">【スタート！】</span>
+                        <span class="text-xs text-purple-300 font-bold bg-purple-950/80 px-2 py-0.5 rounded border border-purple-600/60">✨ 発生イベント ✨</span>
                     </div>
-                    <p id="currentEventDesc" class="text-xs text-purple-100 font-medium leading-relaxed min-h-[2.5em]">
-                        好きなキャラクターを選んでゲームスタート！100マス先のゴールを目指そう！
+                    <p id="currentEventDesc" class="text-sm sm:text-base text-purple-100 font-bold leading-relaxed min-h-[2.8em] tracking-wide">
+                        好きなキャラクターを選んでゲームスタート！ゴールを目指そう！
                     </p>
                 </div>
-                <div id="currentEventEffect" class="text-xs font-bold text-cyan-300 mt-1 truncate">
+                <div id="currentEventEffect" class="text-xs sm:text-sm font-black text-cyan-300 mt-1 truncate bg-indigo-950/80 px-2 py-1 rounded border border-indigo-500/50">
                     -
                 </div>
             </div>
@@ -160,58 +158,38 @@
 
     </main>
 
-    <!-- 🌟 最優先独立レイヤー：画面左上隅のデバッグモード起動ボタン（z-[999999]） -->
+    <!-- 🌟 最優先独立レイヤー：画面左上隅のデバッグモード起動ボタン -->
     <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-16 h-16 z-[999999] cursor-pointer flex items-start justify-start p-2.5 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
         <span class="text-purple-300 text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
     </button>
 
     <!-- キャラクター＆対戦モード選択モーダル -->
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
-        
-        <!-- 背景に大量に散りばめられたダミーの❄️マーク（pointer-events-noneで一切クリックを阻害しない） -->
-        <div class="absolute inset-0 pointer-events-none overflow-hidden select-none text-purple-300 z-10">
-            <span class="absolute top-[5%] left-[12%] text-xs opacity-30">❄️</span>
-            <span class="absolute top-[8%] left-[45%] text-lg opacity-40">❄️</span>
-            <span class="absolute top-[15%] left-[82%] text-sm opacity-25">❄️</span>
-            <span class="absolute top-[22%] left-[25%] text-2xl opacity-35">❄️</span>
-            <span class="absolute top-[30%] left-[68%] text-xs opacity-50">❄️</span>
-            <span class="absolute top-[42%] left-[8%] text-lg opacity-30">❄️</span>
-            <span class="absolute top-[55%] left-[88%] text-2xl opacity-40">❄️</span>
-            <span class="absolute top-[65%] left-[18%] text-sm opacity-20">❄️</span>
-            <span class="absolute top-[78%] left-[75%] text-xl opacity-45">❄️</span>
-            <span class="absolute top-[85%] left-[35%] text-xs opacity-30">❄️</span>
-            <span class="absolute top-[92%] left-[58%] text-lg opacity-35">❄️</span>
-            <span class="absolute top-[18%] left-[92%] text-xs opacity-20">❄️</span>
-            <span class="absolute top-[38%] left-[3%] text-2xl opacity-25">❄️</span>
-            <span class="absolute top-[72%] left-[5%] text-sm opacity-40">❄️</span>
-            <span class="absolute top-[88%] left-[92%] text-xl opacity-30">❄️</span>
-        </div>
-
-        <!-- キャラクター選択メインボックス -->
         <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
             <p class="text-xs text-purple-200 mb-4">プレイするキャラクターを選んでください</p>
 
-            <!-- キャラクター選択ボタン群 -->
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer">
+                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer ring-4 ring-yellow-400 scale-105">
+                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <canvas id="prevUtsuro" width="32" height="32" class="mb-1"></canvas>
                     <span class="text-xs font-bold text-white">氷室うつろ</span>
                 </button>
-                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
+                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
+                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <canvas id="prevGengo" width="32" height="32" class="mb-1"></canvas>
                     <span class="text-xs font-bold text-gray-300">繰言かたる</span>
                 </button>
-                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
+                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
+                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <canvas id="prevTomoko" width="32" height="32" class="mb-1"></canvas>
                     <span class="text-xs font-bold text-gray-300">トモコ</span>
                 </button>
             </div>
 
-            <!-- モード選択ボタン -->
             <div class="flex flex-col gap-2 mt-3">
                 <button onclick="startCpuGame()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
-                    <span>🤖 VS CPU対戦 (3人プレイ)</span>
+                    <span>🤖 VS CPU対戦 (3人対戦)</span>
                 </button>
 
                 <div class="flex items-center gap-2 my-1">
@@ -233,7 +211,6 @@
     <!-- デバッグモーダル (隠し機能) -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
         <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
-            <!-- モーダルヘッダー -->
             <div class="flex-none flex items-center justify-between p-3 border-b border-purple-800 bg-indigo-950/80">
                 <div class="flex items-center gap-2">
                     <span class="text-base">🛠️</span>
@@ -247,10 +224,13 @@
             <!-- タブ切替 -->
             <div class="flex-none flex border-b border-purple-800/80 bg-slate-950">
                 <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
-                    📝 イベント内容編集
+                    📝 イベント編集
                 </button>
                 <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
-                    🎨 ドット絵作成・編集
+                    🎨 ドット絵作成
+                </button>
+                <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                    🗺️ マップ作成
                 </button>
             </div>
 
@@ -258,9 +238,6 @@
             <div class="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-900/90">
                 <!-- イベント編集パネル -->
                 <div id="debugTabEvents" class="space-y-3">
-                    <p class="text-[11px] text-purple-300">すごろくのマスで発生するイベントの文章やリスナー変動数値をカスタマイズできます。</p>
-                    
-                    <!-- イベントタイプ別フィルター -->
                     <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap">
                         <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
                         <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
@@ -269,17 +246,11 @@
                         <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
                         <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
                     </div>
-
-                    <div id="debugEventsList" class="space-y-2">
-                        <!-- JavaScriptで動的生成 -->
-                    </div>
+                    <div id="debugEventsList" class="space-y-2"></div>
                 </div>
 
-                <!-- ドット絵ピクセルエディターパネル -->
+                <!-- ドット絵ピクセルエディター -->
                 <div id="debugTabDots" class="hidden flex flex-col items-center gap-3">
-                    <p class="text-[11px] text-purple-300 text-center">編集したいキャラクターまたはお供（ごしゅ）を選択し、ドット絵（16x16）を直接カスタマイズできます。</p>
-                    
-                    <!-- 編集対象選択ドロップダウン -->
                     <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
                         <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
                         <select id="dotTargetSelect" onchange="changeDotTarget(this.value)" class="flex-1 bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
@@ -292,41 +263,38 @@
                         </select>
                     </div>
 
-                    <!-- パレット＆操作 -->
                     <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-purple-800 flex-wrap justify-center">
                         <span class="text-xs text-purple-300 font-bold">色:</span>
                         <input type="color" id="dotColorPicker" value="#9333ea" class="w-7 h-7 bg-transparent cursor-pointer rounded">
-                        
-                        <!-- 🧪 スポイトボタン -->
-                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1">
-                            🧪 スポイト
-                        </button>
-
-                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">
-                            消しゴム
-                        </button>
-                        
-                        <!-- ↩️ アンドゥボタン -->
-                        <button onclick="undoDotCanvas()" id="btnDotUndo" class="px-2 py-1 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600 flex items-center gap-1">
-                            ↩️ 1つ戻す
-                        </button>
-
-                        <button onclick="resetCurrentDotToDefault()" class="px-2 py-1 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">
-                            元に戻す
-                        </button>
-                        <button onclick="clearDotCanvas()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">
-                            クリア
-                        </button>
-
-                        <!-- 📋 データ出力（ワンタップコピー）ボタン -->
-                        <button onclick="copyDotDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded border border-emerald-400 flex items-center gap-1">
-                            📋 データをコピー
-                        </button>
+                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">🧪 スポイト</button>
+                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">消しゴム</button>
+                        <button onclick="undoDotCanvas()" class="px-2 py-1 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600">↩️ 戻す</button>
+                        <button onclick="resetCurrentDotToDefault()" class="px-2 py-1 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">元に戻す</button>
+                        <button onclick="clearDotCanvas()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">クリア</button>
+                        <button onclick="copyDotDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 データをコピー</button>
                     </div>
 
-                    <!-- ピクセルキャンバス -->
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
                         <canvas id="dotEditorCanvas" width="256" height="256" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
+                    </div>
+                </div>
+
+                <!-- マップエディター -->
+                <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
+                    <div class="flex items-center gap-1.5 bg-slate-950 p-2 rounded-lg border border-purple-800 flex-wrap justify-center">
+                        <span class="text-xs text-yellow-300 font-bold">マス種類:</span>
+                        <button onclick="setMapTool('start')" id="mapTool_start" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🏁 スタート</button>
+                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-2 py-1 text-xs bg-purple-700 text-white font-bold rounded border border-purple-300">🔵 プラス</button>
+                        <button onclick="setMapTool('minus')" id="mapTool_minus" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                        <button onclick="setMapTool('item')" id="mapTool_item" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                        <button onclick="setMapTool('white')" id="mapTool_white" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                        <button onclick="setMapTool('goal')" id="mapTool_goal" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">👑 ゴール</button>
+                        <button onclick="setMapTool('erase')" id="mapTool_erase" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🧹 消去</button>
+                        <button onclick="clearCustomMap()" class="px-2 py-1 text-xs bg-red-900 hover:bg-red-800 text-white rounded border border-red-600">全消去</button>
+                        <button onclick="copyMapDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 マップデータをコピー</button>
+                    </div>
+                    <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
+                        <canvas id="mapEditorCanvas" width="384" height="384" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
                     </div>
                 </div>
             </div>
@@ -349,54 +317,66 @@
         let canvas, ctx;
         let diceCanvas, diceCtx;
         let dotCanvas, dotCtx;
+        let mapEditorCanvas, mapEditorCtx;
+
         let myChar = 'utsuro';
         let isFullMapView = false;
         let activeTab = 'events';
 
-        // カメラ・ドラッグ制御用 (デフォルト倍率を近接用に 1.8 に設定)
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
         let userZoomScale = 1.8;
         let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
+        let dragStartX = 0, dragStartY = 0;
 
-        // ドット絵エディター用 (16x16)
         let selectedDotTarget = 'utsuro';
-        let customDotData = {
-            utsuro: null,
-            gengo: null,
-            tomoko: null,
-            utsuro_goshu: null,
-            gengo_goshu: null,
-            tomoko_goshu: null
-        };
+        let customDotData = { utsuro: null, gengo: null, tomoko: null, utsuro_goshu: null, gengo_goshu: null, tomoko_goshu: null };
         let dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
         let currentColor = '#9333ea';
         let isDotEraser = false;
-        let isDotEyedropper = false; // 🧪 スポイトモード状態
+        let isDotEyedropper = false;
         let isDrawingDot = false;
-        let dotHistoryStack = []; // ↩️ 履歴スタック (アンドゥ用)
+        let dotHistoryStack = [];
 
-        // プレイヤーデータ
+        let selectedMapTool = 'plus';
+        let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+
         let players = [
-            { id: 0, name: '1P', char: 'utsuro', pos: 0, listeners: 1000, color: '#a855f7', items: [] },
-            { id: 1, name: '2P (CPU)', char: 'gengo', pos: 0, listeners: 1000, color: '#10b981', items: [] },
-            { id: 2, name: '3P (CPU)', char: 'tomoko', pos: 0, listeners: 1000, color: '#ec4899', items: [] }
+            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, listeners: 1000, color: '#a855f7' },
+            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, listeners: 1000, color: '#10b981' },
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, listeners: 1000, color: '#ec4899' }
         ];
         let currentPlayerIndex = 0;
-        let turnCount = 1;
-        let maxTurns = 30;
+        let isMoving = false;
         let isRolling = false;
-        let roomSeed = Math.floor(Math.random() * 10000);
+        let roomSeed = 1234;
 
-        // マップコース座標・オブジェクト・イベントデータ
+        // 青・赤マス専用の追加サイコロ振り待ちフラグ
+        let isSubRollPending = false;
+        let pendingTileType = null;
+
+        // 跳躍（ぴょんぴょん）移動アニメーション状態
+        let jumpAnimation = {
+            pIndex: -1,
+            fromPos: 0,
+            toPos: 0,
+            progress: 0,
+            startTime: 0,
+            duration: 380
+        };
+
+        // 各ごしゅ（お供）の個別位置・アニメーション追従管理
+        let goshuPositions = [
+            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false },
+            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false },
+            { pos: 0, fromPos: 0, toPos: 0, progress: 1, startTime: 0, duration: 380, isJumping: false }
+        ];
+
         let tileCoords = [];
         let cityObjects = [];
         let gameEvents = [];
         let currentEventFilter = 'all';
 
-        // デフォルトイベント定義（プラス・マイナス・アイテム・白色）
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
             { type: 'plus', title: '【12時間耐久配信】', desc: '限界突破の12時間耐久！同調リスナーの結束が高まる！', val: 400 },
@@ -415,578 +395,392 @@
             diceCtx = diceCanvas.getContext('2d');
             
             dotCanvas = document.getElementById('dotEditorCanvas');
-            if (dotCanvas) {
-                dotCtx = dotCanvas.getContext('2d');
-                setupDotEditorEvents();
-            }
+            if (dotCanvas) dotCtx = dotCanvas.getContext('2d');
+            
+            mapEditorCanvas = document.getElementById('mapEditorCanvas');
+            if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
 
+            setupDotEditorEvents();
+            setupMapEditorEvents();
+            setupCanvasDrag();
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
-            // ドラッグ＆スクロール操作の設定
-            setupCanvasDrag();
-
-            // 初期ドットテンプレートの読み込み＆ストレージからのデータ復元
             initDefaultDotGrids();
+            initDefaultMapGrid();
             loadDataFromLocalStorage();
 
-            // マップとオブジェクトの生成
             generateRandomMap(roomSeed);
-
-            // キャラプレビュー・名前表記の即時強制更新
             drawCharPreviews();
-            updatePlayerNamesAndUI();
-
-            // 初代サイコロ描画
             drawDice(1);
 
-            // アニメーションループ開始
+            document.getElementById('btnRoll').addEventListener('click', function() {
+                if (isRolling || isMoving) return;
+
+                // 青・赤マス到着後のサイコロ振り判定
+                if (isSubRollPending) {
+                    executeSubDiceRoll();
+                    return;
+                }
+
+                if (currentPlayerIndex !== 0) return;
+
+                isRolling = true;
+                let count = 0;
+                let interval = setInterval(() => {
+                    let roll = Math.floor(Math.random() * 6) + 1;
+                    drawDice(roll);
+                    count++;
+                    if (count > 14) {
+                        clearInterval(interval);
+                        isRolling = false;
+                        movePlayer(currentPlayerIndex, roll);
+                    }
+                }, 100);
+            });
+
             requestAnimationFrame(gameLoop);
         };
 
-        // --- UI表示プレイヤー名の更新 ---
-        function updatePlayerNamesAndUI() {
-            const p1NameElem = document.getElementById('p1Name');
-            const p2NameElem = document.getElementById('p2Name');
-            const p3NameElem = document.getElementById('p3Name');
-
-            if (p1NameElem) p1NameElem.innerText = players[0].char === 'gengo' ? '繰言かたる' : (players[0].char === 'tomoko' ? 'トモコ' : '氷室うつろ');
-            if (p2NameElem) p2NameElem.innerText = players[1].char === 'gengo' ? '繰言かたる(CPU)' : '繰言かたる(CPU)';
-            if (p3NameElem) p3NameElem.innerText = 'トモコ(CPU)';
-        }
-
-        // --- 💾 localStorage による永続保存・読み込み処理 ---
         function saveDataToLocalStorage() {
             try {
-                // ドット絵データとイベントデータの保存
                 localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
                 localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
-            } catch (e) {
-                console.error('Failed to save to localStorage:', e);
-            }
+                localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
+            } catch (e) { console.error(e); }
         }
 
         function loadDataFromLocalStorage() {
             try {
-                // 1. 保存されたドット絵データの読み込み
                 const savedDots = localStorage.getItem('utsuro_custom_dots');
-                if (savedDots) {
-                    const parsedDots = JSON.parse(savedDots);
-                    Object.keys(parsedDots).forEach(key => {
-                        if (parsedDots[key]) {
-                            customDotData[key] = parsedDots[key];
-                        }
-                    });
-                }
+                if (savedDots) Object.assign(customDotData, JSON.parse(savedDots));
 
-                // 2. 保存されたイベントデータの読み込み
                 const savedEvents = localStorage.getItem('utsuro_custom_events');
-                if (savedEvents) {
-                    gameEvents = JSON.parse(savedEvents);
-                } else {
-                    gameEvents = JSON.parse(JSON.stringify(defaultEvents));
-                }
+                if (savedEvents) gameEvents = JSON.parse(savedEvents);
+                else gameEvents = JSON.parse(JSON.stringify(defaultEvents));
 
-                // 現在選択中のターゲットのグリッド更新
+                const savedMap = localStorage.getItem('utsuro_custom_map');
+                if (savedMap) customMapGrid = JSON.parse(savedMap);
+
                 loadTargetDotGrid(selectedDotTarget);
             } catch (e) {
-                console.error('Failed to load from localStorage:', e);
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
         }
 
-        function resizeCanvas() {
-            if (!canvas) return;
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-        }
-
-        // --- キャラクター＆お供のデフォルト16x16グリッド生成 ---
         function initDefaultDotGrids() {
-            // お送りいただいたJSONドット絵データを直接デフォルトとして読み込み設定
-            const defaultExportedData = {"utsuro":[["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]],"gengo":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]],"tomoko":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#be185d","#be185d","#fde047","#fde047","#be185d","#be185d","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#ec4899","#ec4899","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"]],"utsuro_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"gengo_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#ffffff","#ffffff","#34d399","#34d399","#ffffff","#ffffff","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#064e3b","#34d399","#34d399","#34d399","#064e3b","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"tomoko_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#ffffff","#ffffff","#f472b6","#f472b6","#ffffff","#ffffff","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#831843","#f472b6","#f472b6","#f472b6","#831843","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]]};
-
-            Object.keys(defaultExportedData).forEach(key => {
-                customDotData[key] = JSON.parse(JSON.stringify(defaultExportedData[key]));
-            });
-
-            // 現在のターゲットのグリッドを選択設定
+            customDotData = {"utsuro":[["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]],"gengo":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]],"tomoko":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#ec4899","#00000000","#00000000","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#be185d","#be185d","#fde047","#fde047","#be185d","#be185d","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#ec4899","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#ec4899","#ec4899","#ec4899","#00000000"],["#00000000","#ec4899","#ec4899","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#ec4899","#ec4899","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#831843","#00000000","#00000000","#00000000"]],"utsuro_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"gengo_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#ffffff","#ffffff","#34d399","#34d399","#ffffff","#ffffff","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#064e3b","#34d399","#34d399","#34d399","#064e3b","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#34d399","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]],"tomoko_goshu":[["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#ffffff","#ffffff","#f472b6","#f472b6","#ffffff","#ffffff","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#831843","#f472b6","#f472b6","#f472b6","#831843","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]]};
             loadTargetDotGrid(selectedDotTarget);
         }
 
-        // --- 本格ドット絵：街並みオブジェクト描画 ---
-        function drawCityObject(context, obj) {
-            context.save();
-            context.translate(obj.x, obj.y);
-
-            if (obj.type === 'house') {
-                // 🏠 カラフルな家
-                context.fillStyle = obj.roofColor || '#ef4444'; // 屋根
-                context.beginPath();
-                context.moveTo(0, -18);
-                context.lineTo(-18, -2);
-                context.lineTo(18, -2);
-                context.closePath();
-                context.fill();
-
-                context.fillStyle = '#fef3c7'; // 壁
-                context.fillRect(-14, -2, 28, 18);
-
-                context.fillStyle = '#78350f'; // ドア
-                context.fillRect(-4, 6, 8, 10);
-
-                context.fillStyle = '#38bdf8'; // 窓
-                context.fillRect(-10, 2, 5, 5);
-                context.fillRect(5, 2, 5, 5);
-            } else if (obj.type === 'building') {
-                // 🏢 高層ビル
-                context.fillStyle = obj.wallColor || '#3b82f6'; // ビル外壁
-                context.fillRect(-16, -28, 32, 50);
-
-                context.fillStyle = '#fef08a'; // 光る窓
-                for (let r = 0; r < 5; r++) {
-                    for (let c = 0; c < 3; c++) {
-                        context.fillRect(-12 + c * 9, -24 + r * 9, 6, 5);
-                    }
-                }
-            } else if (obj.type === 'tree') {
-                // 🌲 ドット絵ツリー
-                context.fillStyle = '#78350f'; // 幹
-                context.fillRect(-3, 4, 6, 12);
-
-                context.fillStyle = '#15803d'; // 葉（下層）
-                context.beginPath();
-                context.arc(0, 0, 15, 0, Math.PI * 2);
-                context.fill();
-
-                context.fillStyle = '#22c55e'; // 葉（ハイライト）
-                context.beginPath();
-                context.arc(-3, -3, 10, 0, Math.PI * 2);
-                context.fill();
-            } else {
-                // 💡 街灯
-                context.fillStyle = '#64748b'; // 支柱
-                context.fillRect(-2, -10, 4, 20);
-                context.fillStyle = '#fef08a'; // ランプ
-                context.beginPath();
-                context.arc(0, -12, 6, 0, Math.PI * 2);
-                context.fill();
-            }
-
-            context.restore();
+        function initDefaultMapGrid() {
+            customMapGrid = [["start","plus",null,"item","white","white","minus","plus",null,"plus","minus","goal"],[null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],[null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],[null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]];
         }
 
-        // --- カスタムドット絵グリッドの描画ヘルパー ---
-        function renderCustomDotGrid(context, gridData, x, y, size = 32) {
-            if (!gridData) return;
-            const pSize = size / 16;
-            context.save();
-            // ドットの輪郭を拡大時も鮮明（くっきり）にする設定
-            context.imageSmoothingEnabled = false;
-            context.translate(x - size/2, y - size/2);
-            
+        function convertCustomGridToTileCoords() {
+            let gridMap = customMapGrid;
+            let nodes = {};
+            let startR = -1, startC = -1;
+
+            // 1. 全配置マスをマップグリッド(12x12)から抽出
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let type = (gridMap[r] && gridMap[r][c]) ? gridMap[r][c] : null;
+                    if (type !== null) {
+                        let key = `${r}_${c}`;
+                        nodes[key] = {
+                            r: r, c: c,
+                            x: (c - 5.5) * 56,
+                            y: (r - 5.5) * 56,
+                            type: type,
+                            visited: false
+                        };
+                        if (type === 'start') { startR = r; startC = c; }
+                    }
+                }
+            }
+
+            let nodeKeys = Object.keys(nodes);
+            if (nodeKeys.length === 0) return;
+
+            if (startR === -1) {
+                let firstKey = nodeKeys[0];
+                startR = nodes[firstKey].r;
+                startC = nodes[firstKey].c;
+                nodes[firstKey].type = 'start';
+            }
+
+            // 2. スタート(🏁)から隣接マスを一筆書き順路として探索
+            let path = [];
+            let curr = nodes[`${startR}_${startC}`];
+            curr.visited = true;
+            path.push(curr);
+
+            let directions = [
+                { dr: 0, dc: 1 },  // 右
+                { dr: 1, dc: 0 },  // 下
+                { dr: 0, dc: -1 }, // 左
+                { dr: -1, dc: 0 }  // 上
+            ];
+
+            while (path.length < nodeKeys.length) {
+                let nextNode = null;
+
+                for (let d of directions) {
+                    let nr = curr.r + d.dr;
+                    let nc = curr.c + d.dc;
+                    let neighbor = nodes[`${nr}_${nc}`];
+                    if (neighbor && !neighbor.visited) {
+                        nextNode = neighbor;
+                        break;
+                    }
+                }
+
+                if (!nextNode) {
+                    let nearest = null;
+                    let minDist = Infinity;
+                    Object.values(nodes).forEach(node => {
+                        if (!node.visited) {
+                            let dist = Math.abs(node.r - curr.r) + Math.abs(node.c - curr.c);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearest = node;
+                            }
+                        }
+                    });
+                    nextNode = nearest;
+                }
+
+                if (nextNode) {
+                    nextNode.visited = true;
+                    path.push(nextNode);
+                    curr = nextNode;
+                } else {
+                    break;
+                }
+            }
+
+            // 3. 追跡順で tileCoords 生成
+            tileCoords = path.map((node, index) => ({
+                id: index,
+                r: node.r,
+                c: node.c,
+                x: node.x,
+                y: node.y,
+                type: node.type
+            }));
+
+            // 4. 隣接する全てのマス同士の間に道路ラインを接続
+            window.roadConnections = [];
+            let addedKeys = new Set();
+
+            for (let i = 0; i < tileCoords.length; i++) {
+                for (let j = i + 1; j < tileCoords.length; j++) {
+                    let t1 = tileCoords[i];
+                    let t2 = tileCoords[j];
+                    let dist = Math.abs(t1.r - t2.r) + Math.abs(t1.c - t2.c);
+                    if (dist === 1) {
+                        let connKey = `${Math.min(t1.id, t2.id)}_${Math.max(t1.id, t2.id)}`;
+                        if (!addedKeys.has(connKey)) {
+                            addedKeys.add(connKey);
+                            window.roadConnections.push({ x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y });
+                        }
+                    }
+                }
+            }
+
+            generateCityObjects();
+        }
+
+        function saveDebugSettings() {
+            saveCurrentDotGridToTarget();
+            convertCustomGridToTileCoords();
+            players.forEach(p => p.pos = 0);
+            saveDataToLocalStorage();
+            drawCharPreviews();
+            closeDebugMenu();
+        }
+
+        function resetDebugDefaults() {
+            try {
+                localStorage.removeItem('utsuro_custom_dots');
+                localStorage.removeItem('utsuro_custom_events');
+                localStorage.removeItem('utsuro_custom_map');
+            } catch (e) { console.error(e); }
+            gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            initDefaultMapGrid();
+            convertCustomGridToTileCoords();
+            players.forEach(p => p.pos = 0);
+            initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
+            renderDebugEvents();
+            renderDotCanvas();
+            renderMapEditorCanvas();
+            drawCharPreviews();
+        }
+
+        // --- ドット絵＆マップエディターの操作用関数群 ---
+        function setupDotEditorEvents() {
+            if (!dotCanvas) return;
+            let draw = (e) => {
+                if (!isDrawingDot) return;
+                let rect = dotCanvas.getBoundingClientRect();
+                let x = Math.floor((e.clientX - rect.left) / (rect.width / 16));
+                let y = Math.floor((e.clientY - rect.top) / (rect.height / 16));
+                if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+                    if (isDotEyedropper) {
+                        currentColor = dotGrid[y][x];
+                        document.getElementById('dotColorPicker').value = currentColor === '#00000000' ? '#000000' : currentColor;
+                        isDotEyedropper = false;
+                        document.getElementById('btnDotEyedropper').classList.remove('bg-yellow-500');
+                    } else {
+                        pushDotHistory();
+                        dotGrid[y][x] = isDotEraser ? '#00000000' : currentColor;
+                        renderDotCanvas();
+                    }
+                }
+            };
+            dotCanvas.addEventListener('mousedown', (e) => { isDrawingDot = true; draw(e); });
+            dotCanvas.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', () => { isDrawingDot = false; });
+        }
+
+        function setupMapEditorEvents() {
+            if (!mapEditorCanvas) return;
+            let clickMap = (e) => {
+                let rect = mapEditorCanvas.getBoundingClientRect();
+                let c = Math.floor((e.clientX - rect.left) / (rect.width / 12));
+                let r = Math.floor((e.clientY - rect.top) / (rect.height / 12));
+                if (r >= 0 && r < 12 && c >= 0 && c < 12) {
+                    if (selectedMapTool === 'erase') {
+                        customMapGrid[r][c] = null;
+                    } else {
+                        customMapGrid[r][c] = selectedMapTool;
+                    }
+                    renderMapEditorCanvas();
+                }
+            };
+            let isMouseDownMap = false;
+            mapEditorCanvas.addEventListener('mousedown', (e) => { isMouseDownMap = true; clickMap(e); });
+            mapEditorCanvas.addEventListener('mousemove', (e) => { if (isMouseDownMap) clickMap(e); });
+            window.addEventListener('mouseup', () => { isMouseDownMap = false; });
+        }
+
+        function renderDotCanvas() {
+            if (!dotCtx) return;
+            dotCtx.clearRect(0, 0, 256, 256);
+            let pSize = 16;
             for (let r = 0; r < 16; r++) {
                 for (let c = 0; c < 16; c++) {
-                    const col = gridData[r][c];
+                    let col = dotGrid[r][c];
                     if (col && col !== '#00000000') {
-                        context.fillStyle = col;
-                        // 拡大時の浮動小数点計算による隙間（1px以下の目立ち）を防ぐため、僅かにサイズを重ねて描画 (+0.55)
-                        context.fillRect(c * pSize, r * pSize, pSize + 0.55, pSize + 0.55);
+                        dotCtx.fillStyle = col;
+                        dotCtx.fillRect(c * pSize, r * pSize, pSize, pSize);
                     }
+                    dotCtx.strokeStyle = '#334155';
+                    dotCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
                 }
             }
-            context.restore();
         }
 
-        // --- キャラクター固有のドット絵モデル ---
-        function drawPlayerDotModel(context, charType, x, y, size = 32) {
-            // キャラ本体ドット絵
-            if (customDotData[charType]) {
-                renderCustomDotGrid(context, customDotData[charType], x, y, size);
-            }
-
-            // お供「ごしゅ」ドット絵
-            const goshuKey = charType + '_goshu';
-            if (customDotData[goshuKey]) {
-                renderCustomDotGrid(context, customDotData[goshuKey], x + size * 0.45, y + size * 0.2, size * 0.5);
-            }
-        }
-
-        function drawCharPreviews() {
-            ['Utsuro', 'Gengo', 'Tomoko'].forEach(name => {
-                const c = document.getElementById('prev' + name);
-                if (c) {
-                    const cx = c.getContext('2d');
-                    cx.clearRect(0, 0, 32, 32);
-                    drawPlayerDotModel(cx, name.toLowerCase(), 16, 16, 28);
-                }
-            });
-        }
-
-        // --- 動的マップ＆街オブジェクト生成 ---
-        function generateRandomMap(seed) {
-            tileCoords = [];
-            cityObjects = [];
-            let x = 0, y = 0;
-            
-            let rng = function() {
-                seed = (seed * 9301 + 49297) % 233280;
-                return seed / 233280;
-            };
-
-            // 1. 直線性と曲がり角を持つ一本道コース生成 (100マス)
-            let currentDir = 'UP'; // 'UP', 'RIGHT', 'LEFT'
-            let stepInDir = 0;
-            let maxStepInDir = Math.floor(rng() * 4) + 3;
-
-            for (let i = 0; i < 100; i++) {
-                let tileType = 'white';
-                if (i === 0) tileType = 'start';
-                else if (i === 99) tileType = 'goal';
-                else if (i % 7 === 0) tileType = 'item';
-                else if (i % 3 === 0) tileType = 'plus';
-                else if (i % 3 === 1) tileType = 'minus';
-                else tileType = 'white';
-
-                tileCoords.push({
-                    x: x,
-                    y: y,
-                    type: tileType
-                });
-
-                stepInDir++;
-                if (stepInDir >= maxStepInDir && i < 90) {
-                    stepInDir = 0;
-                    maxStepInDir = Math.floor(rng() * 4) + 3;
-                    if (currentDir === 'UP') {
-                        currentDir = rng() > 0.5 ? 'RIGHT' : 'LEFT';
-                    } else {
-                        currentDir = 'UP';
+        function renderMapEditorCanvas() {
+            if (!mapEditorCtx) return;
+            mapEditorCtx.clearRect(0, 0, 384, 384);
+            let pSize = 32;
+            let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#e2e8f0', goal: '#a855f7' };
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let type = customMapGrid[r][c];
+                    if (type && typeColors[type]) {
+                        mapEditorCtx.fillStyle = typeColors[type];
+                        mapEditorCtx.beginPath();
+                        mapEditorCtx.arc(c * pSize + pSize / 2, r * pSize + pSize / 2, pSize / 2 - 4, 0, Math.PI * 2);
+                        mapEditorCtx.fill();
                     }
-                }
-
-                if (currentDir === 'UP') y -= 56;
-                else if (currentDir === 'RIGHT') x += 56;
-                else x -= 56;
-            }
-
-            // 2. コース全体を覆う密度の高い街並みオブジェクト生成
-            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
-            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
-
-            for (let i = -15; i <= 25; i++) {
-                for (let j = -35; j <= 10; j++) {
-                    const ox = i * 64 + (rng() * 20 - 10);
-                    const oy = j * 64 + (rng() * 20 - 10);
-
-                    // マス目と重ならない位置に配置
-                    const tooClose = tileCoords.some(t => Math.hypot(t.x - ox, t.y - oy) < 40);
-                    if (!tooClose && rng() > 0.45) {
-                        const r = rng();
-                        let type = 'tree';
-                        if (r > 0.7) type = 'building';
-                        else if (r > 0.4) type = 'house';
-                        else if (r > 0.3) type = 'light';
-
-                        cityObjects.push({
-                            x: ox,
-                            y: oy,
-                            type: type,
-                            roofColor: roofs[Math.floor(rng() * roofs.length)],
-                            wallColor: walls[Math.floor(rng() * walls.length)]
-                        });
-                    }
+                    mapEditorCtx.strokeStyle = '#1e293b';
+                    mapEditorCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
                 }
             }
         }
 
-        // --- メイン描画ループ ---
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function pushDotHistory() {
+            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
+            if (dotHistoryStack.length > 20) dotHistoryStack.shift();
+        }
 
-            // 明るい芝生グラデーション背景
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function undoDotCanvas() {
+            if (dotHistoryStack.length > 0) {
+                dotGrid = dotHistoryStack.pop();
+                renderDotCanvas();
+            }
+        }
 
-            ctx.save();
+        function toggleDotEyedropper() {
+            isDotEyedropper = !isDotEyedropper;
+            document.getElementById('btnDotEyedropper').classList.toggle('bg-yellow-500', isDotEyedropper);
+        }
 
-            if (isFullMapView) {
-                // 全体マップ表示：コース100マス全体を自動ズームフィット
-                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                tileCoords.forEach(t => {
-                    if (t.x < minX) minX = t.x;
-                    if (t.x > maxX) maxX = t.x;
-                    if (t.y < minY) minY = t.y;
-                    if (t.y > maxY) maxY = t.y;
-                });
+        function setDotEraser() {
+            isDotEraser = !isDotEraser;
+            document.getElementById('btnDotEraser').classList.toggle('bg-red-500', isDotEraser);
+        }
 
-                const mapWidth = (maxX - minX) + 200;
-                const mapHeight = (maxY - minY) + 200;
-                const mapCenterX = (minX + maxX) / 2;
-                const mapCenterY = (minY + maxY) / 2;
+        function clearDotCanvas() {
+            pushDotHistory();
+            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            renderDotCanvas();
+        }
 
-                const scaleX = canvas.width / mapWidth;
-                const scaleY = canvas.height / mapHeight;
-                const autoScale = Math.min(scaleX, scaleY) * 0.9;
+        function copyDotDataToClipboard() {
+            let dataStr = JSON.stringify(dotGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('ドット絵データをクリップボードにコピーしました！');
+        }
 
-                ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
-                ctx.scale(autoScale, autoScale);
-                ctx.translate(-mapCenterX, -mapCenterY);
+        function setMapTool(tool) {
+            selectedMapTool = tool;
+        }
+
+        function clearCustomMap() {
+            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+            renderMapEditorCanvas();
+        }
+
+        function copyMapDataToClipboard() {
+            let dataStr = JSON.stringify(customMapGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('マップデータをクリップボードにコピーしました！');
+        }
+
+        function loadTargetDotGrid(target) {
+            selectedDotTarget = target;
+            if (customDotData[target]) {
+                dotGrid = JSON.parse(JSON.stringify(customDotData[target]));
             } else {
-                // 近接カメラ追従表示（デフォルトズーム倍率で拡大）
-                const targetPos = tileCoords[players[currentPlayerIndex].pos] || { x: 0, y: 0 };
-                ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
-                ctx.scale(userZoomScale, userZoomScale);
-                ctx.translate(-targetPos.x, -targetPos.y);
+                dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
             }
-
-            // 1. 道路の太いライン（ふちどり＆道路）
-            ctx.beginPath();
-            tileCoords.forEach((t, idx) => {
-                if (idx === 0) ctx.moveTo(t.x, t.y);
-                else ctx.lineTo(t.x, t.y);
-            });
-            ctx.lineWidth = 32;
-            ctx.strokeStyle = '#334155';
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
-
-            ctx.lineWidth = 26;
-            ctx.strokeStyle = '#94a3b8';
-            ctx.stroke();
-
-            // 2. 街並みドット絵オブジェクト
-            cityObjects.forEach(obj => drawCityObject(ctx, obj));
-
-            // 3. マス目（コース）＆イベントマークの描画
-            tileCoords.forEach((tile, idx) => {
-                // マス目の色設定 (プラス:青, マイナス:赤/ピンク, アイテム:黄, 白色:白)
-                ctx.fillStyle = tile.type === 'start' ? '#eab308' 
-                             : (tile.type === 'goal' ? '#ef4444' 
-                             : (tile.type === 'item' ? '#f59e0b' 
-                             : (tile.type === 'plus' ? '#3b82f6' 
-                             : (tile.type === 'minus' ? '#ec4899' : '#ffffff'))));
-                
-                ctx.beginPath();
-                ctx.arc(tile.x, tile.y, 18, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = tile.type === 'white' ? '#94a3b8' : '#ffffff';
-                ctx.stroke();
-
-                // イベント内容を示すマーク記号の決定
-                let markSymbol = '・';
-                if (tile.type === 'start') markSymbol = 'S';
-                else if (tile.type === 'goal') markSymbol = 'G';
-                else if (tile.type === 'item') markSymbol = '🎁';
-                else if (tile.type === 'plus') markSymbol = '↑';
-                else if (tile.type === 'minus') markSymbol = '↓';
-                else markSymbol = '・';
-
-                ctx.fillStyle = tile.type === 'white' ? '#475569' : '#ffffff';
-                ctx.font = tile.type === 'item' ? '12px sans-serif' : 'bold 12px DotGothic16';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(markSymbol, tile.x, tile.y);
-            });
-
-            // 4. プレイヤーキャラクター
-            players.forEach((p, idx) => {
-                const pos = tileCoords[p.pos] || { x: 0, y: 0 };
-                const offset = (idx - 1) * 12;
-                drawPlayerDotModel(ctx, p.char, pos.x + offset, pos.y - 8, 32);
-
-                // 全体マップ表示時の吹き出しピンマーカー
-                if (isFullMapView) {
-                    ctx.save();
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(pos.x + offset, pos.y - 38, 14, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 11px DotGothic16';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(p.name, pos.x + offset, pos.y - 38);
-                    ctx.restore();
-                }
-            });
-
-            ctx.restore();
-
-            requestAnimationFrame(gameLoop);
+            renderDotCanvas();
         }
 
-        // --- ドラッグ＆ズーム操作 ---
-        function setupCanvasDrag() {
-            canvas.addEventListener('mousedown', e => {
-                isDragging = true;
-                dragStartX = e.clientX - userDragOffsetX;
-                dragStartY = e.clientY - userDragOffsetY;
-            });
-
-            window.addEventListener('mousemove', e => {
-                if (!isDragging) return;
-                userDragOffsetX = e.clientX - dragStartX;
-                userDragOffsetY = e.clientY - dragStartY;
-            });
-
-            window.addEventListener('mouseup', () => isDragging = false);
-
-            canvas.addEventListener('wheel', e => {
-                e.preventDefault();
-                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-                userZoomScale = Math.max(0.5, Math.min(3.5, userZoomScale * zoomFactor));
-            }, { passive: false });
+        function saveCurrentDotGridToTarget() {
+            customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
         }
 
-        function toggleCameraView() {
-            isFullMapView = !isFullMapView;
-            userDragOffsetX = 0;
-            userDragOffsetY = 0;
-            userZoomScale = 1.8;
-            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+        function changeDotTarget(val) {
+            saveCurrentDotGridToTarget();
+            loadTargetDotGrid(val);
         }
 
-        // --- モード＆キャラクター選択 ---
-        function selectChar(charType) {
-            myChar = charType;
-            players[0].char = charType;
-            updatePlayerNamesAndUI();
-            document.getElementById('btnSelectUtsuro').className = charType === 'utsuro' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-500/50 bg-purple-950/40 opacity-60';
-            document.getElementById('btnSelectGengo').className = charType === 'gengo' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-400 bg-emerald-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 opacity-60';
-            document.getElementById('btnSelectTomoko').className = charType === 'tomoko' ? 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-400 bg-pink-950/80' : 'pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 opacity-60';
+        function resetCurrentDotToDefault() {
+            initDefaultDotGrids();
         }
 
-        function startCpuGame() {
-            document.getElementById('startModal').classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
-        }
-
-        function startOnlineGame() {
-            const code = document.getElementById('roomCodeInput').value || '1234';
-            roomSeed = parseInt(code) || 1234;
-            generateRandomMap(roomSeed);
-            document.getElementById('startModal').classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'ルーム: ' + code;
-        }
-
-        // --- サイコロ＆進行 ---
-        document.getElementById('btnRoll').addEventListener('click', function() {
-            if (isRolling) return;
-            isRolling = true;
-            let count = 0;
-            let interval = setInterval(() => {
-                let roll = Math.floor(Math.random() * 6) + 1;
-                drawDice(roll);
-                count++;
-                if (count > 10) {
-                    clearInterval(interval);
-                    isRolling = false;
-                    movePlayer(currentPlayerIndex, roll);
-                }
-            }, 50);
-        });
-
-        function drawDice(num) {
-            diceCtx.clearRect(0, 0, 48, 48);
-            diceCtx.fillStyle = '#ffffff';
-            diceCtx.fillRect(4, 4, 40, 40);
-            diceCtx.fillStyle = '#ef4444';
-            if (num === 1) {
-                diceCtx.beginPath(); diceCtx.arc(24, 24, 6, 0, Math.PI*2); diceCtx.fill();
-            } else {
-                diceCtx.fillStyle = '#000000';
-                if (num % 2 === 1) { diceCtx.beginPath(); diceCtx.arc(24, 24, 4, 0, Math.PI*2); diceCtx.fill(); }
-                diceCtx.beginPath(); diceCtx.arc(14, 14, 4, 0, Math.PI*2); diceCtx.fill();
-                diceCtx.beginPath(); diceCtx.arc(34, 34, 4, 0, Math.PI*2); diceCtx.fill();
-            }
-        }
-
-        function movePlayer(pIdx, steps) {
-            players[pIdx].pos = Math.min(99, players[pIdx].pos + steps);
-            document.getElementById('diceResultText').innerText = steps + ' の目が出た！';
-            
-            // 🎯 止まったマスのイベントを発動
-            triggerTileEvent(players[pIdx]);
-
-            currentPlayerIndex = (currentPlayerIndex + 1) % 3;
-            document.getElementById('activePlayerTag').innerText = '手番: ' + players[currentPlayerIndex].name;
-        }
-
-        // --- 🎯 マス目イベントの発動・リスナー変動処理 ---
-        function triggerTileEvent(player) {
-            const currentTile = tileCoords[player.pos];
-            if (!currentTile) return;
-
-            let tileType = currentTile.type;
-            let matchingEvents = gameEvents.filter(ev => ev.type === tileType);
-            
-            // 対応するタイプのイベントがない場合はフォールバック
-            if (matchingEvents.length === 0) {
-                matchingEvents = gameEvents.filter(ev => ev.type === 'white');
-            }
-
-            // ランダムにイベントを1つ抽選
-            const ev = matchingEvents[Math.floor(Math.random() * matchingEvents.length)] || {
-                title: '【通常マス】',
-                desc: '特に何も起こらなかった。配信準備を進めよう！',
-                val: 0
-            };
-
-            // スタート / ゴールマスの場合の特別処理
-            let eventTitle = ev.title;
-            let eventDesc = ev.desc;
-            let listenerChange = ev.val || 0;
-
-            if (tileType === 'start') {
-                eventTitle = '【スタート地点】';
-                eventDesc = 'ここから伝説のVstreamerロードが始まる！';
-                listenerChange = 0;
-            } else if (tileType === 'goal') {
-                eventTitle = '【🎉 100マス達成！ゴール！】';
-                eventDesc = player.name + ' が見事にゴール達成！記念大型配信でリスナー大感謝祭！';
-                listenerChange = 1000;
-            }
-
-            // リスナー数の加減算処理
-            player.listeners = Math.max(0, player.listeners + listenerChange);
-
-            // UIの文字・スコアを更新
-            document.getElementById('currentEventTitle').innerText = eventTitle;
-                document.getElementById('currentEventDesc').innerText = eventDesc;
-            
-            let effectText = '-';
-            if (listenerChange > 0) {
-                effectText = '📈 リスナー数 +' + listenerChange.toLocaleString() + '人！';
-            } else if (listenerChange < 0) {
-                effectText = '📉 リスナー数 ' + listenerChange.toLocaleString() + '人…';
-            } else if (tileType === 'item') {
-                effectText = '🎁 配信便利グッズを獲得！';
-            }
-            document.getElementById('currentEventEffect').innerText = effectText;
-
-            // スコアボード（1P/2P/3P）のリスナー数表示を更新
-            const p1Elem = document.getElementById('p1Listeners');
-            const p2Elem = document.getElementById('p2Listeners');
-            const p3Elem = document.getElementById('p3Listeners');
-            if (p1Elem) p1Elem.innerText = players[0].listeners.toLocaleString() + '人';
-            if (p2Elem) p2Elem.innerText = players[1].listeners.toLocaleString() + '人';
-            if (p3Elem) p3Elem.innerText = players[2].listeners.toLocaleString() + '人';
-        }
-
-        // --- 🛠️ デバッグモード＆🎨 ドット絵ピクセルエディター ---
+        // --- モーダル・タブ切替・カメラ制御 ---
         function openDebugMenu() {
             document.getElementById('debugModal').classList.remove('hidden');
             renderDebugEvents();
-            loadTargetDotGrid(selectedDotTarget);
             renderDotCanvas();
+            renderMapEditorCanvas();
         }
 
         function closeDebugMenu() {
@@ -997,253 +791,637 @@
             activeTab = tab;
             document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
             document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
+            document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
+        }
+
+        function toggleCameraView() {
+            isFullMapView = !isFullMapView;
+            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function setupCanvasDrag() {
+            if (!canvas) return;
+            canvas.addEventListener('mousedown', (e) => { isDragging = true; dragStartX = e.clientX - userDragOffsetX; dragStartY = e.clientY - userDragOffsetY; });
+            window.addEventListener('mousemove', (e) => { if (isDragging) { userDragOffsetX = e.clientX - dragStartX; userDragOffsetY = e.clientY - dragStartY; } });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+        }
+
+        function selectChar(char) {
+            myChar = char;
+            let names = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+            players[0].char = char;
+            players[0].name = names[char];
+
+            let rest = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== char);
+            players[1].char = rest[0];
+            players[1].name = names[rest[0]];
+            players[2].char = rest[1];
+            players[2].name = names[rest[1]];
+
+            document.getElementById('p1Name').innerText = players[0].name;
+            document.getElementById('p2Name').innerText = players[1].name;
+            document.getElementById('p3Name').innerText = players[2].name;
+            document.getElementById('activePlayerTag').innerText = `手番: ${players[0].name}`;
+
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                let badge = document.getElementById(`badge${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (btn && badge) {
+                    if (c === char) {
+                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
+                        badge.classList.remove('hidden');
+                    } else {
+                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function startCpuGame() {
+            let modal = document.getElementById('startModal');
+            if (modal) modal.classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
             
-            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            currentPlayerIndex = 0;
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('currentEventTitle').innerText = '【スタート！】';
+            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('btnRoll').disabled = false;
+        }
+
+        function startOnlineGame() {
+            let modal = document.getElementById('startModal');
+            if (modal) modal.classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'オンライン対戦中';
+
+            currentPlayerIndex = 0;
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('currentEventTitle').innerText = '【スタート！】';
+            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('btnRoll').disabled = false;
+        }
+
+        // --- 描画・レンダリングルーチン ---
+        function generateRandomMap(seed) {
+            convertCustomGridToTileCoords();
+        }
+
+        function generateCityObjects() {
+            cityObjects = [];
+            if (tileCoords.length === 0) return;
+
+            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
+            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
+
+            tileCoords.forEach((t, i) => {
+                let offsets = [
+                    { dx: 38, dy: 38, type: 'house' },
+                    { dx: -38, dy: -38, type: 'tree' },
+                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' },
+                    { dx: -38, dy: 38, type: (i % 2 === 0) ? 'light' : 'house' }
+                ];
+
+                offsets.forEach(o => {
+                    let ox = t.x + o.dx;
+                    let oy = t.y + o.dy;
+                    let tooClose = tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24);
+                    if (!tooClose) {
+                        cityObjects.push({
+                            x: ox,
+                            y: oy,
+                            type: o.type,
+                            roofColor: roofs[i % roofs.length],
+                            wallColor: walls[i % walls.length]
+                        });
+                    }
+                });
+            });
+        }
+
+        function drawCityObject(context, obj) {
+            context.save();
+            context.translate(obj.x, obj.y);
+
+            if (obj.type === 'house') {
+                context.fillStyle = obj.roofColor || '#ef4444';
+                context.beginPath();
+                context.moveTo(0, -14);
+                context.lineTo(-14, -2);
+                context.lineTo(14, -2);
+                context.closePath();
+                context.fill();
+
+                context.fillStyle = '#fef3c7';
+                context.fillRect(-10, -2, 20, 14);
+
+                context.fillStyle = '#78350f';
+                context.fillRect(-3, 4, 6, 8);
+            } else if (obj.type === 'building') {
+                context.fillStyle = obj.wallColor || '#3b82f6';
+                context.fillRect(-12, -20, 24, 36);
+
+                context.fillStyle = '#fef08a';
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 2; c++) {
+                        context.fillRect(-8 + c * 9, -16 + r * 9, 5, 5);
+                    }
+                }
+            } else if (obj.type === 'tree') {
+                context.fillStyle = '#78350f';
+                context.fillRect(-2, 2, 4, 10);
+
+                context.fillStyle = '#15803d';
+                context.beginPath();
+                context.arc(0, -2, 11, 0, Math.PI * 2);
+                context.fill();
+
+                context.fillStyle = '#22c55e';
+                context.beginPath();
+                context.arc(-2, -4, 7, 0, Math.PI * 2);
+                context.fill();
+            } else {
+                context.fillStyle = '#64748b';
+                context.fillRect(-1.5, -8, 3, 16);
+                context.fillStyle = '#fef08a';
+                context.beginPath();
+                context.arc(0, -9, 4.5, 0, Math.PI * 2);
+                context.fill();
+            }
+
+            context.restore();
+        }
+
+        function renderCustomDotGrid(context, gridData, x, y, size = 32) {
+            if (!gridData) return;
+            let pSize = size / 16;
+            context.save();
+            context.translate(x - size / 2, y - size / 2);
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = gridData[r][c];
+                    if (col && col !== '#00000000') {
+                        context.fillStyle = col;
+                        context.fillRect(c * pSize, r * pSize, pSize + 0.5, pSize + 0.5);
+                    }
+                }
+            }
+            context.restore();
+        }
+
+        function drawPlayerDotModel(context, charType, x, y, size = 32, drawGoshu = true) {
+            if (customDotData[charType]) {
+                renderCustomDotGrid(context, customDotData[charType], x, y, size);
+            }
+            if (drawGoshu) {
+                let goshuKey = `${charType}_goshu`;
+                if (customDotData[goshuKey]) {
+                    renderCustomDotGrid(context, customDotData[goshuKey], x + size * 0.45, y + size * 0.2, size * 0.5);
+                }
+            }
+        }
+
+        function drawGoshuOnly(context, charType, x, y, size = 16) {
+            let goshuKey = `${charType}_goshu`;
+            if (customDotData[goshuKey]) {
+                renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
+            }
+        }
+
+        function drawDice(num) {
+            if (!diceCtx) return;
+            diceCtx.clearRect(0, 0, 48, 48);
+            diceCtx.fillStyle = '#ffffff';
+            diceCtx.fillRect(4, 4, 40, 40);
+            diceCtx.fillStyle = num === 1 ? '#ef4444' : '#000000';
             
-            if (tab === 'dots') renderDotCanvas();
+            let dots = {
+                1: [[24, 24]],
+                2: [[14, 14], [34, 34]],
+                3: [[14, 14], [24, 24], [34, 34]],
+                4: [[14, 14], [34, 14], [14, 34], [34, 34]],
+                5: [[14, 14], [34, 14], [24, 24], [14, 34], [34, 34]],
+                6: [[14, 14], [34, 14], [14, 24], [34, 24], [14, 34], [34, 34]]
+            };
+            (dots[num] || []).forEach(d => {
+                diceCtx.beginPath();
+                diceCtx.arc(d[0], d[1], num === 1 ? 6 : 4, 0, Math.PI * 2);
+                diceCtx.fill();
+            });
+        }
+
+        function drawCharPreviews() {
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let el = document.getElementById(`prev${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (el) {
+                    let cCtx = el.getContext('2d');
+                    cCtx.clearRect(0, 0, 32, 32);
+                    drawPlayerDotModel(cCtx, c, 16, 16, 28);
+                }
+            });
         }
 
         function filterDebugEvents(type) {
             currentEventFilter = type;
-            ['all', 'plus', 'minus', 'item', 'white'].forEach(t => {
-                const btn = document.getElementById('filterBtn_' + t);
-                if (btn) {
-                    btn.className = t === type 
-                        ? 'px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold' 
-                        : 'px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600';
-                }
-            });
             renderDebugEvents();
         }
 
         function renderDebugEvents() {
-            const container = document.getElementById('debugEventsList');
-            const filtered = gameEvents.filter(ev => currentEventFilter === 'all' || ev.type === currentEventFilter);
-            
-            container.innerHTML = filtered.map((ev, originalIndex) => {
-                const realIndex = gameEvents.indexOf(ev);
-                return `
-                <div class="bg-slate-950 p-2.5 rounded-lg border border-purple-800 flex flex-col gap-2 text-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-yellow-300">イベント #${realIndex+1}</span>
-                        <select onchange="gameEvents[${realIndex}].type=this.value; renderDebugEvents();" class="bg-slate-900 border border-purple-600 rounded px-1.5 py-0.5 text-white font-bold text-[11px]">
-                            <option value="plus" ${ev.type==='plus'?'selected':''}>🔵 プラス（増）</option>
-                            <option value="minus" ${ev.type==='minus'?'selected':''}>🔴 マイナス（減）</option>
-                            <option value="item" ${ev.type==='item'?'selected':''}>🎁 アイテムマス</option>
-                            <option value="white" ${ev.type==='white'?'selected':''}>⚪ 白色マス</option>
-                        </select>
-                    </div>
-                    <input type="text" value="${ev.title}" onchange="gameEvents[${realIndex}].title=this.value" placeholder="タイトル" class="bg-slate-900 border border-purple-600 rounded px-2 py-1 text-white">
-                    <input type="text" value="${ev.desc}" onchange="gameEvents[${realIndex}].desc=this.value" placeholder="説明文" class="bg-slate-900 border border-purple-600 rounded px-2 py-1 text-gray-300">
-                    <div class="flex items-center gap-2">
-                        <span class="text-purple-300 text-[11px]">リスナー変動数:</span>
-                        <input type="number" value="${ev.val}" onchange="gameEvents[${realIndex}].val=parseInt(this.value)||0" class="w-24 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-yellow-300 font-mono">
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        // --- ドット絵編集対象の切替＆操作 ---
-        function changeDotTarget(targetKey) {
-            saveCurrentDotGridToTarget();
-            selectedDotTarget = targetKey;
-            dotHistoryStack = []; // ターゲット変更時に履歴クリア
-            loadTargetDotGrid(targetKey);
-            renderDotCanvas();
-        }
-
-        function saveCurrentDotGridToTarget() {
-            if (selectedDotTarget && customDotData[selectedDotTarget]) {
-                customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
-            }
-        }
-
-        // 操作履歴の保存 (アンドゥ用)
-        function pushDotHistory() {
-            if (dotHistoryStack.length >= 20) dotHistoryStack.shift(); // 最大20回分保存
-            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
-        }
-
-        // ↩️ アンドゥ（1つ前の状態に戻す）
-        function undoDotCanvas() {
-            if (dotHistoryStack.length > 0) {
-                dotGrid = dotHistoryStack.pop();
-                saveCurrentDotGridToTarget();
-                renderDotCanvas();
-                drawCharPreviews();
-            }
-        }
-
-        function loadTargetDotGrid(targetKey) {
-            if (customDotData[targetKey]) {
-                dotGrid = JSON.parse(JSON.stringify(customDotData[targetKey]));
-            } else {
-                dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
-            }
-        }
-
-        function resetCurrentDotToDefault() {
-            initDefaultDotGrids();
-            loadTargetDotGrid(selectedDotTarget);
-            renderDotCanvas();
-        }
-
-        // --- ドット絵キャンバスイベント ---
-        function setupDotEditorEvents() {
-            if (!dotCanvas) return;
-
-            // Ctrl+Z でのアンドゥショートカット
-            window.addEventListener('keydown', e => {
-                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-                    if (activeTab === 'dots' && !document.getElementById('debugModal').classList.contains('hidden')) {
-                        e.preventDefault();
-                        undoDotCanvas();
-                    }
-                }
+            let container = document.getElementById('debugEventsList');
+            if (!container) return;
+            container.innerHTML = '';
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            list.forEach((ev, idx) => {
+                let div = document.createElement('div');
+                div.className = 'p-2 bg-slate-950 border border-purple-800 rounded flex items-center justify-between gap-2';
+                div.innerHTML = `
+                    <span class="text-xs text-yellow-300 font-bold">${ev.title}</span>
+                    <span class="text-xs text-gray-300">${ev.desc}</span>
+                `;
+                container.appendChild(div);
             });
+        }
 
-            const handleDotCanvasInteraction = (e, isStart = false) => {
-                const rect = dotCanvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                const x = Math.floor((clientX - rect.left) / (rect.width / 16));
-                const y = Math.floor((clientY - rect.top) / (rect.height / 16));
+        // --- 跳躍（ぴょんぴょん）移動制御 ---
+        function movePlayer(pIndex, steps) {
+            if (isMoving) return;
+            isMoving = true;
+            let p = players[pIndex];
+            let targetPos = Math.min(tileCoords.length - 1, p.pos + steps);
 
-                if (x >= 0 && x < 16 && y >= 0 && y < 16) {
-                    // 🧪 スポイトモードの場合
-                    if (isDotEyedropper) {
-                        const targetColor = dotGrid[y][x];
-                        if (targetColor && targetColor !== '#00000000') {
-                            const picker = document.getElementById('dotColorPicker');
-                            if (picker) picker.value = targetColor;
-                            currentColor = targetColor;
+            function stepJump() {
+                if (p.pos < targetPos) {
+                    let from = p.pos;
+                    let to = p.pos + 1;
+                    jumpAnimation = {
+                        pIndex: pIndex,
+                        fromPos: from,
+                        toPos: to,
+                        progress: 0,
+                        startTime: performance.now(),
+                        duration: 380
+                    };
+
+                    let animate = (now) => {
+                        let elapsed = now - jumpAnimation.startTime;
+                        let progress = Math.min(1, elapsed / jumpAnimation.duration);
+                        jumpAnimation.progress = progress;
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            p.pos = to;
+                            jumpAnimation.pIndex = -1;
+
+                            // 各プレイヤーが1マス移動完了した180ms後に、ごしゅが遅れて同じマスへぴょんぴょん追従
+                            setTimeout(() => {
+                                startGoshuJump(pIndex, from, to);
+                            }, 180);
+
+                            setTimeout(stepJump, 80);
                         }
-                        toggleDotEyedropper(false); // 色取得後、スポイトをオフにする
-                        return;
-                    }
+                    };
+                    requestAnimationFrame(animate);
+                } else {
+                    isMoving = false;
+                    setTimeout(() => {
+                        triggerTileEvent(pIndex);
+                    }, 450);
+                }
+            }
+            stepJump();
+        }
 
-                    // 書き始め（クリック/タッチ開始時）に履歴を保存
-                    if (isStart) {
-                        pushDotHistory();
-                    }
+        function startGoshuJump(pIndex, from, to) {
+            let g = goshuPositions[pIndex];
+            g.fromPos = from;
+            g.toPos = to;
+            g.progress = 0;
+            g.startTime = performance.now();
+            g.isJumping = true;
 
-                    const picker = document.getElementById('dotColorPicker');
-                    currentColor = picker ? picker.value : '#9333ea';
-                    dotGrid[y][x] = isDotEraser ? '#00000000' : currentColor;
-                    saveCurrentDotGridToTarget();
-                    renderDotCanvas();
-                    drawCharPreviews();
+            let animateGoshu = (now) => {
+                let elapsed = now - g.startTime;
+                let progress = Math.min(1, elapsed / g.duration);
+                g.progress = progress;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateGoshu);
+                } else {
+                    g.pos = to;
+                    g.isJumping = false;
                 }
             };
-
-            dotCanvas.addEventListener('mousedown', e => { isDrawingDot = true; handleDotCanvasInteraction(e, true); });
-            dotCanvas.addEventListener('mousemove', e => { if (isDrawingDot) handleDotCanvasInteraction(e, false); });
-            window.addEventListener('mouseup', () => isDrawingDot = false);
-
-            dotCanvas.addEventListener('touchstart', e => { isDrawingDot = true; handleDotCanvasInteraction(e, true); e.preventDefault(); }, { passive: false });
-            dotCanvas.addEventListener('touchmove', e => { if (isDrawingDot) handleDotCanvasInteraction(e, false); e.preventDefault(); }, { passive: false });
-            window.addEventListener('touchend', () => isDrawingDot = false);
+            requestAnimationFrame(animateGoshu);
         }
 
-        // 🧪 スポイトモードの切り替え
-        function toggleDotEyedropper(forceState = null) {
-            isDotEyedropper = forceState !== null ? forceState : !isDotEyedropper;
-            if (isDotEyedropper) isDotEraser = false; // 消しゴムは解除
-            
-            const btn = document.getElementById('btnDotEyedropper');
-            if (btn) {
-                btn.className = isDotEyedropper 
-                    ? 'px-2 py-1 text-xs bg-cyan-600 text-white rounded border border-cyan-300 font-bold flex items-center gap-1 shadow-md' 
-                    : 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1';
+        function triggerTileEvent(pIndex) {
+            let p = players[pIndex];
+            let tile = tileCoords[p.pos];
+            let tileType = tile.type || 'white';
+
+            let matchingEvents = gameEvents.filter(e => e.type === tileType);
+            if (matchingEvents.length === 0) {
+                matchingEvents = gameEvents.filter(e => e.type === 'white');
+            }
+            let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)] || defaultEvents[0];
+
+            let titleStr = event.title;
+            let descStr = event.desc;
+            let effectStr = '-';
+
+            // 青マス・赤マスの場合、自動で振らず手動サイコロ振りの入力待ち状態にする
+            if (tileType === 'plus' || tileType === 'minus') {
+                isSubRollPending = true;
+                pendingTileType = tileType;
+
+                let modeName = tileType === 'plus' ? '🔵 プラスマス' : '🔴 マイナスマス';
+                titleStr = `【${modeName}】`;
+                descStr = `${event.desc} ${p.name}さんの番です。もう一度サイコロを振ってください！`;
+                effectStr = '🎲 サイコロ振り待ち中...';
+
+                document.getElementById('currentEventTitle').innerText = titleStr;
+                document.getElementById('currentEventDesc').innerText = descStr;
+                document.getElementById('currentEventEffect').innerText = effectStr;
+
+                let btnRoll = document.getElementById('btnRoll');
+                btnRoll.innerText = '🎲 サイコロを振る！';
+
+                if (currentPlayerIndex === 0) {
+                    btnRoll.disabled = false;
+                } else {
+                    btnRoll.disabled = true;
+                    // CPUの手番の場合は1.5秒後に自発的にボタン処理(executeSubDiceRoll)を実行
+                    setTimeout(() => {
+                        executeSubDiceRoll();
+                    }, 1500);
+                }
+                return;
             }
 
-            const eraserBtn = document.getElementById('btnDotEraser');
-            if (eraserBtn) eraserBtn.className = 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+            if (tileType === 'item') {
+                let itemsList = ['⚡スパチャブースター', '🎙️最高級マイク', '🎮レトロゲームソフト', '🍰配信差し入れ'];
+                let gotItem = itemsList[Math.floor(Math.random() * itemsList.length)];
+                effectStr = `アイテム獲得: ${gotItem}`;
+                descStr = `${event.desc} 【${gotItem}】を手に入れました！`;
+
+                if (pIndex === 0) {
+                    let container = document.getElementById('itemListContainer');
+                    if (container) {
+                        let span = document.createElement('span');
+                        span.className = 'text-xs bg-yellow-900/80 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/60 flex-none';
+                        span.innerText = gotItem;
+                        if (container.children[0] && container.children[0].innerText.includes('なし')) {
+                            container.innerHTML = '';
+                        }
+                        container.appendChild(span);
+                    }
+                }
+            } else if (tileType === 'goal') {
+                titleStr = '👑 ゴール到達！';
+                descStr = `おめでとうございます！${p.name}がゴールに一番乗りしました！`;
+                let goalBonus = 1000;
+                p.listeners += goalBonus;
+                effectStr = `🎉 ゴールボーナス: +${goalBonus}人！`;
+                document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+            } else {
+                effectStr = '効果なし（平穏なターン）';
+            }
+
+            document.getElementById('currentEventTitle').innerText = titleStr;
+            document.getElementById('currentEventDesc').innerText = descStr;
+            document.getElementById('currentEventEffect').innerText = effectStr;
+
+            setTimeout(() => {
+                nextTurn();
+            }, 3500);
         }
 
-        function renderDotCanvas() {
-            if (!dotCtx) return;
-            const size = 256 / 16;
-            dotCtx.clearRect(0, 0, 256, 256);
+        // 青・赤マス用：ボタンを押してサイコロを振る処理
+        function executeSubDiceRoll() {
+            if (!isSubRollPending || isRolling) return;
+            isRolling = true;
+            let p = players[currentPlayerIndex];
+            let count = 0;
+            let rollValue = 1;
 
-            // 16x16のグリッドとドット描画
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    // 背景チェッカー模様
-                    dotCtx.fillStyle = (r + c) % 2 === 0 ? '#1e293b' : '#0f172a';
-                    dotCtx.fillRect(c * size, r * size, size, size);
+            let interval = setInterval(() => {
+                rollValue = Math.floor(Math.random() * 6) + 1;
+                drawDice(rollValue);
+                count++;
+                if (count > 12) {
+                    clearInterval(interval);
+                    isRolling = false;
+                    isSubRollPending = false;
 
-                    // ピクセル色
-                    if (dotGrid[r][c] !== '#00000000') {
-                        dotCtx.fillStyle = dotGrid[r][c];
-                        dotCtx.fillRect(c * size, r * size, size, size);
+                    let changeVal = 0;
+                    let effectStr = '';
+                    if (pendingTileType === 'plus') {
+                        // 青マス: 出目が大きいほど増加が大きい (1->100, 2->200, ..., 6->600)
+                        changeVal = rollValue * 100;
+                        effectStr = `サイコロ【${rollValue}】: リスナー +${changeVal}人 UP!`;
+                    } else {
+                        // 赤マス: 出目が小さいほど減少が大きい (1->-600, 2->-500, ..., 6->-100)
+                        changeVal = -(7 - rollValue) * 100;
+                        effectStr = `サイコロ【${rollValue}】: リスナー ${changeVal}人 DOWN!`;
                     }
 
-                    // 枠線
-                    dotCtx.strokeStyle = '#334155';
-                    dotCtx.strokeRect(c * size, r * size, size, size);
+                    p.listeners = Math.max(0, p.listeners + changeVal);
+                    document.getElementById(`p${currentPlayerIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+                    document.getElementById('currentEventEffect').innerText = effectStr;
+
+                    document.getElementById('btnRoll').innerText = '🎲 移動！';
+
+                    setTimeout(() => {
+                        nextTurn();
+                    }, 3000);
                 }
+            }, 100);
+        }
+
+        function nextTurn() {
+            isSubRollPending = false;
+            document.getElementById('btnRoll').innerText = '🎲 移動！';
+
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            let activePlayer = players[currentPlayerIndex];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+
+            if (currentPlayerIndex === 0) {
+                document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                document.getElementById('btnRoll').disabled = false;
+            } else {
+                document.getElementById('btnRoll').disabled = true;
+                document.getElementById('currentEventTitle').innerText = '【CPUのターン】';
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中... サイコロを振ります。`;
+                
+                setTimeout(() => {
+                    let count = 0;
+                    let roll = 1;
+                    let interval = setInterval(() => {
+                        roll = Math.floor(Math.random() * 6) + 1;
+                        drawDice(roll);
+                        count++;
+                        if (count > 14) {
+                            clearInterval(interval);
+                            movePlayer(currentPlayerIndex, roll);
+                        }
+                    }, 100);
+                }, 1000);
             }
         }
 
-        function setDotEraser() {
-            isDotEraser = !isDotEraser;
-            if (isDotEraser) isDotEyedropper = false; // スポイトは解除
-            
-            const btn = document.getElementById('btnDotEraser');
-            if (btn) btn.className = isDotEraser ? 'px-2 py-1 text-xs bg-yellow-600 text-white rounded border border-yellow-400 font-bold' : 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
-            
-            const eyeBtn = document.getElementById('btnDotEyedropper');
-            if (eyeBtn) eyeBtn.className = 'px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600 flex items-center gap-1';
-        }
+        // --- メインゲーム描画ループ ---
+        function gameLoop() {
+            if (ctx && canvas) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        function clearDotCanvas() {
-            pushDotHistory(); // クリア前の状態を履歴に保存
-            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
-            saveCurrentDotGridToTarget();
-            renderDotCanvas();
-            drawCharPreviews();
-        }
+                // 明るい芝生（グリーン）背景を全面描画
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // --- 📋 全ドット絵データをクリップボードへ一括コピー ---
-        function copyDotDataToClipboard() {
-            saveCurrentDotGridToTarget();
-            const textData = JSON.stringify(customDotData);
-            
-            // コピー用テキストエリア生成
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = textData;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
+                ctx.save();
 
-            alert("ドット絵データをコピーしました！チャット欄に貼り付けて教えてください。");
-        }
+                if (isFullMapView && tileCoords.length > 0) {
+                    let minX = Math.min(...tileCoords.map(t => t.x));
+                    let maxX = Math.max(...tileCoords.map(t => t.x));
+                    let minY = Math.min(...tileCoords.map(t => t.y));
+                    let maxY = Math.max(...tileCoords.map(t => t.y));
 
-        function saveDebugSettings() {
-            saveCurrentDotGridToTarget();
-            saveDataToLocalStorage(); // 💾 ブラウザのlocalStorageへ永続保存！
-            drawCharPreviews();
-            closeDebugMenu();
-        }
+                    let mapW = maxX - minX + 160;
+                    let mapH = maxY - minY + 160;
+                    let scale = Math.min(canvas.width / mapW, canvas.height / mapH);
 
-        function resetDebugDefaults() {
-            try {
-                localStorage.removeItem('utsuro_custom_dots');
-                localStorage.removeItem('utsuro_custom_events');
-            } catch (e) {
-                console.error(e);
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.scale(scale, scale);
+                    ctx.translate(-(minX + maxX) / 2, -(minY + maxY) / 2);
+                } else {
+                    let currP = players[currentPlayerIndex];
+                    let currTile = tileCoords[currP.pos] || { x: 0, y: 0 };
+                    ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
+                    ctx.scale(userZoomScale, userZoomScale);
+                    ctx.translate(-currTile.x, -currTile.y);
+                }
+
+                // 1. コースライン（道路）描画
+                if (window.roadConnections && window.roadConnections.length > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 28;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    window.roadConnections.forEach(conn => {
+                        ctx.moveTo(conn.x1, conn.y1);
+                        ctx.lineTo(conn.x2, conn.y2);
+                    });
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#64748b';
+                    ctx.lineWidth = 22;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    window.roadConnections.forEach(conn => {
+                        ctx.moveTo(conn.x1, conn.y1);
+                        ctx.lineTo(conn.x2, conn.y2);
+                    });
+                    ctx.stroke();
+                }
+
+                // 2. 街並みオブジェクト描画
+                cityObjects.forEach(obj => drawCityObject(ctx, obj));
+
+                // 3. マス目描画
+                let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
+                let markSymbols = { start: 'S', plus: '↑', minus: '↓', item: '🎁', white: '・', goal: '👑' };
+
+                tileCoords.forEach(t => {
+                    ctx.beginPath();
+                    ctx.fillStyle = typeColors[t.type] || '#ffffff';
+                    ctx.arc(t.x, t.y, 16, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.stroke();
+
+                    ctx.fillStyle = (t.type === 'white' || t.type === 'start') ? '#1e293b' : '#ffffff';
+                    ctx.font = 'bold 12px DotGothic16';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(markSymbols[t.type] || '・', t.x, t.y);
+                });
+
+                // 4. プレイヤーコマ＆お供（ごしゅ）ジャンプ移動描画
+                players.forEach((p, idx) => {
+                    let offset = (idx - 1) * 12;
+
+                    // VTuber本体の描画位置・高度（跳躍アニメーション）
+                    let currentX, currentY, shadowAlpha = 0.3;
+                    if (jumpAnimation.pIndex === idx) {
+                        let fromTile = tileCoords[jumpAnimation.fromPos];
+                        let toTile = tileCoords[jumpAnimation.toPos];
+                        if (fromTile && toTile) {
+                            let prog = jumpAnimation.progress;
+                            currentX = fromTile.x + (toTile.x - fromTile.x) * prog + offset;
+                            let jumpHeight = Math.sin(prog * Math.PI) * 26;
+                            currentY = fromTile.y + (toTile.y - fromTile.y) * prog - 6 - jumpHeight;
+
+                            // 跳躍中の足元の影描画
+                            ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha * (1 - prog * 0.4)})`;
+                            ctx.beginPath();
+                            ctx.ellipse(fromTile.x + (toTile.x - fromTile.x) * prog + offset, fromTile.y + (toTile.y - fromTile.y) * prog + 10, 10, 4, 0, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else {
+                        let tile = tileCoords[p.pos];
+                        if (tile) {
+                            currentX = tile.x + offset;
+                            currentY = tile.y - 6;
+                        }
+                    }
+
+                    if (currentX !== undefined && currentY !== undefined) {
+                        // 本体を描画 (ごしゅは別途遅れて描画するため false)
+                        drawPlayerDotModel(ctx, p.char, currentX, currentY, 32, false);
+                    }
+
+                    // ごしゅ（お供）の遅れてついていく描画
+                    let g = goshuPositions[idx];
+                    let goshuX, goshuY;
+                    if (g.isJumping) {
+                        let gFrom = tileCoords[g.fromPos];
+                        let gTo = tileCoords[g.toPos];
+                        if (gFrom && gTo) {
+                            let gProg = g.progress;
+                            goshuX = gFrom.x + (gTo.x - gFrom.x) * gProg + offset + 14;
+                            let gJumpHeight = Math.sin(gProg * Math.PI) * 18;
+                            goshuY = gFrom.y + (gTo.y - gFrom.y) * gProg + 2 - gJumpHeight;
+                        }
+                    } else {
+                        let gTile = tileCoords[g.pos];
+                        if (gTile) {
+                            goshuX = gTile.x + offset + 14;
+                            goshuY = gTile.y + 2;
+                        }
+                    }
+
+                    if (goshuX !== undefined && goshuY !== undefined) {
+                        drawGoshuOnly(ctx, p.char, goshuX, goshuY, 18);
+                    }
+                });
+
+                ctx.restore();
             }
-            gameEvents = JSON.parse(JSON.stringify(defaultEvents));
-            initDefaultDotGrids();
-            loadTargetDotGrid(selectedDotTarget);
-            renderDebugEvents();
-            renderDotCanvas();
-            drawCharPreviews();
-            updatePlayerNamesAndUI();
+            requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
