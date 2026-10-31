@@ -1442,14 +1442,13 @@
                         let targetGoshuX = (p.renderX !== undefined ? p.renderX : tile.x) + offset + 12;
                         let targetGoshuY = (p.renderY !== undefined ? p.renderY : tile.y) + 4;
 
-                        p.goshuX += (targetGoshuX - p.goshuX) * 0.12;
-                        p.goshuY += (targetGoshuY - p.goshuY) * 0.12;
-
-                        // ごしゅも歩調に合わせて少し跳ねる
-                        let goshuJump = Math.sin(Date.now() * 0.01 + idx) * (isMoving ? 3 : 0.8);
+                        // 補完率を下げて、操作キャラからもっと遅れてゆっくり追従するように調整
+                        p.goshuX += (targetGoshuX - p.goshuX) * 0.04;
+                        p.goshuY += (targetGoshuY - p.goshuY) * 0.04;
 
                         drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
-                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJump, 18);
+                        // 常にゆらゆら揺れるモーションを削除し、完全に静止
+                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY, 18);
                     }
                 });
 
