@@ -267,9 +267,14 @@
                             <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
                             <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
                         </div>
-                        <button onclick="addNewDebugEvent()" class="px-2.5 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow flex items-center gap-1">
-                            ➕ 新規イベント追加
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="copyEventDataToClipboard()" class="px-2.5 py-1 text-xs bg-indigo-700 hover:bg-indigo-600 text-white rounded font-bold shadow flex items-center gap-1">
+                                📋 イベントデータをコピー
+                            </button>
+                            <button onclick="addNewDebugEvent()" class="px-2.5 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow flex items-center gap-1">
+                                ➕ 新規イベント追加
+                            </button>
+                        </div>
                     </div>
                     <div id="debugEventsList" class="space-y-2.5"></div>
                 </div>
@@ -780,6 +785,12 @@
             alert('ドット絵データをクリップボードにコピーしました！');
         }
 
+        function copyEventDataToClipboard() {
+            let dataStr = JSON.stringify(gameEvents, null, 2);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('イベントデータをクリップボードにコピーしました！チャット欄に貼り付け可能です。');
+        }
+
         function setMapTool(tool) {
             selectedMapTool = tool;
         }
@@ -1094,7 +1105,8 @@
                 type: targetType,
                 title: '【新規イベント】',
                 desc: 'イベントの説明文を入力してください。',
-                val: targetType === 'plus' ? 200 : (targetType === 'minus' ? -200 : 0)
+                val: targetType === 'plus' ? 200 : (targetType === 'minus' ? -200 : 0),
+                item: targetType === 'item' ? '⚡スパチャブースター' : ''
             });
             renderDebugEvents();
         }
@@ -1127,17 +1139,12 @@
                 let div = document.createElement('div');
                 div.className = 'p-2.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-2 shadow';
                 
-                let typeBadges = {
-                    plus: '🔵 プラス',
-                    minus: '🔴 マイナス',
-                    item: '🎁 アイテム',
-                    white: '⚪ 白色'
-                };
+                let isItem = ev.type === 'item';
 
                 div.innerHTML = `
                     <div class="flex items-center justify-between gap-2 border-b border-purple-900/60 pb-1.5">
                         <div class="flex items-center gap-2">
-                            <select onchange="updateEventField(${realIdx}, 'type', this.value)" class="bg-slate-900 border border-purple-600 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                            <select onchange="updateEventField(${realIdx}, 'type', this.value); renderDebugEvents();" class="bg-slate-900 border border-purple-600 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
                                 <option value="plus" ${ev.type === 'plus' ? 'selected' : ''}>🔵 プラス</option>
                                 <option value="minus" ${ev.type === 'minus' ? 'selected' : ''}>🔴 マイナス</option>
                                 <option value="item" ${ev.type === 'item' ? 'selected' : ''}>🎁 アイテム</option>
@@ -1150,18 +1157,24 @@
                         </button>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="sm:col-span-2 flex flex-col gap-1">
+                        <div class="${isItem ? 'sm:col-span-3' : 'sm:col-span-2'} flex flex-col gap-1">
                             <label class="text-[10px] text-purple-300 font-bold">タイトル</label>
-                            <input type="text" value="${ev.title.replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'title', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400">
+                            <input type="text" value="${(ev.title || '').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'title', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400">
                         </div>
+                        ${!isItem ? `
                         <div class="flex flex-col gap-1">
                             <label class="text-[10px] text-purple-300 font-bold">増減数 (リスナー数)</label>
-                            <input type="number" value="${ev.val}" onchange="updateEventField(${realIdx}, 'val', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-cyan-300 font-bold focus:outline-none focus:border-yellow-400">
-                        </div>
+                            <input type="number" value="${ev.val || 0}" onchange="updateEventField(${realIdx}, 'val', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-cyan-300 font-bold focus:outline-none focus:border-yellow-400">
+                        </div>` : ''}
                     </div>
+                    ${isItem ? `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-yellow-300 font-bold">🎁 手に入るアイテム名</label>
+                        <input type="text" value="${(ev.item || '⚡スパチャブースター').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'item', this.value)" class="bg-slate-900 border border-yellow-600 rounded px-2 py-1 text-xs text-yellow-200 focus:outline-none focus:border-yellow-400">
+                    </div>` : ''}
                     <div class="flex flex-col gap-1">
                         <label class="text-[10px] text-purple-300 font-bold">説明テキスト</label>
-                        <input type="text" value="${ev.desc.replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'desc', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-yellow-400">
+                        <input type="text" value="${(ev.desc || '').replace(/"/g, '&quot;')}" onchange="updateEventField(${realIdx}, 'desc', this.value)" class="bg-slate-900 border border-purple-700 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-yellow-400">
                     </div>
                 `;
                 container.appendChild(div);
@@ -1277,7 +1290,6 @@
                     btnRoll.disabled = false;
                 } else {
                     btnRoll.disabled = true;
-                    // CPUの手番の場合は1.5秒後に自発的にボタン処理(executeSubDiceRoll)を実行
                     setTimeout(() => {
                         executeSubDiceRoll();
                     }, 1500);
@@ -1286,8 +1298,7 @@
             }
 
             if (tileType === 'item') {
-                let itemsList = ['⚡スパチャブースター', '🎙️最高級マイク', '🎮レトロゲームソフト', '🍰配信差し入れ'];
-                let gotItem = itemsList[Math.floor(Math.random() * itemsList.length)];
+                let gotItem = event.item || '⚡スパチャブースター';
                 effectStr = `アイテム獲得: ${gotItem}`;
                 descStr = `${event.desc} 【${gotItem}】を手に入れました！`;
 
