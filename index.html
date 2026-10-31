@@ -361,8 +361,10 @@
         // BGMオーディオ要素 (同一フォルダ内の mp3 ファイルを自動ループ再生)
         let modalAudio = new Audio('./select_bgm.mp3');
         modalAudio.loop = true;
+        modalAudio.preload = 'auto'; // 最優先先読み
         let gameAudio = new Audio('./game_bgm.mp3');
         gameAudio.loop = true;
+        gameAudio.preload = 'auto';
 
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
@@ -452,6 +454,19 @@
             initDefaultDotGrids();
             initDefaultMapGrid();
             loadDataFromLocalStorage();
+
+            // キャラクター選択画面のBGMをノータイムで即座に自動再生試行
+            modalAudio.play().catch(e => {
+                let instantPlay = () => {
+                    modalAudio.play().catch(err => {});
+                    window.removeEventListener('click', instantPlay);
+                    window.removeEventListener('touchstart', instantPlay);
+                    window.removeEventListener('keydown', instantPlay);
+                };
+                window.addEventListener('click', instantPlay);
+                window.addEventListener('touchstart', instantPlay);
+                window.addEventListener('keydown', instantPlay);
+            });
 
             generateRandomMap(roomSeed);
             drawCharPreviews();
