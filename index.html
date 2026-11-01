@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>氷室うつろ Vstreamerすごろく</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +15,7 @@
             user-select: none;
             background-color: #090d16;
             color: #ffffff;
+            touch-action: manipulation;
         }
 
         h1, h2, h3, .pixel-btn, #currentEventTitle, #turnCounter, #gameStatusText {
@@ -23,14 +24,13 @@
             letter-spacing: 0.02em;
         }
 
-        /* 潰れの原因だった過剰な縁取りを解消し、すっきり読みやすいシャドウへ変更 */
         .text-outline {
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
         }
 
         /* レトロRPG風枠線 */
         .pixel-box {
-            border: 4px solid #7c3aed;
+            border: 3px solid #7c3aed;
             box-shadow: 0 0 10px rgba(124, 58, 237, 0.5), inset 0 0 8px rgba(0,0,0,0.8);
             background: #120e24;
         }
@@ -39,17 +39,17 @@
         .pixel-btn {
             background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
             border: 2px solid #c084fc;
-            box-shadow: 0 4px 0 #3b0764;
+            box-shadow: 0 3px 0 #3b0764;
             transition: all 0.1s ease;
         }
         .pixel-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 0 #3b0764;
+            box-shadow: 0 5px 0 #3b0764;
             filter: brightness(1.1);
         }
         .pixel-btn:active:not(:disabled) {
             transform: translateY(2px);
-            box-shadow: 0 2px 0 #3b0764;
+            box-shadow: 0 1px 0 #3b0764;
         }
         .pixel-btn:disabled {
             background: #374151;
@@ -69,100 +69,110 @@
         ::-webkit-scrollbar {
             display: none;
         }
+
+        /* スマホ用音量コントロール非表示用スタイル */
+        .mobile-hide-volume {
+            display: flex;
+        }
+        @media (max-width: 640px) {
+            .mobile-hide-volume {
+                display: none !important;
+            }
+        }
     </style>
 </head>
-<body class="flex flex-col h-screen w-screen overflow-hidden text-white bg-slate-950">
+<body class="flex flex-col min-h-screen sm:h-screen w-screen overflow-x-hidden sm:overflow-hidden text-white bg-slate-950">
 
-    <!-- メイン1画面コンテナ -->
-    <main class="flex flex-col h-full w-full max-w-5xl mx-auto p-1.5 sm:p-3 gap-2 overflow-hidden">
+    <!-- メインコンテナ（スマホでのスクロールおよびUI切切れに対応） -->
+    <main class="flex flex-col h-full w-full max-w-5xl mx-auto p-1.5 sm:p-3 gap-1.5 sm:gap-2 overflow-y-auto sm:overflow-hidden pb-12 sm:pb-3">
         
         <!-- ヘッダー：タイトル＆スコア -->
-        <header class="flex-none flex items-center justify-between pixel-box p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-sm sm:text-lg flex-none">
-                    ❄️
-                </div>
-                <div>
-                    <div class="flex items-center gap-1.5">
-                        <h1 class="text-xs sm:text-base font-black text-purple-200 tracking-wider text-outline">氷室うつろ Vstreamerすごろく</h1>
+        <header class="flex-none flex flex-col sm:flex-row items-stretch sm:items-center justify-between pixel-box p-1.5 sm:p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500 gap-1.5">
+            <div class="flex items-center justify-between sm:justify-start gap-2">
+                <div class="flex items-center gap-1.5">
+                    <div class="w-7 h-7 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs sm:text-lg flex-none">
+                        ❄️
                     </div>
-                    <p id="gameStatusText" class="text-[11px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none text-outline">準備中... モードを選択してください</p>
+                    <div>
+                        <h1 class="text-xs sm:text-base font-black text-purple-200 tracking-wider text-outline">氷室うつろ Vstreamerすごろく</h1>
+                        <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[180px] sm:max-w-none text-outline">準備中... モードを選択してください</p>
+                    </div>
+                </div>
+
+                <!-- 🎵 音量調整スライダー（スマホ表示時のみ自動非表示） -->
+                <div id="headerVolumeBox" class="mobile-hide-volume items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
+                    <span class="text-xs text-yellow-300">🎵</span>
+                    <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-12 sm:w-20 accent-purple-400 cursor-pointer">
                 </div>
             </div>
 
             <!-- リスナー数比較 -->
-            <div class="flex items-center gap-1.5 sm:gap-4 text-xs sm:text-sm font-bold">
-                <!-- 🎵 音量調整スライダー -->
-                <div class="flex items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
-                    <span class="text-xs text-yellow-300">🎵</span>
-                    <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-14 sm:w-20 accent-purple-400 cursor-pointer">
+            <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
+                <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
+                    <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
+                    <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
+                    <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                 </div>
-
-                <div class="flex items-center gap-1 bg-purple-900/80 px-2 py-1 rounded border border-purple-400">
-                    <span id="p1Badge" class="text-purple-300 text-[10px] font-black">1P</span>
-                    <span id="p1Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
-                    <span id="p1Listeners" class="text-yellow-300 font-mono font-bold text-outline">1,000人</span>
+                <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
+                    <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
+                    <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
+                    <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                 </div>
-                <div class="flex items-center gap-1 bg-indigo-900/80 px-2 py-1 rounded border border-indigo-400">
-                    <span id="p2Badge" class="text-indigo-300 text-[10px] font-black">2P</span>
-                    <span id="p2Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
-                    <span id="p2Listeners" class="text-cyan-300 font-mono font-bold text-outline">1,000人</span>
-                </div>
-                <div id="p3Box" class="flex items-center gap-1 bg-pink-900/80 px-2 py-1 rounded border border-pink-400">
-                    <span id="p3Badge" class="text-pink-300 text-[10px] font-black">3P</span>
-                    <span id="p3Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">トモコ</span>
-                    <span id="p3Listeners" class="text-pink-300 font-mono font-bold text-outline">1,000人</span>
+                <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
+                    <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
+                    <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
+                    <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                 </div>
             </div>
         </header>
 
         <!-- 中央エリア：すごろくマップ (Canvas) -->
-        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[180px] bg-slate-900 flex items-center justify-center">
-            <canvas id="boardCanvas" class="w-full h-full object-contain"></canvas>
+        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[220px] sm:min-h-[180px] h-[35vh] sm:h-auto bg-slate-900 flex items-center justify-center">
+            <canvas id="boardCanvas" class="w-full h-full object-contain touch-none"></canvas>
             
             <!-- 分岐選択用オーバーレイコンテナ -->
             <div id="branchOverlayContainer" class="absolute inset-0 pointer-events-none z-20"></div>
 
             <!-- ターン表示＆カメラ切替オーバーレイ -->
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-                <div class="bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
+                <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
                     <span class="text-purple-300 font-bold">TURN</span>
                     <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1 / 30</span>
                 </div>
-                <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-1 rounded text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
+                <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
                 </button>
             </div>
         </section>
 
         <!-- 下部コントローラー＆イベント情報エリア -->
-        <section class="flex-none grid grid-cols-1 md:grid-cols-3 gap-2">
+        <section class="flex-none grid grid-cols-1 md:grid-cols-3 gap-1.5 sm:gap-2">
             <!-- サイコロ＆操作パネル -->
-            <div class="pixel-box p-2 rounded-lg flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-2 border-purple-500">
-                <div class="flex items-center gap-3">
-                    <canvas id="diceCanvas" width="48" height="48" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner"></canvas>
+            <div class="pixel-box p-1.5 sm:p-2 rounded-lg flex sm:flex-col items-center justify-between sm:justify-center gap-2 bg-slate-900 border-2 border-purple-500">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <canvas id="diceCanvas" width="40" height="40" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner sm:w-12 sm:h-12"></canvas>
                     <div class="flex flex-col">
-                        <span id="activePlayerTag" class="text-xs font-bold text-purple-300">手番: 氷室うつろ</span>
-                        <span id="diceResultText" class="text-xs font-bold text-yellow-300">準備完了</span>
+                        <span id="activePlayerTag" class="text-[11px] sm:text-xs font-bold text-purple-300">手番: 氷室うつろ</span>
+                        <span id="diceResultText" class="text-[11px] sm:text-xs font-bold text-yellow-300">準備完了</span>
                     </div>
                 </div>
-                <button id="btnRoll" class="pixel-btn py-2 px-6 font-black text-white rounded-lg text-sm sm:text-base w-full shadow-md cursor-pointer">
+                <button id="btnRoll" class="pixel-btn py-2 px-4 sm:px-6 font-black text-white rounded-lg text-xs sm:text-base w-auto sm:w-full shadow-md cursor-pointer flex-none">
                     🎲 移動！
                 </button>
             </div>
 
             <!-- イベントログ・解説表示 -->
-            <div class="pixel-box p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[120px] sm:min-h-[135px]">
+            <div class="pixel-box p-2.5 sm:p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[100px] sm:min-h-[125px]">
                 <div>
-                    <div class="flex items-center justify-between border-b border-purple-700/80 pb-1.5 mb-1.5">
-                        <span id="currentEventTitle" class="text-sm sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1 text-outline">【スタート！】</span>
-                        <span class="text-xs text-purple-200 font-bold bg-purple-900/90 px-2.5 py-0.5 rounded border border-purple-500 shadow">✨ 発生イベント ✨</span>
+                    <div class="flex items-center justify-between border-b border-purple-700/80 pb-1 mb-1">
+                        <span id="currentEventTitle" class="text-xs sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1 text-outline">【スタート！】</span>
+                        <span class="text-[10px] sm:text-xs text-purple-200 font-bold bg-purple-900/90 px-2 py-0.5 rounded border border-purple-500 shadow">✨ 発生イベント ✨</span>
                     </div>
-                    <p id="currentEventDesc" class="text-xs sm:text-sm text-purple-50 font-bold leading-relaxed min-h-[2.8em] tracking-wide">
+                    <p id="currentEventDesc" class="text-[11px] sm:text-sm text-purple-50 font-bold leading-snug sm:leading-relaxed min-h-[2.5em] tracking-wide">
                         好きなキャラクターを選んでゲームスタート！ゴールを目指そう！
                     </p>
                 </div>
-                <div id="currentEventEffect" class="text-xs sm:text-sm font-bold text-cyan-300 mt-1 truncate bg-indigo-950/90 px-2.5 py-1 rounded border border-indigo-400 shadow">
+                <div id="currentEventEffect" class="text-[11px] sm:text-sm font-bold text-cyan-300 mt-1 truncate bg-indigo-950/90 px-2 py-0.5 sm:py-1 rounded border border-indigo-400 shadow">
                     -
                 </div>
             </div>
@@ -170,9 +180,9 @@
 
         <!-- 所持アイテム欄 -->
         <footer class="flex-none pixel-box p-1.5 rounded-lg bg-slate-900/90 border border-purple-500/70 flex items-center gap-2 overflow-x-auto">
-            <span class="text-xs font-bold text-yellow-300 flex-none flex items-center gap-1">🎒 所持アイテム:</span>
+            <span class="text-[11px] sm:text-xs font-bold text-yellow-300 flex-none flex items-center gap-1">🎒 所持アイテム:</span>
             <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-                <span class="text-xs text-gray-300 font-normal">なし（黄色のマスで獲得）</span>
+                <span class="text-[11px] sm:text-xs text-gray-300 font-normal">なし（黄色のマスで獲得）</span>
             </div>
         </footer>
 
@@ -180,19 +190,19 @@
 
     <!-- 🌟 リザルト（結果発表）モーダル -->
     <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100001] hidden">
-        <div class="pixel-box p-5 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center flex flex-col gap-3">
-            <h2 class="text-lg font-black text-yellow-300 tracking-wider">🎉 最終結果発表 🎉</h2>
+        <div class="pixel-box p-4 sm:p-5 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center flex flex-col gap-3">
+            <h2 class="text-base sm:text-lg font-black text-yellow-300 tracking-wider">🎉 最終結果発表 🎉</h2>
             <p class="text-xs text-purple-200 font-bold">全員ゴール！獲得リスナー数ランキング</p>
             <div id="resultRankList" class="flex flex-col gap-2 my-2"></div>
-            <button onclick="location.reload()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
+            <button onclick="location.reload()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
                 🔄 タイトルへ戻る
             </button>
         </div>
     </div>
 
     <!-- 🌟 デバッグ用隠し起動ボタン -->
-    <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-16 h-16 z-[999999] cursor-pointer flex items-start justify-start p-2.5 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
-        <span class="text-purple-300 text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
+    <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
+        <span class="text-purple-300 text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
     </button>
 
     <!-- キャラクター＆対戦モード選択モーダル -->
@@ -211,56 +221,56 @@
 
         <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
-            <p class="text-xs text-purple-200 mb-4 font-bold">プレイするキャラクターを選んでください</p>
+            <p class="text-xs text-purple-200 mb-3 font-bold">プレイするキャラクターを選んでください</p>
 
-            <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="grid grid-cols-3 gap-2 mb-3">
                 <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer ring-4 ring-yellow-400 scale-105">
-                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevUtsuro" width="28" height="28"></canvas>
                         <canvas id="prevUtsuroGoshu" width="20" height="20"></canvas>
                     </div>
-                    <span class="text-xs font-bold text-white">氷室うつろ</span>
+                    <span class="text-[11px] sm:text-xs font-bold text-white">氷室うつろ</span>
                 </button>
                 <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
-                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevGengo" width="28" height="28"></canvas>
                         <canvas id="prevGengoGoshu" width="20" height="20"></canvas>
                     </div>
-                    <span class="text-xs font-bold text-gray-200">繰言かたる</span>
+                    <span class="text-[11px] sm:text-xs font-bold text-gray-200">繰言かたる</span>
                 </button>
                 <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
-                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevTomoko" width="28" height="28"></canvas>
                         <canvas id="prevTomokoGoshu" width="20" height="20"></canvas>
                     </div>
-                    <span class="text-xs font-bold text-gray-200">トモコ</span>
+                    <span class="text-[11px] sm:text-xs font-bold text-gray-200">トモコ</span>
                 </button>
             </div>
 
-            <div class="flex flex-col gap-2 mt-3">
-                <!-- モーダル用音量スライダー -->
-                <div class="flex items-center justify-center gap-2 bg-slate-950/80 p-1.5 rounded border border-purple-800/80">
+            <div class="flex flex-col gap-2 mt-2">
+                <!-- モーダル用音量スライダー（スマホ表示時のみ自動非表示） -->
+                <div id="modalVolumeBox" class="mobile-hide-volume items-center justify-center gap-2 bg-slate-950/80 p-1.5 rounded border border-purple-800/80">
                     <span class="text-xs text-purple-300 font-bold">🎵 BGM音量:</span>
-                    <input type="range" id="modalBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-28 accent-purple-400 cursor-pointer">
+                    <input type="range" id="modalBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-24 accent-purple-400 cursor-pointer">
                     <span id="bgmVolPercent" class="text-xs font-mono text-yellow-300 w-8 text-right font-bold">30%</span>
                 </div>
 
-                <button onclick="startCpuGame()" class="pixel-btn py-2.5 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
+                <button onclick="startCpuGame()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md cursor-pointer flex items-center justify-center gap-2">
                     <span>🤖 VS CPU対戦 (3人対戦)</span>
                 </button>
 
-                <div class="flex items-center gap-2 my-1">
+                <div class="flex items-center gap-2 my-0.5">
                     <div class="flex-1 h-px bg-purple-800"></div>
                     <span class="text-[10px] text-purple-300 font-bold">または オンライン対戦</span>
                     <div class="flex-1 h-px bg-purple-800"></div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
-                    <button onclick="startOnlineGame()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none">
+                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
+                    <button onclick="startOnlineGame()" class="pixel-btn py-1 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none">
                         参加 / 作成
                     </button>
                 </div>
@@ -271,64 +281,64 @@
     <!-- デバッグモーダル -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
         <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
-            <div class="flex-none flex items-center justify-between p-3 border-b border-purple-800 bg-indigo-950/80">
+            <div class="flex-none flex items-center justify-between p-2.5 border-b border-purple-800 bg-indigo-950/80">
                 <div class="flex items-center gap-2">
-                    <span class="text-base">🛠️</span>
-                    <h3 class="text-sm font-black text-yellow-300">デバッグモード & カスタマイズ</h3>
+                    <span class="text-sm sm:text-base">🛠️</span>
+                    <h3 class="text-xs sm:text-sm font-black text-yellow-300">デバッグモード & カスタマイズ</h3>
                 </div>
-                <button onclick="closeDebugMenu()" class="text-gray-400 hover:text-white font-bold px-2 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                <button onclick="closeDebugMenu()" class="text-gray-400 hover:text-white font-bold px-2 py-0.5 text-xs rounded bg-slate-800 hover:bg-slate-700 cursor-pointer">
                     ✕ 閉じる
                 </button>
             </div>
 
             <!-- タブ切替 -->
             <div class="flex-none flex border-b border-purple-800/80 bg-slate-950">
-                <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
+                <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
                     📝 イベント編集
                 </button>
-                <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
                     🎨 ドット絵作成
                 </button>
-                <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
                     🗺️ マップ作成
                 </button>
             </div>
 
             <!-- タブコンテンツエリア -->
-            <div class="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-900/90">
+            <div class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-3 bg-slate-900/90">
                 <!-- イベント編集パネル -->
                 <div id="debugTabEvents" class="space-y-3">
                     <!-- ゴール順位ボーナス設定パネル -->
-                    <div class="bg-indigo-950/90 p-2.5 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-yellow-300 font-bold">🏆 ゴール順位ボーナス設定（リスナー数）:</span>
                         <div class="grid grid-cols-3 gap-2">
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-yellow-300 font-bold">1位:</span>
-                                <input type="number" id="goalBonus1st" value="3000" step="100" class="w-full bg-slate-900 border border-yellow-400 rounded px-1.5 py-1 text-xs text-yellow-300 font-bold text-right">
+                                <input type="number" id="goalBonus1st" value="3000" step="100" class="w-full bg-slate-900 border border-yellow-400 rounded px-1 py-0.5 text-xs text-yellow-300 font-bold text-right">
                             </div>
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-cyan-300 font-bold">2位:</span>
-                                <input type="number" id="goalBonus2nd" value="2000" step="100" class="w-full bg-slate-900 border border-cyan-400 rounded px-1.5 py-1 text-xs text-cyan-300 font-bold text-right">
+                                <input type="number" id="goalBonus2nd" value="2000" step="100" class="w-full bg-slate-900 border border-cyan-400 rounded px-1 py-0.5 text-xs text-cyan-300 font-bold text-right">
                             </div>
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-pink-300 font-bold">3位:</span>
-                                <input type="number" id="goalBonus3rd" value="1000" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1.5 py-1 text-xs text-pink-300 font-bold text-right">
+                                <input type="number" id="goalBonus3rd" value="1000" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1 py-0.5 text-xs text-pink-300 font-bold text-right">
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap gap-2">
-                        <div class="flex items-center gap-1.5">
+                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap gap-1.5">
+                        <div class="flex items-center gap-1 flex-wrap">
                             <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
-                            <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-2 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
-                            <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
-                            <button onclick="filterDebugEvents('minus')" id="filterBtn_minus" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
-                            <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
-                            <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-2 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                            <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-1.5 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
+                            <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
+                            <button onclick="filterDebugEvents('minus')" id="filterBtn_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                            <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                            <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="copyEventDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">📋 イベントデータをコピー</button>
-                            <button onclick="addNewDebugEvent()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">➕ 新規追加</button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="copyEventDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">📋 コピー</button>
+                            <button onclick="addNewDebugEvent()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">➕ 追加</button>
                         </div>
                     </div>
                     <div id="debugEventsList" class="space-y-2"></div>
@@ -348,15 +358,15 @@
                         </select>
                     </div>
 
-                    <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-purple-800 flex-wrap justify-center">
+                    <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
                         <span class="text-xs text-purple-300 font-bold">色:</span>
-                        <input type="color" id="dotColorPicker" value="#9333ea" class="w-7 h-7 bg-transparent cursor-pointer rounded">
-                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">🧪 スポイト</button>
-                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">消しゴム</button>
-                        <button onclick="undoDotCanvas()" class="px-2 py-1 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600">↩️ 戻す</button>
-                        <button onclick="resetCurrentDotToDefault()" class="px-2 py-1 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">元に戻す</button>
-                        <button onclick="clearDotCanvas()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">クリア</button>
-                        <button onclick="copyDotDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 データをコピー</button>
+                        <input type="color" id="dotColorPicker" value="#9333ea" class="w-6 h-6 bg-transparent cursor-pointer rounded">
+                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">🧪 スポイト</button>
+                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">消しゴム</button>
+                        <button onclick="undoDotCanvas()" class="px-1.5 py-0.5 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600">↩️ 戻す</button>
+                        <button onclick="resetCurrentDotToDefault()" class="px-1.5 py-0.5 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">元に戻す</button>
+                        <button onclick="clearDotCanvas()" class="px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">クリア</button>
+                        <button onclick="copyDotDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
                     </div>
 
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
@@ -366,17 +376,17 @@
 
                 <!-- マップエディター -->
                 <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
-                    <div class="flex items-center gap-1.5 bg-slate-950 p-2 rounded-lg border border-purple-800 flex-wrap justify-center">
+                    <div class="flex items-center gap-1 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
                         <span class="text-xs text-yellow-300 font-bold">マス種類:</span>
-                        <button onclick="setMapTool('start')" id="mapTool_start" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🏁 スタート</button>
-                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-2 py-1 text-xs bg-purple-700 text-white font-bold rounded border border-purple-300">🔵 プラス</button>
-                        <button onclick="setMapTool('minus')" id="mapTool_minus" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
-                        <button onclick="setMapTool('item')" id="mapTool_item" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
-                        <button onclick="setMapTool('white')" id="mapTool_white" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
-                        <button onclick="setMapTool('goal')" id="mapTool_goal" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">👑 ゴール</button>
-                        <button onclick="setMapTool('erase')" id="mapTool_erase" class="px-2 py-1 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🧹 消去</button>
-                        <button onclick="clearCustomMap()" class="px-2 py-1 text-xs bg-red-900 hover:bg-red-800 text-white rounded border border-red-600">全消去</button>
-                        <button onclick="copyMapDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 マップデータをコピー</button>
+                        <button onclick="setMapTool('start')" id="mapTool_start" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🏁 スタート</button>
+                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-1.5 py-0.5 text-xs bg-purple-700 text-white font-bold rounded border border-purple-300">🔵 プラス</button>
+                        <button onclick="setMapTool('minus')" id="mapTool_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                        <button onclick="setMapTool('item')" id="mapTool_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                        <button onclick="setMapTool('white')" id="mapTool_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                        <button onclick="setMapTool('goal')" id="mapTool_goal" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">👑 ゴール</button>
+                        <button onclick="setMapTool('erase')" id="mapTool_erase" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🧹 消去</button>
+                        <button onclick="clearCustomMap()" class="px-1.5 py-0.5 text-xs bg-red-900 hover:bg-red-800 text-white rounded border border-red-600">全消去</button>
+                        <button onclick="copyMapDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
                     </div>
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
                         <canvas id="mapEditorCanvas" width="384" height="384" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
@@ -385,18 +395,18 @@
             </div>
 
             <!-- フッター保存ボタン -->
-            <div class="flex-none p-2.5 border-t border-purple-800 bg-slate-950 flex items-center justify-between">
-                <button onclick="resetDebugDefaults()" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
+            <div class="flex-none p-2 border-t border-purple-800 bg-slate-950 flex items-center justify-between">
+                <button onclick="resetDebugDefaults()" class="px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
                     初期リセット
                 </button>
-                <button onclick="saveDebugSettings()" class="pixel-btn px-5 py-1.5 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
+                <button onclick="saveDebugSettings()" class="pixel-btn px-4 py-1 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
                     💾 設定・変更を適用
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- オーディオエレメント (自動再生・ループ設定) -->
+    <!-- オーディオエレメント -->
     <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
     <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
 
@@ -430,7 +440,6 @@
         let selectedMapTool = 'plus';
         let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
 
-        // プレイヤーごとに個別アイテム配列 (items: []) を所持するよう改修
         let players = [
             { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [] },
             { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [] },
@@ -445,8 +454,8 @@
         let isRolling = false;
         let isSubRollPending = false;
         let pendingTileType = null;
-        let isWaitingForBranchChoice = false; // 分岐選択待ちフラグ
-        let activeBranchCandidates = []; // 分岐予測表示用の候補情報保持
+        let isWaitingForBranchChoice = false;
+        let activeBranchCandidates = [];
 
         let tileCoords = [];
         let cityObjects = [];
@@ -455,8 +464,8 @@
 
         let currentBgmVolume = 0.3;
         let audioUnlocked = false;
-        let activeBgm = 'select'; // BGMの状態管理を追加
-        let audioCtx = null; // SE生成用 Web Audio Context
+        let activeBgm = 'select';
+        let audioCtx = null;
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -482,6 +491,9 @@
             mapEditorCanvas = document.getElementById('mapEditorCanvas');
             if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
 
+            // モバイル端末判定＆音量コントロール表示切り替え
+            checkMobileDevice();
+
             let savedVol = localStorage.getItem('utsuro_bgm_volume');
             if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
                 currentBgmVolume = parseFloat(savedVol);
@@ -490,7 +502,6 @@
             }
             updateVolumeControlsUI(currentBgmVolume);
 
-            // ゴールボーナス設定読み込み
             let savedBonuses = localStorage.getItem('utsuro_goal_bonuses');
             if (savedBonuses) {
                 try {
@@ -503,9 +514,12 @@
 
             setupDotEditorEvents();
             setupMapEditorEvents();
-            setupCanvasDrag();
+            setupCanvasDragAndTouch();
             resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('resize', () => {
+                checkMobileDevice();
+                resizeCanvas();
+            });
 
             initDefaultDotGrids();
             initDefaultMapGrid();
@@ -524,6 +538,17 @@
             requestAnimationFrame(gameLoop);
         };
 
+        function checkMobileDevice() {
+            let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 640;
+            let headerBox = document.getElementById('headerVolumeBox');
+            let modalBox = document.getElementById('modalVolumeBox');
+            
+            if (isMobile) {
+                if (headerBox) headerBox.classList.add('mobile-hide-volume');
+                if (modalBox) modalBox.classList.add('mobile-hide-volume');
+            }
+        }
+
         function setupAudioUnlockers() {
             const unlockAudio = () => {
                 if (!audioCtx) {
@@ -535,7 +560,6 @@
                 const selectAudio = document.getElementById('selectBgmAudio');
                 const gameAudio = document.getElementById('gameBgmAudio');
                 
-                // 再生トライ
                 if (selectAudio && activeBgm === 'select') {
                     selectAudio.volume = currentBgmVolume;
                     selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
@@ -550,7 +574,6 @@
             });
         }
 
-        // SE (効果音) 自動合成・再生処理
         function playSe(type) {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -565,7 +588,6 @@
             masterGain.connect(audioCtx.destination);
 
             if (type === 'dice_roll') {
-                // サイコロが転がるコトコト音
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
@@ -578,7 +600,6 @@
                 osc.start(now);
                 osc.stop(now + 0.05);
             } else if (type === 'dice_stop') {
-                // 出目決定時のピコーン音
                 [523.25, 659.25, 783.99].forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -592,7 +613,6 @@
                     osc.stop(now + idx * 0.06 + 0.2);
                 });
             } else if (type === 'jump') {
-                // ぴょんぴょんジャンプ音（ピポッ）
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
@@ -831,8 +851,10 @@
 
             const getPos = (e) => {
                 let rect = dotCanvas.getBoundingClientRect();
-                let x = Math.floor((e.clientX - rect.left) / (rect.width / 16));
-                let y = Math.floor((e.clientY - rect.top) / (rect.height / 16));
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let x = Math.floor((clientX - rect.left) / (rect.width / 16));
+                let y = Math.floor((clientY - rect.top) / (rect.height / 16));
                 return { c: Math.max(0, Math.min(15, x)), r: Math.max(0, Math.min(15, y)) };
             };
 
@@ -852,19 +874,27 @@
             dotCanvas.addEventListener('mousedown', (e) => { pushDotHistory(); isDrawingDot = true; paint(e); });
             dotCanvas.addEventListener('mousemove', (e) => { if (isDrawingDot) paint(e); });
             window.addEventListener('mouseup', () => { isDrawingDot = false; });
+
+            dotCanvas.addEventListener('touchstart', (e) => { pushDotHistory(); isDrawingDot = true; paint(e); }, { passive: true });
+            dotCanvas.addEventListener('touchmove', (e) => { if (isDrawingDot) paint(e); }, { passive: true });
+            window.addEventListener('touchend', () => { isDrawingDot = false; });
         }
 
         function setupMapEditorEvents() {
             if (!mapEditorCanvas) return;
-            mapEditorCanvas.addEventListener('click', (e) => {
+            const handleMapClick = (e) => {
                 let rect = mapEditorCanvas.getBoundingClientRect();
-                let c = Math.floor((e.clientX - rect.left) / (rect.width / 12));
-                let r = Math.floor((e.clientY - rect.top) / (rect.height / 12));
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let c = Math.floor((clientX - rect.left) / (rect.width / 12));
+                let r = Math.floor((clientY - rect.top) / (rect.height / 12));
                 if (r >= 0 && r < 12 && c >= 0 && c < 12) {
                     customMapGrid[r][c] = selectedMapTool === 'erase' ? null : selectedMapTool;
                     renderMapEditorCanvas();
                 }
-            });
+            };
+
+            mapEditorCanvas.addEventListener('click', handleMapClick);
         }
 
         function convertCustomGridToTileCoords() {
@@ -891,7 +921,6 @@
 
             if (rawTiles.length === 0) return;
 
-            // 1. スタートマスからのすごろく順序配列（tileCoords）の作成
             let startIdx = rawTiles.findIndex(t => t.type === 'start');
             if (startIdx === -1) startIdx = 0;
 
@@ -924,7 +953,6 @@
                 curr = nextTile;
             }
 
-            // 2. マップエディター上で配置されたすべての「隣接しているマス同士（距離1）」を必ず道路で繋ぐ
             let connectedPairs = new Set();
             for (let i = 0; i < rawTiles.length; i++) {
                 for (let j = i + 1; j < rawTiles.length; j++) {
@@ -948,7 +976,6 @@
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
 
-            // ゴールボーナス読み込み保存
             goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 3000;
             goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
             goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
@@ -1044,9 +1071,9 @@
             document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
             document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
             
-            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-2 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-2 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
         }
 
         function toggleCameraView() {
@@ -1060,11 +1087,44 @@
             canvas.height = canvas.parentElement.clientHeight;
         }
 
-        function setupCanvasDrag() {
+        // PCマウスドラッグ & スマホタッチスワイプ移動の両方に対応
+        function setupCanvasDragAndTouch() {
             if (!canvas) return;
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; dragStartX = e.clientX - userDragOffsetX; dragStartY = e.clientY - userDragOffsetY; });
-            window.addEventListener('mousemove', (e) => { if (isDragging) { userDragOffsetX = e.clientX - dragStartX; userDragOffsetY = e.clientY - dragStartY; } });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            const onStart = (clientX, clientY) => {
+                isDragging = true;
+                dragStartX = clientX - userDragOffsetX;
+                dragStartY = clientY - userDragOffsetY;
+            };
+
+            const onMove = (clientX, clientY) => {
+                if (isDragging) {
+                    userDragOffsetX = clientX - dragStartX;
+                    userDragOffsetY = clientY - dragStartY;
+                }
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+            };
+
+            canvas.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+            window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+            window.addEventListener('mouseup', onEnd);
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    onStart(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchend', onEnd);
         }
 
         function selectChar(char) {
@@ -1309,7 +1369,6 @@
                     isRolling = false;
                     playSe('dice_stop');
 
-                    // サイコロ決定後に1.2秒のタメ（間隔）を設けてから移動を開始
                     setTimeout(() => {
                         if (isSubRollPending) {
                             isSubRollPending = false;
@@ -1366,22 +1425,22 @@
             
             list.forEach((ev, idx) => {
                 let div = document.createElement('div');
-                div.className = 'p-2.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-2';
+                div.className = 'p-2 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1.5';
                 
                 let typeBadges = { plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色' };
 
                 div.innerHTML = `
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
-                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-1 text-xs text-yellow-300 font-bold focus:outline-none">
-                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-1 rounded border border-red-500">🗑️</button>
+                    <div class="flex items-center justify-between gap-1.5">
+                        <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
+                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-0.5 rounded border border-red-500">🗑️</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none">
+                    <div class="flex items-center gap-1.5">
+                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none">
                         ${ev.type === 'item' ? `
-                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-32 bg-slate-900 border border-yellow-500/80 rounded px-2 py-1 text-xs text-yellow-300 font-bold focus:outline-none">
+                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-28 bg-slate-900 border border-yellow-500/80 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
                         ` : `
-                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-20 bg-slate-900 border border-cyan-500/80 rounded px-2 py-1 text-xs text-cyan-300 font-bold focus:outline-none text-right">
+                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-16 bg-slate-900 border border-cyan-500/80 rounded px-1.5 py-0.5 text-xs text-cyan-300 font-bold focus:outline-none text-right">
                         `}
                     </div>
                 `;
@@ -1402,7 +1461,6 @@
             p.lastVisitedTileIndex = p.lastVisitedTileIndex !== undefined ? p.lastVisitedTileIndex : -1;
 
             function stepNext() {
-                // ゴール到達判定（ゴールマスに到達した時点で余り歩数があっても即クリア）
                 if (tileCoords[p.pos] && tileCoords[p.pos].type === 'goal') {
                     p.jumpY = 0;
                     isMoving = false;
@@ -1411,15 +1469,12 @@
                 }
 
                 if (remainingSteps > 0 && p.pos < tileCoords.length - 1) {
-                    let fromTile = tileCoords[p.pos];
-
-                    // 次の進行方向候補（ゴールに向かう順方向のみ）を取得
                     let possibleNextTiles = getAdjacentNextTiles(p.pos, p.lastVisitedTileIndex);
 
                     if (possibleNextTiles.length > 1) {
                         isWaitingForBranchChoice = true;
                         if (pIndex === 0) {
-                            showBranchSelectionUI(pIndex, possibleNextTiles, (chosenTileIdx) => {
+                            showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                 hideBranchSelectionUI();
                                 isWaitingForBranchChoice = false;
                                 executeSingleStep(chosenTileIdx);
@@ -1480,7 +1535,6 @@
             stepNext();
         }
 
-        // 分岐選択用UIの描画と選択処理＆着地予定マスの計算
         function showBranchSelectionUI(pIndex, candidates, remainingSteps, onChoose) {
             let container = document.getElementById('branchOverlayContainer');
             if (!container || !canvas) return;
@@ -1490,7 +1544,6 @@
             activeBranchCandidates = [];
 
             candidates.forEach((cand) => {
-                // 残りの歩数で最終的にどのマス（インデックス）に到着するか予測計算
                 let destTileIdx = calculateBranchDestinationTile(pIndex, cand.tileIdx, remainingSteps - 1);
                 activeBranchCandidates.push({
                     startTileIdx: cand.tileIdx,
@@ -1501,7 +1554,6 @@
                 let currTile = tileCoords[currP.pos];
                 let targetTile = cand.tile;
 
-                // 進行方向の矢印・ラベル決定
                 let dx = targetTile.c - currTile.c;
                 let dy = targetTile.r - currTile.r;
 
@@ -1512,7 +1564,7 @@
                 else if (dy === -1) arrowSymbol = '⬆️ 上';
 
                 let btn = document.createElement('button');
-                btn.className = 'absolute pointer-events-auto pixel-btn px-3 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
+                btn.className = 'absolute pointer-events-auto pixel-btn px-2.5 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
                 btn.innerHTML = `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
 
                 let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
@@ -1530,7 +1582,6 @@
             });
         }
 
-        // 分岐先から残りの歩数進んだ場合の最終到着マスインデックスをシミュレート計算
         function calculateBranchDestinationTile(pIndex, startBranchTileIdx, remSteps) {
             let currIdx = startBranchTileIdx;
             let lastIdx = players[pIndex].pos;
@@ -1556,7 +1607,6 @@
             activeBranchCandidates = [];
         }
 
-        // ゴール処理（即時クリア＆リスナーボーナス加算）
         function handlePlayerGoal(pIndex) {
             let p = players[pIndex];
             if (p.finished) return;
@@ -1575,7 +1625,6 @@
             document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
-            // 全員ゴールしたか判定
             if (players.every(player => player.finished)) {
                 setTimeout(showFinalResultModal, 3500);
             } else {
@@ -1589,12 +1638,11 @@
             if (!modal || !list) return;
 
             list.innerHTML = '';
-            // リスナー数順でソート
             let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
 
             sorted.forEach((p, idx) => {
                 let div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2.5 bg-slate-950 border border-purple-600 rounded-lg text-xs font-bold';
+                div.className = 'flex items-center justify-between p-2 bg-slate-950 border border-purple-600 rounded-lg text-xs font-bold';
                 let medal = idx === 0 ? '🥇 1位' : (idx === 1 ? '🥈 2位' : '🥉 3位');
                 div.innerHTML = `
                     <span class="text-yellow-300 font-bold">${medal}</span>
@@ -1607,14 +1655,12 @@
             modal.classList.remove('hidden');
         }
 
-        // 現在地から進行可能な隣接マスを取得
+        // ゴールへ向かう順方向のみを抽出する厳密な分岐判定ロジック
         function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
             let curr = tileCoords[currentTileIdx];
             let candidates = [];
 
             tileCoords.forEach((t, idx) => {
-                // 1. 直前のマス（戻る方向）は排除
-                // 2. ゴールに向かって前進する方向（現在地よりインデックスが大きい順方向 idx > currentTileIdx）のみを厳密に抽出
                 if (idx > currentTileIdx && idx !== lastVisitedTileIdx) {
                     let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
                     if (manhattanDist === 1) {
@@ -1626,7 +1672,6 @@
             return candidates;
         }
 
-        // マップ上の座標をスクリーンのピクセル位置（px）に変換
         function calculateScreenPos(worldX, worldY, centerTile) {
             let rect = canvas.getBoundingClientRect();
             let screenX = 0, screenY = 0;
@@ -1679,14 +1724,12 @@
         }
 
         function nextTurn() {
-            // まだゴールしていない次のプレイヤーを探す
             let checkCount = 0;
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
                 checkCount++;
             } while (players[currentPlayerIndex].finished && checkCount <= players.length);
 
-            // 全員ゴール済みの場合は結果画面を表示
             if (players.every(p => p.finished)) {
                 showFinalResultModal();
                 return;
@@ -1726,11 +1769,9 @@
                 }, 1500);
             }
 
-            // 手番変更時に所持アイテム表示UIを最新のプレイヤー状態へ更新
             updateItemUI();
         }
 
-        // プレイヤーごとの個別の所持アイテム追加＆UI描画関数
         function addPlayerItem(pIndex, itemName) {
             let p = players[pIndex];
             if (p) {
@@ -1746,7 +1787,6 @@
 
             let p = players[currentPlayerIndex];
             
-            // 自分以外のプレイヤーのアイテムは対人戦・オンライン戦時に非表示（伏せ状態）にする
             if (p.id !== 0 && document.getElementById('gameStatusText').innerText.includes('オンライン')) {
                 let badge = document.createElement('span');
                 badge.className = 'text-xs text-gray-400 italic';
@@ -1895,10 +1935,9 @@
                         let destTile = tileCoords[cand.destTileIdx];
                         if (destTile) {
                             ctx.save();
-                            ctx.globalAlpha = 0.55; // 半透明設定
+                            ctx.globalAlpha = 0.55;
                             drawPlayerDotModel(ctx, cand.playerChar, destTile.x, destTile.y - 10, 32);
 
-                            // 到達予測マークリングの描画
                             ctx.beginPath();
                             ctx.arc(destTile.x, destTile.y, 20, 0, Math.PI * 2);
                             ctx.strokeStyle = '#fde047';
