@@ -137,7 +137,7 @@
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
                     <span class="text-purple-300 font-bold">TURN</span>
-                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1 / 30</span>
+                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1</span>
                 </div>
                 <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
@@ -585,41 +585,42 @@
 
             const now = audioCtx.currentTime;
             const masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0.3, now);
+            // SEのマスター音量を 0.3 から 0.85 に増強してスマホでも聞こえやすく調整
+            masterGain.gain.setValueAtTime(0.85, now);
             masterGain.connect(audioCtx.destination);
 
             if (type === 'dice_roll') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(200 + Math.random() * 300, now);
-                osc.frequency.exponentialRampToValueAtTime(80, now + 0.05);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.frequency.setValueAtTime(250 + Math.random() * 350, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.06);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.06);
                 osc.connect(gain);
                 gain.connect(masterGain);
                 osc.start(now);
-                osc.stop(now + 0.05);
+                osc.stop(now + 0.06);
             } else if (type === 'dice_stop') {
                 [523.25, 659.25, 783.99].forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(freq, now + idx * 0.06);
-                    gain.gain.setValueAtTime(0.25, now + idx * 0.06);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.2);
+                    gain.gain.setValueAtTime(0.6, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
                     osc.connect(gain);
                     gain.connect(masterGain);
                     osc.start(now + idx * 0.06);
-                    osc.stop(now + idx * 0.06 + 0.2);
+                    osc.stop(now + idx * 0.06 + 0.25);
                 });
             } else if (type === 'jump') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(750, now + 0.12);
-                gain.gain.setValueAtTime(0.3, now);
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
+                gain.gain.setValueAtTime(0.6, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
                 osc.connect(gain);
                 gain.connect(masterGain);
@@ -1169,7 +1170,24 @@
 
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
-            document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
+            document.getElementById('turnCounter').innerText = currentTurnNumber;
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('currentEventTitle').innerText = '【スタート！】';
+            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('btnRoll').disabled = false;
+        }
+
+        function startOnlineGame() {
+            let modal = document.getElementById('startModal');
+            if (modal) modal.classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'オンライン対戦中';
+
+            playGameBgm();
+
+            currentPlayerIndex = 0;
+            currentTurnNumber = 1;
+            document.getElementById('turnCounter').innerText = currentTurnNumber;
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
@@ -1656,16 +1674,17 @@
             if (!modal || !list) return;
 
             list.innerHTML = '';
-            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let sortedPlayers = [...players].sort((a, b) => b.listeners - a.listeners);
 
-            sorted.forEach((p, idx) => {
+            sortedPlayers.forEach((p, idx) => {
                 let div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2 bg-slate-950 border border-purple-600 rounded-lg text-xs font-bold';
-                let medal = idx === 0 ? '🥇 1位' : (idx === 1 ? '🥈 2位' : '🥉 3位');
+                div.className = 'flex items-center justify-between p-2 rounded bg-slate-800 border border-purple-500';
                 div.innerHTML = `
-                    <span class="text-yellow-300 font-bold">${medal}</span>
-                    <span class="text-white">${p.name}</span>
-                    <span class="text-cyan-300 font-mono">${p.listeners.toLocaleString()}人</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-yellow-300 text-sm">${idx + 1}位</span>
+                        <span class="font-bold text-white text-xs">${p.name}</span>
+                    </div>
+                    <span class="font-mono text-cyan-300 font-bold text-xs">${p.listeners.toLocaleString()}人</span>
                 `;
                 list.appendChild(div);
             });
@@ -1673,18 +1692,35 @@
             modal.classList.remove('hidden');
         }
 
-        // ゴールへ向かう順方向のみを抽出する厳密な分岐判定ロジック
+        // 道路接続に基づく隣接マス判定ロジックに修正（道のないワープを完全に防止）
         function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
             let curr = tileCoords[currentTileIdx];
             let candidates = [];
 
             tileCoords.forEach((t, idx) => {
-                if (idx > currentTileIdx && idx !== lastVisitedTileIdx) {
+                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
                     let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
+                    // マンハッタン距離が1であること
                     if (manhattanDist === 1) {
-                        candidates.push({ tileIdx: idx, tile: t });
+                        // 道路接続情報(roadConnections)が存在するか検証
+                        let isConnected = window.roadConnections && window.roadConnections.some(conn => {
+                            return (Math.abs(conn.x1 - curr.x) < 5 && Math.abs(conn.y1 - curr.y) < 5 && Math.abs(conn.x2 - t.x) < 5 && Math.abs(conn.y2 - t.y) < 5) ||
+                                   (Math.abs(conn.x2 - curr.x) < 5 && Math.abs(conn.y2 - curr.y) < 5 && Math.abs(conn.x1 - t.x) < 5 && Math.abs(conn.y1 - t.y) < 5);
+                        });
+
+                        // 接続リストにある、またはゴール方向（インデックスが進む方向）へ向かう隣接マスを採用
+                        if (isConnected || idx > currentTileIdx) {
+                            candidates.push({ tileIdx: idx, tile: t });
+                        }
                     }
                 }
+            });
+
+            // ゴールに向かって前進する方向を優先ソート
+            candidates.sort((a, b) => {
+                let distA = tileCoords.length - 1 - a.tileIdx;
+                let distB = tileCoords.length - 1 - b.tileIdx;
+                return distA - distB;
             });
 
             return candidates;
@@ -1755,7 +1791,7 @@
 
             if (currentPlayerIndex === 0) {
                 currentTurnNumber++;
-                document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
+                document.getElementById('turnCounter').innerText = currentTurnNumber;
             }
 
             let activePlayer = players[currentPlayerIndex];
