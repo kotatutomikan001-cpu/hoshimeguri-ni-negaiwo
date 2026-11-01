@@ -200,6 +200,32 @@
         </div>
     </div>
 
+    <!-- 🌐 オンライン対戦 待ち合いロビーモーダル -->
+    <div id="onlineLobbyModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[90000] hidden">
+        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-cyan-400 shadow-2xl text-center flex flex-col gap-3">
+            <h2 class="text-base sm:text-lg font-black text-cyan-300 tracking-wider flex items-center justify-center gap-1">
+                <span class="animate-pulse">🌐</span> 対戦相手を待っています...
+            </h2>
+            <div class="bg-indigo-950/80 p-2 rounded border border-cyan-500/60 flex items-center justify-between text-xs font-bold">
+                <span class="text-purple-300">部屋コード: <span id="lobbyRoomCode" class="text-yellow-300 font-mono text-sm">1234</span></span>
+                <span class="text-cyan-300">接続人数: <span id="lobbyMemberCount" class="text-yellow-300 font-mono text-sm">1</span> / 3</span>
+            </div>
+
+            <div id="lobbyMemberList" class="flex flex-col gap-1.5 my-1 text-xs">
+                <!-- 参加者リストが動的に入ります -->
+            </div>
+
+            <div class="flex flex-col gap-2 mt-2">
+                <button id="btnStartWithCpu" onclick="startOnlineGameWithCpu()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md cursor-pointer flex items-center justify-center gap-1">
+                    🚀 この人数で始める (残りをCPUで補う)
+                </button>
+                <button onclick="closeOnlineLobby()" class="pixel-btn py-1.5 px-4 font-bold text-gray-300 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 cursor-pointer">
+                    ⏳ このまま待つ (またはキャンセル)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 🌟 デバッグ用隠し起動ボタン -->
     <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
         <span class="text-purple-300 text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
@@ -224,7 +250,7 @@
             <p class="text-xs text-purple-200 mb-3 font-bold">プレイするキャラクターを選んでください</p>
 
             <div class="grid grid-cols-3 gap-2 mb-3">
-                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer ring-4 ring-yellow-400 scale-105">
+                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition-all cursor-pointer ring-4 ring-yellow-400 scale-105">
                     <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevUtsuro" width="28" height="28"></canvas>
@@ -232,7 +258,7 @@
                     </div>
                     <span class="text-[11px] sm:text-xs font-bold text-white">氷室うつろ</span>
                 </button>
-                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
+                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition-all cursor-pointer">
                     <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevGengo" width="28" height="28"></canvas>
@@ -240,7 +266,7 @@
                     </div>
                     <span class="text-[11px] sm:text-xs font-bold text-gray-200">繰言かたる</span>
                 </button>
-                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
+                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition-all cursor-pointer">
                     <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevTomoko" width="28" height="28"></canvas>
@@ -422,6 +448,11 @@
         let myChar = 'utsuro';
         let isFullMapView = false;
         let activeTab = 'events';
+
+        // オンラインロビー状態
+        let currentRoomCode = '';
+        let isRoomHost = false;
+        let lobbyMembers = [];
 
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
@@ -1151,6 +1182,7 @@
                 let badge = document.getElementById(`badge${c.charAt(0).toUpperCase() + c.slice(1)}`);
                 if (btn && badge) {
                     if (c === char) {
+                        // 黄色枠とスケール変更をクラスの付け替えで即座に反映
                         btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
                         badge.classList.remove('hidden');
                     } else {
@@ -1178,33 +1210,183 @@
             document.getElementById('btnRoll').disabled = false;
         }
 
+        // オンライン対戦：部屋作成/参加ロジック
         function startOnlineGame() {
-            let modal = document.getElementById('startModal');
-            if (modal) modal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'オンライン対戦中';
+            let codeInput = document.getElementById('roomCodeInput');
+            let roomCode = codeInput ? codeInput.value.trim() : '';
+
+            if (!roomCode) {
+                alert('部屋コードを入力してください (例: 1234)');
+                return;
+            }
+
+            currentRoomCode = roomCode;
+
+            // ローカルストレージを使用したダミールーム情報管理（キャラ被り＆人数管理）
+            let roomKey = `utsuro_room_${roomCode}`;
+            let roomData = null;
+            try {
+                let saved = localStorage.getItem(roomKey);
+                if (saved) roomData = JSON.parse(saved);
+            } catch (e) {}
+
+            if (!roomData) {
+                // 新規部屋作成 (ホスト)
+                isRoomHost = true;
+                roomData = {
+                    code: roomCode,
+                    hostChar: myChar,
+                    members: [{ id: 0, char: myChar, name: players[0].name, isCpu: false }]
+                };
+            } else {
+                // 既存部屋に参加
+                isRoomHost = false;
+
+                // 先に取られているキャラかチェック
+                let usedChars = roomData.members.map(m => m.char);
+                if (usedChars.includes(myChar)) {
+                    // 空いているキャラを自動割り当て
+                    let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                    if (availableChars.length === 0) {
+                        alert('この部屋は満員(3人)です。別の部屋コードをご利用ください。');
+                        return;
+                    }
+                    myChar = availableChars[0];
+                    selectChar(myChar);
+                    alert(`部屋作成者がすでにそのキャラを選択しているため、空いている【${players[0].name}】が自動選択されました！`);
+                }
+
+                if (roomData.members.length >= 3) {
+                    alert('この部屋はすでに3名参加しています。');
+                    return;
+                }
+
+                roomData.members.push({ id: roomData.members.length, char: myChar, name: players[0].name, isCpu: false });
+            }
+
+            // ルーム情報を更新保存
+            try {
+                localStorage.setItem(roomKey, JSON.stringify(roomData));
+            } catch (e) {}
+
+            lobbyMembers = roomData.members;
+
+            // キャラ選択モーダルを閉じ、ロビーを表示
+            document.getElementById('startModal').classList.add('hidden');
+            openOnlineLobby();
+        }
+
+        function openOnlineLobby() {
+            let lobbyModal = document.getElementById('onlineLobbyModal');
+            if (!lobbyModal) return;
+
+            document.getElementById('lobbyRoomCode').innerText = currentRoomCode;
+            updateLobbyUI();
+            lobbyModal.classList.remove('hidden');
+        }
+
+        function updateLobbyUI() {
+            let countEl = document.getElementById('lobbyMemberCount');
+            let listEl = document.getElementById('lobbyMemberList');
+            if (!countEl || !listEl) return;
+
+            countEl.innerText = lobbyMembers.length;
+            listEl.innerHTML = '';
+
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+
+            for (let i = 0; i < 3; i++) {
+                let div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 rounded bg-slate-800 border border-purple-500/70';
+
+                if (i < lobbyMembers.length) {
+                    let m = lobbyMembers[i];
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-yellow-300 font-bold">${i + 1}P</span>
+                            <span class="text-white font-bold">${charNames[m.char] || m.name}</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${i === 0 ? 'bg-purple-900 border border-purple-400 text-purple-200' : 'bg-cyan-900 border border-cyan-400 text-cyan-200'}">
+                            ${i === 0 ? '👑 ホスト (プレイヤー)' : '🎮 参加者'}
+                        </span>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500 font-bold">${i + 1}P</span>
+                            <span class="text-gray-400 italic">対戦相手を待っています...</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-gray-500 border border-gray-700">
+                            空き枠
+                        </span>
+                    `;
+                }
+                listEl.appendChild(div);
+            }
+
+            // 後から参加した人のためにキャラ被り防止（ボタン無効化）
+            let hostChar = lobbyMembers[0] ? lobbyMembers[0].char : null;
+            if (hostChar) {
+                ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                    let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                    if (btn) {
+                        if (!isRoomHost && c === hostChar) {
+                            btn.disabled = true;
+                            btn.classList.add('opacity-40', 'cursor-not-allowed');
+                        } else {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                        }
+                    }
+                });
+            }
+        }
+
+        function closeOnlineLobby() {
+            let lobbyModal = document.getElementById('onlineLobbyModal');
+            if (lobbyModal) lobbyModal.classList.add('hidden');
+            document.getElementById('startModal').classList.remove('hidden');
+        }
+
+        // 「この人数で始める (残りをCPUで補う)」ボタン処理
+        function startOnlineGameWithCpu() {
+            // 3人に満たない枠をCPUで埋める
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+            let usedChars = lobbyMembers.map(m => m.char);
+
+            while (lobbyMembers.length < 3) {
+                let restChars = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                let nextChar = restChars[0];
+                usedChars.push(nextChar);
+
+                lobbyMembers.push({
+                    id: lobbyMembers.length,
+                    char: nextChar,
+                    name: `${charNames[nextChar]} (CPU)`,
+                    isCpu: true
+                });
+            }
+
+            // プレイヤー配列に適用
+            lobbyMembers.forEach((m, idx) => {
+                players[idx].char = m.char;
+                players[idx].name = charNames[m.char] + (m.isCpu ? ' (CPU)' : '');
+            });
+
+            document.getElementById('p1Name').innerText = players[0].name;
+            document.getElementById('p2Name').innerText = players[1].name;
+            document.getElementById('p3Name').innerText = players[2].name;
+
+            let lobbyModal = document.getElementById('onlineLobbyModal');
+            if (lobbyModal) lobbyModal.classList.add('hidden');
+
+            document.getElementById('gameStatusText').innerText = `オンライン対戦 (部屋: ${currentRoomCode})`;
 
             playGameBgm();
 
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
             document.getElementById('turnCounter').innerText = currentTurnNumber;
-            let activePlayer = players[0];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
-            document.getElementById('currentEventTitle').innerText = '【スタート！】';
-            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-            document.getElementById('btnRoll').disabled = false;
-        }
-
-        function startOnlineGame() {
-            let modal = document.getElementById('startModal');
-            if (modal) modal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'オンライン対戦中';
-
-            playGameBgm();
-
-            currentPlayerIndex = 0;
-            currentTurnNumber = 1;
-            document.getElementById('turnCounter').innerText = `${currentTurnNumber} / 30`;
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
