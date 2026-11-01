@@ -7,17 +7,25 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Kiwi+Maru:wght@500;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
         
         body {
-            font-family: 'Kiwi Maru', 'DotGothic16', sans-serif;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            font-weight: 700;
             user-select: none;
             background-color: #090d16;
             color: #ffffff;
         }
 
-        h1, h2, h3, .pixel-btn, #currentEventTitle, #turnCounter {
-            font-family: 'Dela Gothic One', 'DotGothic16', cursive;
+        h1, h2, h3, .pixel-btn, #currentEventTitle, #turnCounter, #gameStatusText {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+        }
+
+        /* 潰れの原因だった過剰な縁取りを解消し、すっきり読みやすいシャドウへ変更 */
+        .text-outline {
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
         }
 
         /* レトロRPG風枠線 */
@@ -76,9 +84,9 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <h1 class="text-xs sm:text-base font-black text-purple-300 tracking-wider">氷室うつろ Vstreamerすごろく</h1>
+                        <h1 class="text-xs sm:text-base font-black text-purple-200 tracking-wider text-outline">氷室うつろ Vstreamerすごろく</h1>
                     </div>
-                    <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none">準備中... モードを選択してください</p>
+                    <p id="gameStatusText" class="text-[11px] sm:text-xs text-yellow-300 font-bold truncate max-w-[150px] sm:max-w-none text-outline">準備中... モードを選択してください</p>
                 </div>
             </div>
 
@@ -90,20 +98,20 @@
                     <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-14 sm:w-20 accent-purple-400 cursor-pointer">
                 </div>
 
-                <div class="flex items-center gap-1 bg-purple-900/60 px-1.5 py-1 rounded border border-purple-500/50">
-                    <span id="p1Badge" class="text-purple-300">1P</span>
-                    <span id="p1Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">氷室うつろ</span>
-                    <span id="p1Listeners" class="text-yellow-400 font-mono font-black">1,000人</span>
+                <div class="flex items-center gap-1 bg-purple-900/80 px-2 py-1 rounded border border-purple-400">
+                    <span id="p1Badge" class="text-purple-300 text-[10px] font-black">1P</span>
+                    <span id="p1Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
+                    <span id="p1Listeners" class="text-yellow-300 font-mono font-bold text-outline">1,000人</span>
                 </div>
-                <div class="flex items-center gap-1 bg-indigo-900/60 px-1.5 py-1 rounded border border-indigo-500/50">
-                    <span id="p2Badge" class="text-indigo-300">2P</span>
-                    <span id="p2Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">繰言かたる</span>
-                    <span id="p2Listeners" class="text-cyan-400 font-mono font-black">1,000人</span>
+                <div class="flex items-center gap-1 bg-indigo-900/80 px-2 py-1 rounded border border-indigo-400">
+                    <span id="p2Badge" class="text-indigo-300 text-[10px] font-black">2P</span>
+                    <span id="p2Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
+                    <span id="p2Listeners" class="text-cyan-300 font-mono font-bold text-outline">1,000人</span>
                 </div>
-                <div id="p3Box" class="flex items-center gap-1 bg-pink-900/60 px-1.5 py-1 rounded border border-pink-500/50">
-                    <span id="p3Badge" class="text-pink-300">3P</span>
-                    <span id="p3Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate">トモコ</span>
-                    <span id="p3Listeners" class="text-pink-400 font-mono font-black">1,000人</span>
+                <div id="p3Box" class="flex items-center gap-1 bg-pink-900/80 px-2 py-1 rounded border border-pink-400">
+                    <span id="p3Badge" class="text-pink-300 text-[10px] font-black">3P</span>
+                    <span id="p3Name" class="text-white max-w-[55px] sm:max-w-[90px] truncate text-outline">トモコ</span>
+                    <span id="p3Listeners" class="text-pink-300 font-mono font-bold text-outline">1,000人</span>
                 </div>
             </div>
         </header>
@@ -144,14 +152,14 @@
             <div class="pixel-box p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[120px] sm:min-h-[135px]">
                 <div>
                     <div class="flex items-center justify-between border-b border-purple-700/80 pb-1.5 mb-1.5">
-                        <span id="currentEventTitle" class="text-sm sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1">【スタート！】</span>
-                        <span class="text-xs text-purple-300 font-bold bg-purple-950/80 px-2 py-0.5 rounded border border-purple-600/60">✨ 発生イベント ✨</span>
+                        <span id="currentEventTitle" class="text-sm sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1 text-outline">【スタート！】</span>
+                        <span class="text-xs text-purple-200 font-bold bg-purple-900/90 px-2.5 py-0.5 rounded border border-purple-500 shadow">✨ 発生イベント ✨</span>
                     </div>
-                    <p id="currentEventDesc" class="text-sm sm:text-base text-purple-100 font-bold leading-relaxed min-h-[2.8em] tracking-wide">
+                    <p id="currentEventDesc" class="text-xs sm:text-sm text-purple-50 font-bold leading-relaxed min-h-[2.8em] tracking-wide">
                         好きなキャラクターを選んでゲームスタート！ゴールを目指そう！
                     </p>
                 </div>
-                <div id="currentEventEffect" class="text-xs sm:text-sm font-black text-cyan-300 mt-1 truncate bg-indigo-950/80 px-2 py-1 rounded border border-indigo-500/50">
+                <div id="currentEventEffect" class="text-xs sm:text-sm font-bold text-cyan-300 mt-1 truncate bg-indigo-950/90 px-2.5 py-1 rounded border border-indigo-400 shadow">
                     -
                 </div>
             </div>
@@ -161,7 +169,7 @@
         <footer class="flex-none pixel-box p-1.5 rounded-lg bg-slate-900/90 border border-purple-500/70 flex items-center gap-2 overflow-x-auto">
             <span class="text-xs font-bold text-yellow-300 flex-none flex items-center gap-1">🎒 所持アイテム:</span>
             <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-                <span class="text-xs text-gray-400 font-normal">なし（黄色のマスで獲得）</span>
+                <span class="text-xs text-gray-300 font-normal">なし（黄色のマスで獲得）</span>
             </div>
         </footer>
 
@@ -188,11 +196,11 @@
 
         <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
-            <p class="text-xs text-purple-200 mb-4">プレイするキャラクターを選んでください</p>
+            <p class="text-xs text-purple-200 mb-4 font-bold">プレイするキャラクターを選んでください</p>
 
             <div class="grid grid-cols-3 gap-2 mb-4">
                 <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 transition cursor-pointer ring-4 ring-yellow-400 scale-105">
-                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevUtsuro" width="28" height="28"></canvas>
                         <canvas id="prevUtsuroGoshu" width="20" height="20"></canvas>
@@ -200,20 +208,20 @@
                     <span class="text-xs font-bold text-white">氷室うつろ</span>
                 </button>
                 <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 transition cursor-pointer">
-                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevGengo" width="28" height="28"></canvas>
                         <canvas id="prevGengoGoshu" width="20" height="20"></canvas>
                     </div>
-                    <span class="text-xs font-bold text-gray-300">繰言かたる</span>
+                    <span class="text-xs font-bold text-gray-200">繰言かたる</span>
                 </button>
                 <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 transition cursor-pointer">
-                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
+                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevTomoko" width="28" height="28"></canvas>
                         <canvas id="prevTomokoGoshu" width="20" height="20"></canvas>
                     </div>
-                    <span class="text-xs font-bold text-gray-300">トモコ</span>
+                    <span class="text-xs font-bold text-gray-200">トモコ</span>
                 </button>
             </div>
 
@@ -231,12 +239,12 @@
 
                 <div class="flex items-center gap-2 my-1">
                     <div class="flex-1 h-px bg-purple-800"></div>
-                    <span class="text-[10px] text-purple-400 font-bold">または オンライン対戦</span>
+                    <span class="text-[10px] text-purple-300 font-bold">または オンライン対戦</span>
                     <div class="flex-1 h-px bg-purple-800"></div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-mono text-center">
+                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
                     <button onclick="startOnlineGame()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none">
                         参加 / 作成
                     </button>
@@ -1557,10 +1565,10 @@
                     ctx.stroke();
 
                     ctx.fillStyle = (t.type === 'white' || t.type === 'start') ? '#1e293b' : '#ffffff';
-                    ctx.font = 'bold 12px "Dela Gothic One", "DotGothic16"';
+                    ctx.font = '700 13px "Zen Maru Gothic", sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(markSymbols[t.type] || '・', t.x, t.y);
+                    ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
                 });
 
                 // 4. プレイヤー＆ごしゅの描画
