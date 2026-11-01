@@ -1408,7 +1408,9 @@
                 ['utsuro', 'gengo', 'tomoko'].forEach(c => {
                     let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
                     if (btn) {
-                        if (!isRoomHost && c === hostChar) {
+                        // オンラインロビーが開いている時のみ被りキャラを制限
+                        let isOnlineLobbyActive = !document.getElementById('onlineLobbyModal').classList.contains('hidden');
+                        if (isOnlineLobbyActive && !isRoomHost && c === hostChar) {
                             btn.disabled = true;
                             btn.classList.add('opacity-40', 'cursor-not-allowed');
                         } else {
@@ -1445,6 +1447,44 @@
 
         function closeOnlineLobby() {
             leaveOnlineLobby(false);
+        }
+
+        // CPU対戦を確実にスタートさせるための専用関数
+        function startCpuGame() {
+            // モード選択モーダルを閉じる
+            let startModal = document.getElementById('startModal');
+            if (startModal) startModal.classList.add('hidden');
+
+            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
+
+            // キャラクター割り当て（自分が選んだキャラ以外をCPU2人に設定）
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+            let usedChars = [myChar];
+            let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== myChar);
+
+            players[0].char = myChar;
+            players[0].name = charNames[myChar];
+
+            players[1].char = availableChars[0];
+            players[1].name = `${charNames[availableChars[0]]} (CPU)`;
+
+            players[2].char = availableChars[1];
+            players[2].name = `${charNames[availableChars[1]]} (CPU)`;
+
+            document.getElementById('p1Name').innerText = players[0].name;
+            document.getElementById('p2Name').innerText = players[1].name;
+            document.getElementById('p3Name').innerText = players[2].name;
+
+            playGameBgm();
+
+            currentPlayerIndex = 0;
+            currentTurnNumber = 1;
+            document.getElementById('turnCounter').innerText = currentTurnNumber;
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('currentEventTitle').innerText = '【スタート！】';
+            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('btnRoll').disabled = false;
         }
 
         // 「この人数で始める (残りをCPUで補う)」ボタン処理
