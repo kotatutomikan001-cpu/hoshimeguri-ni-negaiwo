@@ -280,7 +280,6 @@
                     <div class="flex-1 h-px bg-purple-800"></div>
                 </div>
 
-                <!-- レスポンシブ配置修正（スマホで枠内に収まる構造） -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
                     <button id="btnStartOnline" onclick="startOnlineGame()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none w-full sm:w-auto">
@@ -344,7 +343,6 @@
         let isHost = false;
         let myPlayerIndex = 0;
         let currentRoomCode = '';
-        let connectedPeerIds = [];
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -557,44 +555,38 @@
             document.getElementById('startModal').classList.add('hidden');
             document.getElementById('onlineLobbyModal').classList.remove('hidden');
             document.getElementById('lobbyRoomCode').innerText = roomCode;
-            document.getElementById('lobbyStatusText').innerText = '接続サーバーに接続中...';
+            document.getElementById('lobbyStatusText').innerText = 'サーバー接続中...';
 
             initPeerConnection(roomCode);
         }
 
         function initPeerConnection(roomCode) {
             let hostPeerId = `utsuro-sugoroku-v2-${roomCode}`;
-
             if (peer) peer.destroy();
 
-            // まずホストとして自身を起動試行
             peer = new Peer(hostPeerId, { debug: 1 });
 
             peer.on('open', (id) => {
                 isHost = true;
                 myPlayerIndex = 0;
-                connectedPeerIds = [];
+                peerConnections = [];
                 document.getElementById('lobbyStatusText').innerText = 'ホストとして部屋を作成しました。参加者を待っています...';
                 document.getElementById('lobbyMemberCount').innerText = '1 / 3';
             });
 
             peer.on('connection', (conn) => {
-                peerConnections.push(conn);
-                setupConnectionHandlers(conn);
-
-                if (connectedPeerIds.length < 2) {
-                    connectedPeerIds.push(conn.peer);
-                    updateLobbyMembers();
-                    broadcastLobbyState();
+                if (peerConnections.length < 2) {
+                    peerConnections.push(conn);
+                    setupConnectionHandlers(conn);
                 }
             });
 
             peer.on('error', (err) => {
-                // ホストが存在する場合（ID衝突）、ゲストとして接続
                 if (err.type === 'unavailable-id') {
+                    // ホストが既に存在する場合はゲストとして接続
                     isHost = false;
                     peer = new Peer({ debug: 1 });
-                    peer.on('open', (myId) => {
+                    peer.on('open', () => {
                         document.getElementById('lobbyStatusText').innerText = '部屋へ接続中...';
                         let hostConn = peer.connect(hostPeerId);
                         peerConnections = [hostConn];
@@ -607,12 +599,23 @@
         }
 
         function setupConnectionHandlers(conn) {
+            conn.on('open', () => {
+                if (isHost) {
+                    updateLobbyMembers();
+                    broadcastLobbyState();
+                }
+            });
+
             conn.on('data', (data) => {
                 handleNetworkData(data, conn);
             });
+
             conn.on('close', () => {
                 peerConnections = peerConnections.filter(c => c !== conn);
-                if (isHost) updateLobbyMembers();
+                if (isHost) {
+                    updateLobbyMembers();
+                    broadcastLobbyState();
+                }
             });
         }
 
@@ -623,11 +626,14 @@
 
         function broadcastLobbyState() {
             let state = { type: 'LOBBY_UPDATE', memberCount: peerConnections.length + 1 };
-            peerConnections.forEach(c => c.send(state));
+            peerConnections.forEach(c => {
+                if (c.open) c.send(state);
+            });
         }
 
         function handleNetworkData(data, conn) {
             if (data.type === 'LOBBY_UPDATE') {
+                document.getElementById('lobbyStatusText').innerText = '部屋に入りました！参加者を待っています...';
                 document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
             } else if (data.type === 'START_GAME') {
                 document.getElementById('onlineLobbyModal').classList.add('hidden');
@@ -656,9 +662,10 @@
 
             resetAllPlayerPositions();
 
-            // 参加ゲストへプレイヤーIndexを割り当ててゲーム開始通知
             peerConnections.forEach((conn, idx) => {
-                conn.send({ type: 'START_GAME', playerIndex: idx + 1 });
+                if (conn.open) {
+                    conn.send({ type: 'START_GAME', playerIndex: idx + 1 });
+                }
             });
 
             myPlayerIndex = 0;
@@ -673,7 +680,6 @@
             document.getElementById('startModal').classList.remove('hidden');
         }
 
-        // 🌐 ホストから全参加者へ現在のゲーム状態を一斉同期
         function broadcastGameState(extraData = {}) {
             if (!isOnlineMode || !isHost) return;
 
@@ -697,10 +703,11 @@
                 ...extraData
             };
 
-            peerConnections.forEach(c => c.send(state));
+            peerConnections.forEach(c => {
+                if (c.open) c.send(state);
+            });
         }
 
-        // 🌐 ホストから送信されたゲーム状態をゲスト画面へ反映
         function applySyncGameState(data) {
             let startTile = tileCoords[0] || { x: 100, y: 100 };
 
@@ -764,9 +771,8 @@
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
-            // オンライン対戦でゲストがボタンを押した場合はホストへコマンド送信
             if (isOnlineMode && !isHost) {
-                if (peerConnections.length > 0) {
+                if (peerConnections.length > 0 && peerConnections[0].open) {
                     peerConnections[0].send({ type: 'ACTION_ROLL' });
                 }
                 return;
@@ -1013,7 +1019,6 @@
             modal.classList.remove('hidden');
         }
 
-        // 厳密な道路接続判定（ワープ移動を完全防止）
         function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
             let curr = tileCoords[currentTileIdx];
             let candidates = [];
@@ -1129,7 +1134,6 @@
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
 
-                // CPUの手番かつホスト側で実行
                 if (!isOnlineMode || isHost) {
                     setTimeout(() => {
                         isRolling = true;
@@ -1367,7 +1371,6 @@
             context.restore();
         }
 
-        // スマホ高解像度ディスプレイ（Retina等）の隙間防止補正付きドット描画
         function drawPlayerDotModel(cCtx, charKey, x, y, size = 30) {
             let grid = customDotData[charKey];
             if (!grid) return;
@@ -1570,4 +1573,4 @@
     </script>
 </body>
 </html>
-`
+```
