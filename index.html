@@ -1195,35 +1195,31 @@
 
         // オンライン対戦：部屋作成/参加ロジック（安定型 PeerJS 通信）
         function startOnlineGame() {
-            let codeInput = document.getElementById('roomCodeInput');
-            let roomCode = codeInput ? codeInput.value.trim() : '';
-
-            if (!roomCode) {
-                alert('部屋コードを入力してください (例: 1234)');
-                return;
-            }
-
-            currentRoomCode = roomCode;
-
-            // 既存のPeer接続があればクリーンアップ
-            if (peer) {
-                try { peer.destroy(); } catch(e) {}
-            }
-
-            // 部屋コードに基づく統一HostID
-            let hostId = `utsuro-sugoroku-v2-${roomCode}`;
-            hostPeerId = hostId;
-
-            // 安定シグナリングサーバーオプション
-            const peerOptions = {
-                host: '0.peerjs.com',
-                port: 443,
-                path: '/',
-                secure: true,
-                debug: 1
-            };
-
             try {
+                let codeInput = document.getElementById('roomCodeInput');
+                let roomCode = codeInput ? codeInput.value.trim() : '';
+
+                if (!roomCode) {
+                    alert('部屋コードを入力してください (例: 1234)');
+                    return;
+                }
+
+                currentRoomCode = roomCode;
+
+                // 既存のPeer接続があればクリーンアップ
+                if (peer) {
+                    try { peer.destroy(); } catch(e) {}
+                }
+
+                // 部屋コードに基づく統一HostID
+                let hostId = `utsuro-sugoroku-v2-${roomCode}`;
+                hostPeerId = hostId;
+
+                // 安定シグナリングサーバーオプション
+                const peerOptions = {
+                    debug: 1
+                };
+
                 // まずゲストとしてホストに接続を試みる
                 peer = new Peer(peerOptions);
 
@@ -1290,7 +1286,7 @@
                                 document.getElementById('startModal').classList.remove('hidden');
                             });
                         }
-                    }, 1800);
+                    }, 1200);
                 });
 
                 peer.on('error', (err) => {
@@ -1299,7 +1295,8 @@
                     }
                 });
             } catch (err) {
-                alert('通信ライブラリの初期化に失敗しました。ページを再読み込みしてください。');
+                console.error('Online game start error:', err);
+                alert('オンライン対戦の開始中にエラーが発生しました。部屋コードを確認して再度お試しください。');
             }
         }
 
