@@ -1367,9 +1367,82 @@
             } else if (data.type === 'GAME_START') {
                 lobbyMembers = data.members;
                 execStartOnlineGame(data.members);
+            } else if (data.type === 'GAME_STATE_UPDATE') {
+                // 🌐 全体ゲーム状態の完全同期受信（ゲスト端末）
+                applySyncGameState(data);
             } else if (data.type === 'ACTION_ROLL') {
                 handleRollButtonClick();
             }
+        }
+
+        // 🌐 ホストから送信されたゲーム状態をゲスト画面へ反映
+        function applySyncGameState(data) {
+            if (data.players) {
+                data.players.forEach((p, idx) => {
+                    players[idx].pos = p.pos;
+                    players[idx].listeners = p.listeners;
+                    players[idx].finished = p.finished;
+                    players[idx].rank = p.rank;
+                    players[idx].items = p.items || [];
+
+                    let tile = tileCoords[p.pos];
+                    if (tile && !isMoving) {
+                        players[idx].renderX = tile.x;
+                        players[idx].renderY = tile.y;
+                    }
+                    let listenerEl = document.getElementById(`p${idx + 1}Listeners`);
+                    if (listenerEl) listenerEl.innerText = `${p.listeners.toLocaleString()}人`;
+                });
+            }
+
+            if (data.currentTurnNumber !== undefined) {
+                currentTurnNumber = data.currentTurnNumber;
+                let turnEl = document.getElementById('turnCounter');
+                if (turnEl) turnEl.innerText = currentTurnNumber;
+            }
+
+            if (data.currentPlayerIndex !== undefined) {
+                currentPlayerIndex = data.currentPlayerIndex;
+                let activePlayer = players[currentPlayerIndex];
+                let tagEl = document.getElementById('activePlayerTag');
+                if (tagEl) tagEl.innerText = `手番: ${activePlayer.name}`;
+
+                // 自分のターンかどうかでボタン制御
+                let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+                let btnRoll = document.getElementById('btnRoll');
+                if (btnRoll) {
+                    btnRoll.disabled = (myMemberIndex !== currentPlayerIndex) || isMoving || isRolling;
+                }
+            }
+
+            if (data.eventTitle) document.getElementById('currentEventTitle').innerText = data.eventTitle;
+            if (data.eventDesc) document.getElementById('currentEventDesc').innerText = data.eventDesc;
+            if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
+            if (data.diceRoll) drawDice(data.diceRoll);
+
+            updateItemUI();
+        }
+
+        // 🌐 ホストが定期的に全プレイヤーへ状態を放送する関数
+        function broadcastGameState(extraData = {}) {
+            if (!isRoomHost || !currentRoomCode) return;
+            let syncData = {
+                type: 'GAME_STATE_UPDATE',
+                players: players.map(p => ({
+                    pos: p.pos,
+                    listeners: p.listeners,
+                    finished: p.finished,
+                    rank: p.rank,
+                    items: p.items
+                })),
+                currentPlayerIndex: currentPlayerIndex,
+                currentTurnNumber: currentTurnNumber,
+                eventTitle: document.getElementById('currentEventTitle')?.innerText || '',
+                eventDesc: document.getElementById('currentEventDesc')?.innerText || '',
+                eventEffect: document.getElementById('currentEventEffect')?.innerText || '',
+                ...extraData
+            };
+            broadcastToRoom(syncData);
         }
 
         // ルーム全員へデータ送信
@@ -1741,6 +1814,14 @@
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
+            // オンライン対戦で自分のターンでない場合は弾く
+            if (currentRoomCode) {
+                let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+                if (myMemberIndex !== -1 && myMemberIndex !== currentPlayerIndex && !isRoomHost) {
+                    return;
+                }
+            }
+
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll && btnRoll.disabled) return;
 
@@ -1748,6 +1829,8 @@
             if (btnRoll) btnRoll.disabled = true;
 
             let count = 0;
+            let finalRoll = Math.floor(Math.random() * 6) + 1;
+
             let interval = setInterval(() => {
                 let roll = Math.floor(Math.random() * 6) + 1;
                 drawDice(roll);
@@ -1757,14 +1840,19 @@
                 if (count > 12) {
                     clearInterval(interval);
                     isRolling = false;
+                    drawDice(finalRoll);
                     playSe('dice_stop');
+
+                    if (isRoomHost) {
+                        broadcastGameState({ diceRoll: finalRoll });
+                    }
 
                     setTimeout(() => {
                         if (isSubRollPending) {
                             isSubRollPending = false;
-                            resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
+                            resolveSubRollEvent(currentPlayerIndex, pendingTileType, finalRoll);
                         } else {
-                            movePlayer(currentPlayerIndex, roll);
+                            movePlayer(currentPlayerIndex, finalRoll);
                         }
                     }, 1200);
                 }
@@ -2140,6 +2228,7 @@
 
             if (players.every(p => p.finished)) {
                 showFinalResultModal();
+                if (isRoomHost) broadcastGameState();
                 return;
             }
 
@@ -2152,7 +2241,10 @@
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('btnRoll').innerText = '🎲 移動！';
 
-            if (currentPlayerIndex === 0) {
+            let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+            let isMyTurn = currentRoomCode ? (myMemberIndex === currentPlayerIndex) : (currentPlayerIndex === 0);
+
+            if (isMyTurn) {
                 document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
                 document.getElementById('btnRoll').disabled = false;
@@ -2161,20 +2253,19 @@
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
 
-                setTimeout(() => {
-                    isRolling = true;
-                    let count = 0;
-                    let interval = setInterval(() => {
-                        let roll = Math.floor(Math.random() * 6) + 1;
-                        drawDice(roll);
-                        count++;
-                        if (count > 12) {
-                            clearInterval(interval);
-                            isRolling = false;
-                            movePlayer(currentPlayerIndex, roll);
-                        }
-                    }, 100);
-                }, 1500);
+                // CPUまたは他プレイヤーのターンの自動進行（ホストのみが集中制御）
+                if (!currentRoomCode || isRoomHost) {
+                    let isCpuTurn = currentRoomCode ? lobbyMembers[currentPlayerIndex]?.isCpu : (currentPlayerIndex !== 0);
+                    if (isCpuTurn) {
+                        setTimeout(() => {
+                            handleRollButtonClick();
+                        }, 1500);
+                    }
+                }
+            }
+
+            if (isRoomHost) {
+                broadcastGameState();
             }
 
             updateItemUI();
