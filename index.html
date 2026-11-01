@@ -430,10 +430,11 @@
         let selectedMapTool = 'plus';
         let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
 
+        // プレイヤーごとに個別アイテム配列 (items: []) を所持するよう改修
         let players = [
-            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0 },
-            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0 },
-            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0 }
+            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [] },
+            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [] },
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [] }
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
@@ -1774,6 +1775,89 @@
                         }
                     }, 100);
                 }, 1500);
+            }
+
+            // 手番変更時に所持アイテム表示UIを最新のプレイヤー状態へ更新
+            updateItemUI();
+        }
+
+        // プレイヤーごとの個別の所持アイテム追加＆UI描画関数
+        function addPlayerItem(pIndex, itemName) {
+            let p = players[pIndex];
+            if (p) {
+                p.items.push(itemName);
+                updateItemUI();
+            }
+        }
+
+        function updateItemUI() {
+            let container = document.getElementById('itemListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let p = players[currentPlayerIndex];
+            
+            // 自分以外のプレイヤーのアイテムは対人戦・オンライン戦時に非表示（伏せ状態）にする
+            if (p.id !== 0 && document.getElementById('gameStatusText').innerText.includes('オンライン')) {
+                let badge = document.createElement('span');
+                badge.className = 'text-xs text-gray-400 italic';
+                badge.innerText = '🔒 対戦相手のアイテム（非公開）';
+                container.appendChild(badge);
+                return;
+            }
+
+            if (p && p.items && p.items.length > 0) {
+                p.items.forEach(item => {
+                    let badge = document.createElement('span');
+                    badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
+                    badge.innerText = item;
+                    container.appendChild(badge);
+                });
+            } else {
+                let badge = document.createElement('span');
+                badge.className = 'text-xs text-gray-300 font-normal';
+                badge.innerText = 'なし（黄色のマスで獲得）';
+                container.appendChild(badge);
+            }
+        }
+
+        function triggerTileEvent(pIndex) {
+            let p = players[pIndex];
+            let tile = tileCoords[p.pos];
+
+            if (tile.type === 'plus' || tile.type === 'minus') {
+                isSubRollPending = true;
+                pendingTileType = tile.type;
+
+                let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
+                let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
+
+                document.getElementById('currentEventTitle').innerText = titleText;
+                document.getElementById('currentEventDesc').innerText = descText;
+                document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
+                document.getElementById('btnRoll').innerText = '🎲 サイコロを振る！';
+                document.getElementById('btnRoll').disabled = false;
+
+                if (pIndex !== 0) {
+                    setTimeout(() => { handleRollButtonClick(); }, 1500);
+                }
+            } else {
+                let matchingEvents = gameEvents.filter(e => e.type === tile.type);
+                if (matchingEvents.length === 0) matchingEvents = gameEvents;
+                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+
+                document.getElementById('currentEventTitle').innerText = event.title;
+                document.getElementById('currentEventDesc').innerText = event.desc;
+
+                if (tile.type === 'item') {
+                    let itemGot = event.itemName || '⚡ スパチャブースター';
+                    document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
+                    addPlayerItem(pIndex, itemGot);
+                } else {
+                    document.getElementById('currentEventEffect').innerText = '変化なし';
+                }
+
+                setTimeout(() => { nextTurn(); }, 3000);
             }
         }
 
