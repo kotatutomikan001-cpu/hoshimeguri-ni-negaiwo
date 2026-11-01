@@ -297,12 +297,12 @@
                 </div>
 
                 <!-- 部屋コード入力＆参加/作成ボタン -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="w-full sm:flex-1 bg-slate-950 border border-purple-500 rounded px-2 py-1.5 sm:py-1 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
-                    <button onclick="startOnlineGame()" class="pixel-btn py-1.5 sm:py-1 px-4 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer w-full sm:w-auto flex-none">
-                        参加 / 作成
-                    </button>
-                </div>
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+        <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="w-full sm:flex-1 bg-slate-950 border border-purple-500 rounded px-2 py-1.5 sm:py-1 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
+        <button onclick="startOnlineGame()" class="pixel-btn py-1.5 sm:py-1 px-4 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer w-full sm:w-auto flex-none">
+            参加 / 作成
+        </button>
+    </div>
             </div>
         </div>
     </div>
@@ -450,6 +450,28 @@
         let myChar = 'utsuro';
         let isFullMapView = false;
         let activeTab = 'events';
+
+        // キャラ選択関数（スマホでの不具合修正版）
+        function selectChar(charType) {
+            myChar = charType;
+
+            const chars = ['utsuro', 'gengo', 'tomoko'];
+            chars.forEach(c => {
+                const btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                const badge = document.getElementById(`badge${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                
+                if (btn && badge) {
+                    if (c === charType) {
+                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
+                        badge.classList.remove('hidden');
+                    } else {
+                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
+            drawCharPreviews();
+        }
 
         // オンラインロビー状態
         let currentRoomCode = '';
@@ -1024,84 +1046,65 @@
             generateCityObjects();
         }
 
+        // デバッグ設定の保存
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
-
-            goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 3000;
-            goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
-            goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
-
             try {
-                localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
                 localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
                 localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
+                localStorage.setItem('utsuro_game_events', JSON.stringify(gameEvents));
+
+                let g1 = parseInt(document.getElementById('goalBonus1st').value) || 3000;
+                let g2 = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
+                let g3 = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
+                goalBonuses = { 1: g1, 2: g2, 3: g3 };
                 localStorage.setItem('utsuro_goal_bonuses', JSON.stringify(goalBonuses));
-            } catch (e) {}
+            } catch(e) {}
 
             convertCustomGridToTileCoords();
-
-            if (tileCoords.length > 0) {
-                players.forEach(p => {
-                    p.pos = 0;
-                    p.finished = false;
-                    p.rank = 0;
-                    let t = tileCoords[0];
-                    p.renderX = t.x;
-                    p.renderY = t.y;
-                    p.goshuX = t.x;
-                    p.goshuY = t.y;
-                });
-            }
-
             drawCharPreviews();
             closeDebugMenu();
-            alert('設定・変更を適用しました！');
-        }
-
-        function resetDebugDefaults() {
-            if (confirm('デバッグ設定を初期リセットしますか？')) {
-                localStorage.removeItem('utsuro_custom_events');
-                localStorage.removeItem('utsuro_custom_dots');
-                localStorage.removeItem('utsuro_custom_map');
-                initDefaultDotGrids();
-                initDefaultMapGrid();
-                loadDataFromLocalStorage();
-                convertCustomGridToTileCoords();
-                
-                if (tileCoords.length > 0) {
-                    players.forEach(p => {
-                        p.pos = 0;
-                        let t = tileCoords[0];
-                        p.renderX = t.x;
-                        p.renderY = t.y;
-                        p.goshuX = t.x;
-                        p.goshuY = t.y;
-                    });
-                }
-
-                renderDebugEvents();
-                renderDotCanvas();
-                renderMapEditorCanvas();
-                drawCharPreviews();
-                alert('初期リセットが完了しました！');
-            }
+            alert('設定を適用・保存しました！');
         }
 
         function loadDataFromLocalStorage() {
             try {
-                let savedEvents = localStorage.getItem('utsuro_custom_events');
-                gameEvents = savedEvents ? JSON.parse(savedEvents) : JSON.parse(JSON.stringify(defaultEvents));
-
                 let savedDots = localStorage.getItem('utsuro_custom_dots');
-                if (savedDots) {
-                    let parsed = JSON.parse(savedDots);
-                    Object.keys(parsed).forEach(k => { if (parsed[k]) customDotData[k] = parsed[k]; });
-                }
+                if (savedDots) customDotData = JSON.parse(savedDots);
 
                 let savedMap = localStorage.getItem('utsuro_custom_map');
                 if (savedMap) customMapGrid = JSON.parse(savedMap);
-            } catch (e) {
+
+                let savedEvents = localStorage.getItem('utsuro_game_events');
+                if (savedEvents) gameEvents = JSON.parse(savedEvents);
+                else gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            } catch(e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            }
+        }
+
+        function resetDebugDefaults() {
+            if (confirm('すべてのカスタマイズ設定を初期化しますか？')) {
+                localStorage.removeItem('utsuro_custom_dots');
+                localStorage.removeItem('utsuro_custom_map');
+                localStorage.removeItem('utsuro_game_events');
+                localStorage.removeItem('utsuro_goal_bonuses');
+
+                initDefaultDotGrids();
+                initDefaultMapGrid();
+                gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+                goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
+
+                if (document.getElementById('goalBonus1st')) document.getElementById('goalBonus1st').value = 3000;
+                if (document.getElementById('goalBonus2nd')) document.getElementById('goalBonus2nd').value = 2000;
+                if (document.getElementById('goalBonus3rd')) document.getElementById('goalBonus3rd').value = 1000;
+
+                convertCustomGridToTileCoords();
+                renderDotCanvas();
+                renderMapEditorCanvas();
+                renderDebugEvents();
+                drawCharPreviews();
+                alert('初期状態にリセットしました。');
             }
         }
 
@@ -1118,68 +1121,79 @@
 
         function switchDebugTab(tab) {
             activeTab = tab;
-            document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
-            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
-            document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
-            
-            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-        }
+            ['events', 'dots', 'map'].forEach(t => {
+                let tabBtn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                let tabContent = document.getElementById(`debugTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (tabBtn && tabContent) {
+                    if (t === tab) {
+                        tabBtn.classList.add('text-yellow-300', 'border-yellow-400', 'bg-purple-900/40');
+                        tabBtn.classList.remove('text-gray-400', 'border-transparent');
+                        tabContent.classList.remove('hidden');
+                    } else {
+                        tabBtn.classList.remove('text-yellow-300', 'border-yellow-400', 'bg-purple-900/40');
+                        tabBtn.classList.add('text-gray-400', 'border-transparent');
+                        tabContent.classList.add('hidden');
+                    }
+                }
+            });
 
-        function toggleCameraView() {
-            isFullMapView = !isFullMapView;
-            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+            if (tab === 'dots') renderDotCanvas();
+            if (tab === 'map') renderMapEditorCanvas();
         }
 
         function resizeCanvas() {
             if (!canvas) return;
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            let parent = canvas.parentElement;
+            if (parent) {
+                canvas.width = parent.clientWidth;
+                canvas.height = parent.clientHeight;
+            }
         }
 
-        // PCマウスドラッグ & スマホタッチスワイプ移動の両方に対応
+        function toggleCameraView() {
+            isFullMapView = !isFullMapView;
+            let btn = document.getElementById('btnToggleCamera');
+            if (btn) {
+                btn.innerHTML = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+            }
+            if (!isFullMapView) {
+                userDragOffsetX = 0;
+                userDragOffsetY = 0;
+            }
+        }
+
         function setupCanvasDragAndTouch() {
             if (!canvas) return;
 
-            canvas.addEventListener('mousedown', (e) => {
+            const startDrag = (e) => {
+                if (isFullMapView) return;
                 isDragging = true;
-                dragStartX = e.clientX - userDragOffsetX;
-                dragStartY = e.clientY - userDragOffsetY;
-            });
+                dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
+                dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+            };
 
-            window.addEventListener('mousemove', (e) => {
-                if (isDragging && !isFullMapView) {
-                    userDragOffsetX = e.clientX - dragStartX;
-                    userDragOffsetY = e.clientY - dragStartY;
-                }
-            });
+            const moveDrag = (e) => {
+                if (!isDragging || isFullMapView) return;
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                userDragOffsetX += clientX - dragStartX;
+                userDragOffsetY += clientY - dragStartY;
+                dragStartX = clientX;
+                dragStartY = clientY;
+            };
 
-            window.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
+            const endDrag = () => { isDragging = false; };
 
-            canvas.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    isDragging = true;
-                    dragStartX = e.touches[0].clientX - userDragOffsetX;
-                    dragStartY = e.touches[0].clientY - userDragOffsetY;
-                }
-            }, { passive: true });
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', moveDrag);
+            window.addEventListener('mouseup', endDrag);
 
-            window.addEventListener('touchmove', (e) => {
-                if (isDragging && !isFullMapView && e.touches.length === 1) {
-                    userDragOffsetX = e.touches[0].clientX - dragStartX;
-                    userDragOffsetY = e.touches[0].clientY - dragStartY;
-                }
-            }, { passive: true });
-
-            window.addEventListener('touchend', () => {
-                isDragging = false;
-            });
+            canvas.addEventListener('touchstart', startDrag, { passive: true });
+            canvas.addEventListener('touchmove', moveDrag, { passive: true });
+            window.addEventListener('touchend', endDrag);
         }
 
-        // オンライン対戦：部屋作成/参加ロジック（インターネットリアルタイム通信 P2P版）
+        // オンライン対戦：部屋作成/参加ロジック（安定型 PeerJS 通信）
         function startOnlineGame() {
             let codeInput = document.getElementById('roomCodeInput');
             let roomCode = codeInput ? codeInput.value.trim() : '';
@@ -1190,75 +1204,97 @@
             }
 
             currentRoomCode = roomCode;
-            document.getElementById('startModal').classList.add('hidden');
 
             // 既存のPeer接続があればクリーンアップ
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
             }
 
-            // 部屋コードに基づくPeerIDを生成
-            // ホストは "utsuro-sugoroku-room-[コード]" のIDを試み、失敗した場合はゲストとして接続する
-            let hostId = `utsuro-sugoroku-room-${roomCode}`;
+            // 部屋コードに基づく統一HostID
+            let hostId = `utsuro-sugoroku-v2-${roomCode}`;
             hostPeerId = hostId;
 
-            // まずホストとして Peer オブジェクトを作成してみる
-            peer = new Peer(hostId);
+            // 安定シグナリングサーバーオプション
+            const peerOptions = {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                debug: 1
+            };
 
-            peer.on('open', (id) => {
-                // 自分がホスト（部屋の作成者）
-                isRoomHost = true;
-                lobbyMembers = [{
-                    id: 0,
-                    sessionId: mySessionId,
-                    peerId: id,
-                    char: myChar,
-                    name: players[0].name,
-                    isCpu: false
-                }];
-                openOnlineLobby();
+            // まずゲストとしてホストに接続を試みる
+            peer = new Peer(peerOptions);
 
-                // ゲストからの接続を待受
-                peer.on('connection', (conn) => {
-                    setupHostConnection(conn);
+            peer.on('open', (myPeerId) => {
+                let conn = peer.connect(hostId, { reliable: true });
+
+                let connectedToHost = false;
+
+                conn.on('open', () => {
+                    connectedToHost = true;
+                    isRoomHost = false;
+                    peerConnections[hostId] = conn;
+
+                    conn.send({
+                        type: 'JOIN_REQUEST',
+                        sessionId: mySessionId,
+                        char: myChar,
+                        name: players[0].name
+                    });
+
+                    conn.on('data', (data) => {
+                        handleGuestReceivedData(data);
+                    });
+
+                    conn.on('close', () => {
+                        alert('ホストとの接続が切断されました。');
+                        leaveOnlineLobby(false);
+                    });
+
+                    document.getElementById('startModal').classList.add('hidden');
+                    openOnlineLobby();
                 });
+
+                // 一定時間接続できない場合は自分がホスト（部屋作成者）になる
+                setTimeout(() => {
+                    if (!connectedToHost) {
+                        conn.close();
+                        try { peer.destroy(); } catch(e) {}
+
+                        // ホストとして自ら立ち上げる
+                        peer = new Peer(hostId, peerOptions);
+
+                        peer.on('open', (id) => {
+                            isRoomHost = true;
+                            lobbyMembers = [{
+                                id: 0,
+                                sessionId: mySessionId,
+                                peerId: id,
+                                char: myChar,
+                                name: players[0].name,
+                                isCpu: false
+                            }];
+
+                            peer.on('connection', (hostConn) => {
+                                setupHostConnection(hostConn);
+                            });
+
+                            document.getElementById('startModal').classList.add('hidden');
+                            openOnlineLobby();
+                        });
+
+                        peer.on('error', (err) => {
+                            alert('オンライン部屋の作成・接続に失敗しました: ' + err.type);
+                            document.getElementById('startModal').classList.remove('hidden');
+                        });
+                    }
+                }, 1800);
             });
 
             peer.on('error', (err) => {
-                // すでにその部屋コードのホストが存在する場合（ゲストとして参加）
-                if (err.type === 'unavailable-id') {
-                    isRoomHost = false;
-
-                    // ランダムなゲスト用PeerIDで接続
-                    peer = new Peer();
-                    peer.on('open', (guestId) => {
-                        let conn = peer.connect(hostId);
-                        
-                        conn.on('open', () => {
-                            // ホストへ参加申請送信
-                            conn.send({
-                                type: 'JOIN_REQUEST',
-                                sessionId: mySessionId,
-                                char: myChar,
-                                name: players[0].name
-                            });
-                        });
-
-                        conn.on('data', (data) => {
-                            handleGuestReceivedData(data);
-                        });
-
-                        conn.on('close', () => {
-                            alert('ホストとの接続が切断されました。');
-                            leaveOnlineLobby(false);
-                        });
-
-                        peerConnections[hostId] = conn;
-                        openOnlineLobby();
-                    });
-                } else {
-                    alert('通信エラーが発生しました: ' + err.type);
-                    document.getElementById('startModal').classList.remove('hidden');
+                if (err.type !== 'unavailable-id') {
+                    console.log('Peer error:', err);
                 }
             });
         }
@@ -1323,7 +1359,6 @@
         function handleGuestReceivedData(data) {
             if (data.type === 'LOBBY_UPDATE') {
                 lobbyMembers = data.members;
-                // 自分の割り当てキャラ更新チェック
                 let myData = lobbyMembers.find(m => m.sessionId === mySessionId);
                 if (myData && myData.char !== myChar) {
                     selectChar(myData.char);
@@ -1402,24 +1437,14 @@
                 btnStartCpu.style.display = isRoomHost ? 'flex' : 'none';
             }
 
-            // 後から参加した人のためにキャラ被り防止（ボタン無効化）
-            let hostChar = lobbyMembers[0] ? lobbyMembers[0].char : null;
-            if (hostChar) {
-                ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                    let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                    if (btn) {
-                        // オンラインロビーが開いている時のみ被りキャラを制限
-                        let isOnlineLobbyActive = !document.getElementById('onlineLobbyModal').classList.contains('hidden');
-                        if (isOnlineLobbyActive && !isRoomHost && c === hostChar) {
-                            btn.disabled = true;
-                            btn.classList.add('opacity-40', 'cursor-not-allowed');
-                        } else {
-                            btn.disabled = false;
-                            btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                        }
-                    }
-                });
-            }
+            // キャラボタンの制限解除（スタート画面ではいつでも全キャラ選択可にする）
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
+            });
         }
 
         // オンラインロビーからの退室処理
@@ -1459,7 +1484,6 @@
 
             // キャラクター割り当て（自分が選んだキャラ以外をCPU2人に設定）
             let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-            let usedChars = [myChar];
             let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== myChar);
 
             players[0].char = myChar;
@@ -2025,7 +2049,7 @@
             modal.classList.remove('hidden');
         }
 
-        // 道路接続に基づく隣接マス判定ロジックに修正（道のないワープを完全に防止）
+        // 道路接続に基づく隣接マス判定ロジック（道のないワープを完全に防止）
         function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
             let curr = tileCoords[currentTileIdx];
             let candidates = [];
