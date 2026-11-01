@@ -1215,18 +1215,14 @@
                 let hostId = `utsuro-sugoroku-v2-${roomCode}`;
                 hostPeerId = hostId;
 
-                // 安定シグナリングサーバーオプション
-                const peerOptions = {
-                    debug: 1
-                };
-
-                // まずゲストとしてホストに接続を試みる
-                peer = new Peer(peerOptions);
-
-                let connectedToHost = false;
+                // 安定接続用Peerオブジェクト生成（ID指定なしで初期化）
+                peer = new Peer();
 
                 peer.on('open', (myPeerId) => {
+                    // まず既存ホストへの接続を試みる
                     let conn = peer.connect(hostId, { reliable: true });
+
+                    let connectedToHost = false;
 
                     conn.on('open', () => {
                         connectedToHost = true;
@@ -1253,46 +1249,46 @@
                         openOnlineLobby();
                     });
 
-                    // 一定時間接続できない場合は自分がホスト（部屋作成者）になる
-                    setTimeout(() => {
-                        if (!connectedToHost) {
-                            try { if (conn) conn.close(); } catch(e) {}
-                            try { peer.destroy(); } catch(e) {}
+                    // 接続エラーまたはタイムアウト時に自分が部屋のホストになる
+                    const tryBecomeHost = () => {
+                        if (connectedToHost) return;
+                        try { if (conn) conn.close(); } catch(e) {}
+                        try { peer.destroy(); } catch(e) {}
 
-                            // ホストとして自ら立ち上げる
-                            peer = new Peer(hostId, peerOptions);
+                        // 部屋のホストとして新規作成
+                        peer = new Peer(hostId);
 
-                            peer.on('open', (id) => {
-                                isRoomHost = true;
-                                lobbyMembers = [{
-                                    id: 0,
-                                    sessionId: mySessionId,
-                                    peerId: id,
-                                    char: myChar,
-                                    name: players[0].name,
-                                    isCpu: false
-                                }];
+                        peer.on('open', (id) => {
+                            isRoomHost = true;
+                            lobbyMembers = [{
+                                id: 0,
+                                sessionId: mySessionId,
+                                peerId: id,
+                                char: myChar,
+                                name: players[0].name,
+                                isCpu: false
+                            }];
 
-                                peer.on('connection', (hostConn) => {
-                                    setupHostConnection(hostConn);
-                                });
-
-                                document.getElementById('startModal').classList.add('hidden');
-                                openOnlineLobby();
+                            peer.on('connection', (hostConn) => {
+                                setupHostConnection(hostConn);
                             });
 
-                            peer.on('error', (err) => {
-                                alert('オンライン部屋の作成・接続に失敗しました: ' + (err.type || err));
-                                document.getElementById('startModal').classList.remove('hidden');
-                            });
-                        }
-                    }, 1200);
+                            document.getElementById('startModal').classList.add('hidden');
+                            openOnlineLobby();
+                        });
+
+                        peer.on('error', (err) => {
+                            alert('オンライン部屋の作成・接続に失敗しました: ' + (err.type || err));
+                            document.getElementById('startModal').classList.remove('hidden');
+                        });
+                    };
+
+                    conn.on('error', tryBecomeHost);
+                    setTimeout(tryBecomeHost, 1000);
                 });
 
                 peer.on('error', (err) => {
-                    if (err.type !== 'unavailable-id') {
-                        console.log('Peer error:', err);
-                    }
+                    console.log('Peer error:', err);
                 });
             } catch (err) {
                 console.error('Online game start error:', err);
