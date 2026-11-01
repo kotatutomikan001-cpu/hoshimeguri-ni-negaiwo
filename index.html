@@ -1223,80 +1223,84 @@
                 debug: 1
             };
 
-            // まずゲストとしてホストに接続を試みる
-            peer = new Peer(peerOptions);
-
-            peer.on('open', (myPeerId) => {
-                let conn = peer.connect(hostId, { reliable: true });
+            try {
+                // まずゲストとしてホストに接続を試みる
+                peer = new Peer(peerOptions);
 
                 let connectedToHost = false;
 
-                conn.on('open', () => {
-                    connectedToHost = true;
-                    isRoomHost = false;
-                    peerConnections[hostId] = conn;
+                peer.on('open', (myPeerId) => {
+                    let conn = peer.connect(hostId, { reliable: true });
 
-                    conn.send({
-                        type: 'JOIN_REQUEST',
-                        sessionId: mySessionId,
-                        char: myChar,
-                        name: players[0].name
+                    conn.on('open', () => {
+                        connectedToHost = true;
+                        isRoomHost = false;
+                        peerConnections[hostId] = conn;
+
+                        conn.send({
+                            type: 'JOIN_REQUEST',
+                            sessionId: mySessionId,
+                            char: myChar,
+                            name: players[0].name
+                        });
+
+                        conn.on('data', (data) => {
+                            handleGuestReceivedData(data);
+                        });
+
+                        conn.on('close', () => {
+                            alert('ホストとの接続が切断されました。');
+                            leaveOnlineLobby(false);
+                        });
+
+                        document.getElementById('startModal').classList.add('hidden');
+                        openOnlineLobby();
                     });
 
-                    conn.on('data', (data) => {
-                        handleGuestReceivedData(data);
-                    });
+                    // 一定時間接続できない場合は自分がホスト（部屋作成者）になる
+                    setTimeout(() => {
+                        if (!connectedToHost) {
+                            try { if (conn) conn.close(); } catch(e) {}
+                            try { peer.destroy(); } catch(e) {}
 
-                    conn.on('close', () => {
-                        alert('ホストとの接続が切断されました。');
-                        leaveOnlineLobby(false);
-                    });
+                            // ホストとして自ら立ち上げる
+                            peer = new Peer(hostId, peerOptions);
 
-                    document.getElementById('startModal').classList.add('hidden');
-                    openOnlineLobby();
-                });
+                            peer.on('open', (id) => {
+                                isRoomHost = true;
+                                lobbyMembers = [{
+                                    id: 0,
+                                    sessionId: mySessionId,
+                                    peerId: id,
+                                    char: myChar,
+                                    name: players[0].name,
+                                    isCpu: false
+                                }];
 
-                // 一定時間接続できない場合は自分がホスト（部屋作成者）になる
-                setTimeout(() => {
-                    if (!connectedToHost) {
-                        conn.close();
-                        try { peer.destroy(); } catch(e) {}
+                                peer.on('connection', (hostConn) => {
+                                    setupHostConnection(hostConn);
+                                });
 
-                        // ホストとして自ら立ち上げる
-                        peer = new Peer(hostId, peerOptions);
-
-                        peer.on('open', (id) => {
-                            isRoomHost = true;
-                            lobbyMembers = [{
-                                id: 0,
-                                sessionId: mySessionId,
-                                peerId: id,
-                                char: myChar,
-                                name: players[0].name,
-                                isCpu: false
-                            }];
-
-                            peer.on('connection', (hostConn) => {
-                                setupHostConnection(hostConn);
+                                document.getElementById('startModal').classList.add('hidden');
+                                openOnlineLobby();
                             });
 
-                            document.getElementById('startModal').classList.add('hidden');
-                            openOnlineLobby();
-                        });
+                            peer.on('error', (err) => {
+                                alert('オンライン部屋の作成・接続に失敗しました: ' + (err.type || err));
+                                document.getElementById('startModal').classList.remove('hidden');
+                            });
+                        }
+                    }, 1800);
+                });
 
-                        peer.on('error', (err) => {
-                            alert('オンライン部屋の作成・接続に失敗しました: ' + err.type);
-                            document.getElementById('startModal').classList.remove('hidden');
-                        });
+                peer.on('error', (err) => {
+                    if (err.type !== 'unavailable-id') {
+                        console.log('Peer error:', err);
                     }
-                }, 1800);
-            });
-
-            peer.on('error', (err) => {
-                if (err.type !== 'unavailable-id') {
-                    console.log('Peer error:', err);
-                }
-            });
+                });
+            } catch (err) {
+                alert('通信ライブラリの初期化に失敗しました。ページを再読み込みしてください。');
+            }
         }
 
         // ホスト側の通信制御
