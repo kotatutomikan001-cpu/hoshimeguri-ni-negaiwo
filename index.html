@@ -7,13 +7,17 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Kiwi+Maru:wght@500;800&display=swap');
         
         body {
-            font-family: 'DotGothic16', sans-serif;
+            font-family: 'Kiwi Maru', 'DotGothic16', sans-serif;
             user-select: none;
             background-color: #090d16;
             color: #ffffff;
+        }
+
+        h1, h2, h3, .pixel-btn, #currentEventTitle, #turnCounter {
+            font-family: 'Dela Gothic One', 'DotGothic16', cursive;
         }
 
         /* レトロRPG風枠線 */
@@ -396,18 +400,15 @@
         let isSubRollPending = false;
         let pendingTileType = null;
 
-        // キャラクター移動アニメーション用変数
-        let moveAnimProgress = 0;
-        let animStartTile = null;
-        let animEndTile = null;
-
         let tileCoords = [];
         let cityObjects = [];
         let gameEvents = [];
         let currentEventFilter = 'all';
 
-        // BGM音量設定値 (デフォルト30%)
         let currentBgmVolume = 0.3;
+        let audioUnlocked = false;
+        let activeBgm = 'select'; // BGMの状態管理を追加
+        let audioCtx = null; // SE生成用 Web Audio Context
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -432,10 +433,11 @@
             mapEditorCanvas = document.getElementById('mapEditorCanvas');
             if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
 
-            // 保存されている音量設定の読み込み
             let savedVol = localStorage.getItem('utsuro_bgm_volume');
-            if (savedVol !== null) {
+            if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
                 currentBgmVolume = parseFloat(savedVol);
+            } else {
+                currentBgmVolume = 0.3;
             }
             updateVolumeControlsUI(currentBgmVolume);
 
@@ -449,22 +451,106 @@
             initDefaultMapGrid();
             loadDataFromLocalStorage();
 
-            // 最新のデフォルトデータで未保存または古いデータを上書き更新
             saveCurrentDotGridToTarget();
 
             convertCustomGridToTileCoords();
             drawCharPreviews();
             drawDice(1);
 
-            // BGM自動再生（選択画面BGM）
+            setupAudioUnlockers();
             playSelectBgm();
 
             document.getElementById('btnRoll').addEventListener('click', handleRollButtonClick);
             requestAnimationFrame(gameLoop);
         };
 
+        function setupAudioUnlockers() {
+            const unlockAudio = () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } else if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const selectAudio = document.getElementById('selectBgmAudio');
+                const gameAudio = document.getElementById('gameBgmAudio');
+                
+                // 再生トライ
+                if (selectAudio && activeBgm === 'select') {
+                    selectAudio.volume = currentBgmVolume;
+                    selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
+                } else if (gameAudio && activeBgm === 'game') {
+                    gameAudio.volume = currentBgmVolume;
+                    gameAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
+                }
+            };
+
+            ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
+                window.addEventListener(evt, unlockAudio, { passive: true });
+            });
+        }
+
+        // SE (効果音) 自動合成・再生処理
+        function playSe(type) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.3, now);
+            masterGain.connect(audioCtx.destination);
+
+            if (type === 'dice_roll') {
+                // サイコロが転がるコトコト音
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200 + Math.random() * 300, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'dice_stop') {
+                // 出目決定時のピコーン音
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.2);
+                });
+            } else if (type === 'jump') {
+                // ぴょんぴょんジャンプ音（ピポッ）
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(750, now + 0.12);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        }
+
         function changeBgmVolume(val) {
             currentBgmVolume = parseFloat(val);
+            if (isNaN(currentBgmVolume)) currentBgmVolume = 0.3;
+            
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
             
@@ -488,42 +574,37 @@
         }
 
         function playSelectBgm() {
-            const selectAudio = document.getElementById('selectBgmAudio');
-            const gameAudio = document.getElementById('gameBgmAudio');
-            if (gameAudio) { gameAudio.pause(); gameAudio.currentTime = 0; }
-            if (selectAudio) {
-                selectAudio.volume = currentBgmVolume;
-                let playPromise = selectAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        // ブラウザの自動再生制限を解除するイベントリスナー
-                        const unlockBgm = () => {
-                            selectAudio.volume = currentBgmVolume;
-                            selectAudio.play().catch(() => {});
-                            ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockBgm));
-                        };
-                        ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockBgm, { once: true }));
-                    });
-                }
-            }
+            activeBgm = 'select';
+            attemptPlayBgm();
         }
 
         function playGameBgm() {
+            activeBgm = 'game';
+            attemptPlayBgm();
+        }
+
+        function attemptPlayBgm() {
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
-            if (selectAudio) { selectAudio.pause(); selectAudio.currentTime = 0; }
-            if (gameAudio) {
-                gameAudio.volume = currentBgmVolume;
-                let playPromise = gameAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        const unlockGameBgm = () => {
-                            gameAudio.volume = currentBgmVolume;
-                            gameAudio.play().catch(() => {});
-                            ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.removeEventListener(evt, unlockGameBgm));
-                        };
-                        ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(evt => window.addEventListener(evt, unlockGameBgm, { once: true }));
-                    });
+            
+            if (!selectAudio || !gameAudio) return;
+            
+            selectAudio.volume = currentBgmVolume;
+            gameAudio.volume = currentBgmVolume;
+
+            if (activeBgm === 'select') {
+                gameAudio.pause();
+                gameAudio.currentTime = 0;
+                let p = selectAudio.play();
+                if (p !== undefined) {
+                    p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
+                }
+            } else {
+                selectAudio.pause();
+                selectAudio.currentTime = 0;
+                let p = gameAudio.play();
+                if (p !== undefined) {
+                    p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
                 }
             }
         }
@@ -625,23 +706,18 @@
         }
 
         function initDefaultDotGrids() {
-            // 氷室うつろのごしゅ（緑色）
-            customDotData.utsuro_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#00000000","#eae434","#00000000","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#eae434","#eae434","#eae434","#eae434","#eae434","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#34ea8c","#2e2e2e","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f4b8b8","#f4b8b8","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#f4b8b8","#f4b8b8","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#f27373","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#34ea8c","#34ea8c","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#34ea8c","#34ea8c","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#34ea8c","#34ea8c","#34ea8c","#00000000","#34ea8c","#34ea8c","#34ea8c","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
+            let tomokoGoshuGrid = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffadad","#ffadad","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#ffadad","#ffadad","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
             
-            // 繰言かたるのごしゅ（水色・王冠付き）
-            customDotData.gengo_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#66a8ff","#000000","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f8b9d5","#f8b9d5","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#f8b9d5","#f8b9d5","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#ff8a8a","#66a8ff","#ff8a8a","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#ff8a8a","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#66a8ff","#66a8ff","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#66a8ff","#66a8ff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#66a8ff","#66a8ff","#66a8ff","#00000000","#66a8ff","#66a8ff","#66a8ff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
+            customDotData.tomoko_goshu = tomokoGoshuGrid;
+            
+            customDotData.utsuro_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#22c55e' : col));
+            customDotData.gengo_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#06b6d4' : col));
 
-            // 氷室うつろ
             customDotData.utsuro = [["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]];
 
-            // 繰言かたる
             customDotData.gengo = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]];
 
-            // トモコ
             customDotData.tomoko = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#ffd5b3","#ee7717","#363535","#ffd5b3","#ffd5b3","#ee7717","#363535","#ffd5b3","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#2f0e0e","#2f0e0e","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#ffffff","#ffffff","#ffffff","#ffffff","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#ffffff","#cca671","#cca671","#ffffff","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#831843","#831843","#831843","#831843","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#831843","#cca671","#cca671","#831843","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"]];
-
-            // トモコのごしゅ（ピンク色・王冠付き）
-            customDotData.tomoko_goshu = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffadad","#ffadad","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#ffadad","#ffadad","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
 
             loadTargetDotGrid(selectedDotTarget);
         }
@@ -736,66 +812,50 @@
             window.roadConnections = [];
             let pSize = 64;
 
-            // 12x12のエディットマップを走査して配置されている全マスを抽出
-            let gridMap = {};
             let rawTiles = [];
             for (let r = 0; r < 12; r++) {
                 for (let c = 0; c < 12; c++) {
                     let type = customMapGrid[r][c];
                     if (type) {
-                        let tileObj = {
+                        rawTiles.push({
                             x: c * pSize + pSize / 2,
                             y: r * pSize + pSize / 2,
                             type: type,
                             r: r,
                             c: c,
                             visited: false
-                        };
-                        rawTiles.push(tileObj);
-                        gridMap[`${r}_${c}`] = tileObj;
+                        });
                     }
                 }
             }
 
             if (rawTiles.length === 0) return;
 
-            // スタートマスを探す（無ければ先頭）
-            let curr = rawTiles.find(t => t.type === 'start') || rawTiles[0];
+            // 1. スタートマスからのすごろく順序配列（tileCoords）の作成
+            let startIdx = rawTiles.findIndex(t => t.type === 'start');
+            if (startIdx === -1) startIdx = 0;
+
+            let curr = rawTiles[startIdx];
             curr.visited = true;
             tileCoords.push(curr);
 
-            // 上下左右（4方向）の隣接探索で順番にたどる
-            const dirs = [
-                { dr: -1, dc: 0 }, // 上
-                { dr: 1, dc: 0 },  // 下
-                { dr: 0, dc: -1 }, // 左
-                { dr: 0, dc: 1 }   // 右
-            ];
-
             while (tileCoords.length < rawTiles.length) {
+                let neighbors = rawTiles.filter(t => !t.visited && Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c) === 1);
+
                 let nextTile = null;
-
-                // 1. まず上下左右の直近（距離1）の未訪問マスを探す
-                for (let d of dirs) {
-                    let nr = curr.r + d.dr;
-                    let nc = curr.c + d.dc;
-                    let candidate = gridMap[`${nr}_${nc}`];
-                    if (candidate && !candidate.visited) {
-                        nextTile = candidate;
-                        break;
+                if (neighbors.length > 0) {
+                    if (curr.r === 4 && curr.c === 5) {
+                        let downPref = neighbors.find(t => t.r === 4 && t.c === 4);
+                        if (downPref) nextTile = downPref;
                     }
-                }
-
-                // 2. もし直近になければ最も近い未訪問マス（直線距離）を探す
-                if (!nextTile) {
+                    if (!nextTile) {
+                        neighbors.sort((a, b) => Math.abs(b.r - curr.r) - Math.abs(a.r - curr.r));
+                        nextTile = neighbors[0];
+                    }
+                } else {
                     let unvisited = rawTiles.filter(t => !t.visited);
                     if (unvisited.length === 0) break;
-
-                    unvisited.sort((a, b) => {
-                        let distA = Math.hypot(a.r - curr.r, a.c - curr.c);
-                        let distB = Math.hypot(b.r - curr.r, b.c - curr.c);
-                        return distA - distB;
-                    });
+                    unvisited.sort((a, b) => (Math.abs(a.r - curr.r) + Math.abs(a.c - curr.c)) - (Math.abs(b.r - curr.r) + Math.abs(b.c - curr.c)));
                     nextTile = unvisited[0];
                 }
 
@@ -804,11 +864,22 @@
                 curr = nextTile;
             }
 
-            // 接続ラインの生成
-            for (let i = 0; i < tileCoords.length - 1; i++) {
-                let t1 = tileCoords[i];
-                let t2 = tileCoords[i + 1];
-                window.roadConnections.push({ x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y });
+            // 2. マップエディター上で配置されたすべての「隣接しているマス同士（距離1）」を必ず道路で繋ぐ
+            let connectedPairs = new Set();
+            for (let i = 0; i < rawTiles.length; i++) {
+                for (let j = i + 1; j < rawTiles.length; j++) {
+                    let t1 = rawTiles[i];
+                    let t2 = rawTiles[j];
+                    let manhattanDist = Math.abs(t1.r - t2.r) + Math.abs(t1.c - t2.c);
+                    
+                    if (manhattanDist === 1) {
+                        let pairKey = `${t1.r},${t1.c}-${t2.r},${t2.c}`;
+                        if (!connectedPairs.has(pairKey)) {
+                            connectedPairs.add(pairKey);
+                            window.roadConnections.push({ x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y });
+                        }
+                    }
+                }
             }
 
             generateCityObjects();
@@ -822,10 +893,8 @@
                 localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
             } catch (e) {}
 
-            // マップ座標を再計算
             convertCustomGridToTileCoords();
 
-            // マップ変更に合わせてプレイヤー位置と描画座標を同期リセット
             if (tileCoords.length > 0) {
                 players.forEach(p => {
                     p.pos = 0;
@@ -1150,7 +1219,6 @@
             });
         }
 
-        // --- サイコロクリックイベントハンドラー ---
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
@@ -1164,18 +1232,23 @@
             let interval = setInterval(() => {
                 let roll = Math.floor(Math.random() * 6) + 1;
                 drawDice(roll);
+                playSe('dice_roll');
                 count++;
 
                 if (count > 12) {
                     clearInterval(interval);
                     isRolling = false;
+                    playSe('dice_stop');
 
-                    if (isSubRollPending) {
-                        isSubRollPending = false;
-                        resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
-                    } else {
-                        movePlayer(currentPlayerIndex, roll);
-                    }
+                    // サイコロ決定後に1.2秒のタメ（間隔）を設けてから移動を開始
+                    setTimeout(() => {
+                        if (isSubRollPending) {
+                            isSubRollPending = false;
+                            resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
+                        } else {
+                            movePlayer(currentPlayerIndex, roll);
+                        }
+                    }, 1200);
                 }
             }, 100);
         }
@@ -1247,7 +1320,6 @@
             });
         }
 
-        // --- コマ移動＆順番進行 ---
         function movePlayer(pIndex, steps) {
             if (isMoving) return;
             isMoving = true;
@@ -1264,6 +1336,8 @@
                     p.pos++;
                     let toTile = tileCoords[p.pos];
                     remainingSteps--;
+
+                    playSe('jump'); // ぴょんぴょんジャンプ音
 
                     let duration = 300;
                     let startTime = performance.now();
@@ -1483,7 +1557,7 @@
                     ctx.stroke();
 
                     ctx.fillStyle = (t.type === 'white' || t.type === 'start') ? '#1e293b' : '#ffffff';
-                    ctx.font = 'bold 12px DotGothic16';
+                    ctx.font = 'bold 12px "Dela Gothic One", "DotGothic16"';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y);
