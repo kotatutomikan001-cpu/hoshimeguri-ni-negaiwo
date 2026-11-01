@@ -1401,11 +1401,11 @@
                     players[idx].rank = p.rank;
                     players[idx].items = p.items || [];
 
-                    let tile = tileCoords[p.pos];
-                    if (tile && !isMoving) {
-                        players[idx].renderX = tile.x;
-                        players[idx].renderY = tile.y;
-                    }
+                    // 🌐 移動中・ジャンプ中の座標をリアルタイムで同期反映（ワープ防止）
+                    if (p.renderX !== undefined) players[idx].renderX = p.renderX;
+                    if (p.renderY !== undefined) players[idx].renderY = p.renderY;
+                    if (p.jumpY !== undefined) players[idx].jumpY = p.jumpY;
+
                     let listenerEl = document.getElementById(`p${idx + 1}Listeners`);
                     if (listenerEl) listenerEl.innerText = `${p.listeners.toLocaleString()}人`;
                 });
@@ -1438,13 +1438,16 @@
             updateItemUI();
         }
 
-        // 🌐 ホストが定期的に全プレイヤーへ状態を放送する関数
+        // 🌐 ホストが定期的に全プレイヤーへ状態を放送する関数（リアルタイム座標含む）
         function broadcastGameState(extraData = {}) {
             if (!isRoomHost || !currentRoomCode) return;
             let syncData = {
                 type: 'GAME_STATE_UPDATE',
                 players: players.map(p => ({
                     pos: p.pos,
+                    renderX: p.renderX,
+                    renderY: p.renderY,
+                    jumpY: p.jumpY,
                     listeners: p.listeners,
                     finished: p.finished,
                     rank: p.rank,
@@ -1829,15 +1832,14 @@
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
-            // オンライン対戦時：自分のターンでない場合は弾く
-            if (currentRoomCode) {
-                if (myPlayerIndex !== currentPlayerIndex && !isRoomHost) {
-                    // ゲストが自分のターンに押した場合はホストへサイコロ要求を送信
-                    if (myPlayerIndex === currentPlayerIndex && peerConnections[hostPeerId]) {
-                        peerConnections[hostPeerId].send({ type: 'ACTION_ROLL' });
-                    }
-                    return;
+            // オンライン対戦時：ゲスト（自分の手番）が押した場合はホストへ要求を送信
+            if (currentRoomCode && !isRoomHost) {
+                if (myPlayerIndex === currentPlayerIndex && peerConnections[hostPeerId]) {
+                    peerConnections[hostPeerId].send({ type: 'ACTION_ROLL' });
+                    let btnRoll = document.getElementById('btnRoll');
+                    if (btnRoll) btnRoll.disabled = true;
                 }
+                return;
             }
 
             let btnRoll = document.getElementById('btnRoll');
@@ -2017,6 +2019,11 @@
                     p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
                     p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
                     p.jumpY = -Math.sin(progress * Math.PI) * 18;
+
+                    // 🌐 ホストは移動中の座標を毎フレームリアルタイム送信（ワープ解消）
+                    if (isRoomHost) {
+                        broadcastGameState();
+                    }
 
                     if (progress < 1) {
                         requestAnimationFrame(animateStep);
