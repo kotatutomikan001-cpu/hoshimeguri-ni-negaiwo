@@ -1047,6 +1047,151 @@
             generateCityObjects();
         }
 
+        // --- 街並みオブジェクト＆ドット絵描画ヘルパー ---
+        function generateCityObjects() {
+            cityObjects = [];
+            let pSize = 64;
+
+            // 12x12のグリッド上の空きマスに建物や木をランダム配置
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let tile = customMapGrid[r][c];
+                    if (!tile) {
+                        let x = c * pSize + pSize / 2;
+                        let y = r * pSize + pSize / 2;
+
+                        let rand = (r * 13 + c * 37) % 100;
+                        if (rand < 40) {
+                            cityObjects.push({ type: 'tree', x: x, y: y });
+                        } else if (rand < 65) {
+                            cityObjects.push({ type: 'house', x: x, y: y });
+                        } else if (rand < 85) {
+                            cityObjects.push({ type: 'building', x: x, y: y });
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawCityObject(cCtx, obj) {
+            cCtx.save();
+            if (obj.type === 'tree') {
+                // 木
+                cCtx.fillStyle = '#15803d';
+                cCtx.beginPath();
+                cCtx.arc(obj.x, obj.y - 4, 12, 0, Math.PI * 2);
+                cCtx.fill();
+                cCtx.fillStyle = '#b45309';
+                cCtx.fillRect(obj.x - 3, obj.y + 4, 6, 8);
+            } else if (obj.type === 'house') {
+                // 三角屋根の家
+                cCtx.fillStyle = '#f97316';
+                cCtx.beginPath();
+                cCtx.moveTo(obj.x, obj.y - 14);
+                cCtx.lineTo(obj.x - 12, obj.y - 2);
+                cCtx.lineTo(obj.x + 12, obj.y - 2);
+                cCtx.closePath();
+                cCtx.fill();
+
+                cCtx.fillStyle = '#fef08a';
+                cCtx.fillRect(obj.x - 10, obj.y - 2, 20, 14);
+                cCtx.fillStyle = '#0284c7';
+                cCtx.fillRect(obj.x - 5, obj.y + 2, 6, 6);
+            } else if (obj.type === 'building') {
+                // ビル
+                cCtx.fillStyle = '#334155';
+                cCtx.fillRect(obj.x - 12, obj.y - 16, 24, 28);
+                cCtx.fillStyle = '#fde047';
+                cCtx.fillRect(obj.x - 8, obj.y - 12, 5, 5);
+                cCtx.fillRect(obj.x + 3, obj.y - 12, 5, 5);
+                cCtx.fillRect(obj.x - 8, obj.y - 3, 5, 5);
+                cCtx.fillRect(obj.x + 3, obj.y - 3, 5, 5);
+            }
+            cCtx.restore();
+        }
+
+        function drawPlayerDotModel(cCtx, charKey, x, y, size = 30) {
+            let grid = customDotData[charKey];
+            if (!grid) return;
+
+            cCtx.save();
+            let pSize = size / 16;
+            let startX = x - size / 2;
+            let startY = y - size / 2;
+
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = grid[r][c];
+                    if (col && col !== '#00000000') {
+                        cCtx.fillStyle = col;
+                        cCtx.fillRect(startX + c * pSize, startY + r * pSize, pSize, pSize);
+                    }
+                }
+            }
+            cCtx.restore();
+        }
+
+        function drawGoshuDotModel(cCtx, charKey, x, y, size = 18) {
+            let goshuKey = `${charKey}_goshu`;
+            let grid = customDotData[goshuKey] || customDotData.utsuro_goshu;
+            if (!grid) return;
+
+            cCtx.save();
+            let pSize = size / 16;
+            let startX = x - size / 2;
+            let startY = y - size / 2;
+
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = grid[r][c];
+                    if (col && col !== '#00000000') {
+                        cCtx.fillStyle = col;
+                        cCtx.fillRect(startX + c * pSize, startY + r * pSize, pSize, pSize);
+                    }
+                }
+            }
+            cCtx.restore();
+        }
+
+        function drawDice(num) {
+            if (!diceCtx || !diceCanvas) return;
+            let w = diceCanvas.width;
+            let h = diceCanvas.height;
+
+            diceCtx.clearRect(0, 0, w, h);
+
+            // サイコロの背景
+            diceCtx.fillStyle = '#ffffff';
+            diceCtx.beginPath();
+            diceCtx.roundRect(2, 2, w - 4, h - 4, 8);
+            diceCtx.fill();
+            diceCtx.lineWidth = 2;
+            diceCtx.strokeStyle = '#94a3b8';
+            diceCtx.stroke();
+
+            // ドットの座標計算（動的解像度対応）
+            let cx = w / 2;
+            let cy = h / 2;
+            let offset = w * 0.25;
+
+            let dots = [];
+            if (num === 1) dots = [[cx, cy]];
+            else if (num === 2) dots = [[cx - offset, cy - offset], [cx + offset, cy + offset]];
+            else if (num === 3) dots = [[cx - offset, cy - offset], [cx, cy], [cx + offset, cy + offset]];
+            else if (num === 4) dots = [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy + offset], [cx + offset, cy + offset]];
+            else if (num === 5) dots = [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]];
+            else if (num === 6) dots = [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy], [cx + offset, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]];
+
+            diceCtx.fillStyle = (num === 1) ? '#ef4444' : '#1e293b';
+            let dotRadius = num === 1 ? w * 0.12 : w * 0.08;
+
+            dots.forEach(d => {
+                diceCtx.beginPath();
+                diceCtx.arc(d[0], d[1], dotRadius, 0, Math.PI * 2);
+                diceCtx.fill();
+            });
+        }
+
         // デバッグ設定の保存
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
@@ -1587,6 +1732,23 @@
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
 
+            // 🌟 プレイヤー状態と初期位置の完全初期化（Sマスへ配置）
+            let startTile = tileCoords[0] || { x: 100, y: 100 };
+            players.forEach((p, idx) => {
+                p.pos = 0;
+                p.listeners = 1000;
+                p.finished = false;
+                p.rank = 0;
+                p.items = [];
+                p.renderX = startTile.x;
+                p.renderY = startTile.y;
+                p.goshuX = startTile.x;
+                p.goshuY = startTile.y;
+                p.jumpY = 0;
+                p.lastVisitedTileIndex = -1;
+                document.getElementById(`p${idx + 1}Listeners`).innerText = '1,000人';
+            });
+
             playGameBgm();
 
             currentPlayerIndex = 0;
@@ -1640,6 +1802,23 @@
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
 
+            // 🌟 オンライン対戦開始時もプレイヤー状態と初期位置（Sマス）を同期セット
+            let startTile = tileCoords[0] || { x: 100, y: 100 };
+            players.forEach((p, idx) => {
+                p.pos = 0;
+                p.listeners = 1000;
+                p.finished = false;
+                p.rank = 0;
+                p.items = [];
+                p.renderX = startTile.x;
+                p.renderY = startTile.y;
+                p.goshuX = startTile.x;
+                p.goshuY = startTile.y;
+                p.jumpY = 0;
+                p.lastVisitedTileIndex = -1;
+                document.getElementById(`p${idx + 1}Listeners`).innerText = '1,000人';
+            });
+
             let lobbyModal = document.getElementById('onlineLobbyModal');
             if (lobbyModal) lobbyModal.classList.add('hidden');
 
@@ -1654,160 +1833,69 @@
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
             document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-            document.getElementById('btnRoll').disabled = false;
+            
+            // 自分のターンかどうかに応じてボタン制御
+            let isMyTurn = (myPlayerIndex === 0);
+            document.getElementById('btnRoll').disabled = !isMyTurn;
+
+            if (isRoomHost) {
+                broadcastGameState();
+            }
         }
+        // ホスト側の通信制御
+        function setupHostConnection(conn) {
+            conn.on('data', (data) => {
+                if (data.type === 'JOIN_REQUEST') {
+                    if (lobbyMembers.length >= 3) {
+                        conn.send({ type: 'JOIN_REJECT', reason: '部屋が満員(3人)です。' });
+                        return;
+                    }
 
-        function drawCityObject(context, obj) {
-            context.save();
-            context.translate(obj.x, obj.y);
+                    // キャラ被りチェックと自動調整
+                    let usedChars = lobbyMembers.map(m => m.char);
+                    let assignedChar = data.char;
+                    if (usedChars.includes(assignedChar)) {
+                        let available = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                        if (available.length > 0) assignedChar = available[0];
+                    }
 
-            if (obj.type === 'house') {
-                context.fillStyle = obj.roofColor || '#ef4444';
-                context.beginPath();
-                context.moveTo(0, -14);
-                context.lineTo(-14, -2);
-                context.lineTo(14, -2);
-                context.closePath();
-                context.fill();
+                    let newMember = {
+                        id: lobbyMembers.length,
+                        sessionId: data.sessionId,
+                        peerId: conn.peer,
+                        char: assignedChar,
+                        name: data.name,
+                        isCpu: false
+                    };
 
-                context.fillStyle = '#fef3c7';
-                context.fillRect(-10, -2, 20, 14);
+                    lobbyMembers.push(newMember);
+                    peerConnections[conn.peer] = conn;
 
-                context.fillStyle = '#78350f';
-                context.fillRect(-3, 4, 6, 8);
-            } else if (obj.type === 'building') {
-                context.fillStyle = obj.wallColor || '#3b82f6';
-                context.fillRect(-12, -20, 24, 36);
+                    // 全参加者へ最新のメンバーリストを同期送信
+                    broadcastToRoom({
+                        type: 'LOBBY_UPDATE',
+                        members: lobbyMembers
+                    });
 
-                context.fillStyle = '#fef08a';
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c < 2; c++) {
-                        context.fillRect(-8 + c * 9, -16 + r * 9, 5, 5);
+                    updateLobbyUI();
+                } else if (data.type === 'LEAVE') {
+                    lobbyMembers = lobbyMembers.filter(m => m.peerId !== conn.peer);
+                    delete peerConnections[conn.peer];
+                    broadcastToRoom({ type: 'LOBBY_UPDATE', members: lobbyMembers });
+                    updateLobbyUI();
+                } else if (data.type === 'ACTION_ROLL') {
+                    // 🌟 ゲストからのサイコロ振り要求をホストで確実に実行
+                    if (!isRolling && !isMoving) {
+                        handleRollButtonClick();
                     }
                 }
-            } else if (obj.type === 'tree') {
-                context.fillStyle = '#78350f';
-                context.fillRect(-2, 2, 4, 10);
-
-                context.fillStyle = '#15803d';
-                context.beginPath();
-                context.arc(0, -2, 11, 0, Math.PI * 2);
-                context.fill();
-
-                context.fillStyle = '#22c55e';
-                context.beginPath();
-                context.arc(-2, -4, 7, 0, Math.PI * 2);
-                context.fill();
-            } else {
-                context.fillStyle = '#64748b';
-                context.fillRect(-1.5, -8, 3, 16);
-                context.fillStyle = '#fef08a';
-                context.beginPath();
-                context.arc(0, -9, 4.5, 0, Math.PI * 2);
-                context.fill();
-            }
-
-            context.restore();
-        }
-
-        function generateCityObjects() {
-            cityObjects = [];
-            if (tileCoords.length === 0) return;
-
-            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
-            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
-
-            tileCoords.forEach((t, i) => {
-                let offsets = [
-                    { dx: 38, dy: 38, type: 'house' },
-                    { dx: -38, dy: -38, type: 'tree' },
-                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' },
-                    { dx: -38, dy: 38, type: (i % 2 === 0) ? 'light' : 'house' }
-                ];
-
-                offsets.forEach(o => {
-                    let ox = t.x + o.dx;
-                    let oy = t.y + o.dy;
-                    let tooClose = tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24);
-                    if (!tooClose) {
-                        cityObjects.push({
-                            x: ox,
-                            y: oy,
-                            type: o.type,
-                            roofColor: roofs[i % roofs.length],
-                            wallColor: walls[i % walls.length]
-                        });
-                    }
-                });
             });
-        }
 
-        function renderCustomDotGrid(context, gridData, x, y, size = 32) {
-            if (!gridData) return;
-            let pSize = size / 16;
-            context.save();
-            context.translate(x - size / 2, y - size / 2);
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    let col = gridData[r][c];
-                    if (col && col !== '#00000000') {
-                        context.fillStyle = col;
-                        context.fillRect(c * pSize, r * pSize, pSize + 0.5, pSize + 0.5);
-                    }
-                }
-            }
-            context.restore();
-        }
-
-        function drawPlayerDotModel(context, charType, x, y, size = 32) {
-            if (customDotData[charType]) {
-                renderCustomDotGrid(context, customDotData[charType], x, y, size);
-            }
-        }
-
-        function drawGoshuDotModel(context, charType, x, y, size = 20) {
-            let goshuKey = `${charType}_goshu`;
-            if (customDotData[goshuKey]) {
-                renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
-            }
-        }
-
-        // 🎲 サイコロを描画する関数（ズレ修正版）
-        function drawDice(num) {
-            if (!diceCtx || !diceCanvas) return;
-            let w = diceCanvas.width;
-            let h = diceCanvas.height;
-            let cx = w / 2;
-            let cy = h / 2;
-            let margin = 4;
-
-            diceCtx.clearRect(0, 0, w, h);
-            
-            // 白地サイコロのベース
-            diceCtx.fillStyle = '#ffffff';
-            diceCtx.beginPath();
-            diceCtx.roundRect ? diceCtx.roundRect(margin, margin, w - margin * 2, h - margin * 2, 6) : diceCtx.fillRect(margin, margin, w - margin * 2, h - margin * 2);
-            diceCtx.fill();
-
-            // 目の色（1は赤、その他は黒）
-            diceCtx.fillStyle = num === 1 ? '#ef4444' : '#111827';
-            
-            let offset = w * 0.22;
-            let dotRadius = num === 1 ? w * 0.12 : w * 0.08;
-
-            let dots = {
-                1: [[cx, cy]],
-                2: [[cx - offset, cy - offset], [cx + offset, cy + offset]],
-                3: [[cx - offset, cy - offset], [cx, cy], [cx + offset, cy + offset]],
-                4: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy + offset], [cx + offset, cy + offset]],
-                5: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]],
-                6: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy], [cx + offset, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]]
-            };
-
-            (dots[num] || []).forEach(d => {
-                diceCtx.beginPath();
-                diceCtx.arc(d[0], d[1], dotRadius, 0, Math.PI * 2);
-                diceCtx.fill();
+            conn.on('close', () => {
+                lobbyMembers = lobbyMembers.filter(m => m.peerId !== conn.peer);
+                delete peerConnections[conn.peer];
+                broadcastToRoom({ type: 'LOBBY_UPDATE', members: lobbyMembers });
+                updateLobbyUI();
             });
         }
 
