@@ -546,6 +546,7 @@
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
             document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
             document.getElementById('btnRoll').disabled = false;
+            document.getElementById('btnRoll').innerText = '🎲 移動！';
         }
 
         // 🌐 オンライン対戦 部屋作成/参加
@@ -707,6 +708,8 @@
                 type: 'GAME_STATE_UPDATE',
                 currentPlayerIndex: currentPlayerIndex,
                 currentTurnNumber: currentTurnNumber,
+                isSubRollPending: isSubRollPending,
+                pendingTileType: pendingTileType,
                 players: players.map(p => ({
                     pos: p.pos,
                     listeners: p.listeners,
@@ -721,6 +724,7 @@
                 eventTitle: document.getElementById('currentEventTitle').innerText,
                 eventDesc: document.getElementById('currentEventDesc').innerText,
                 eventEffect: document.getElementById('currentEventEffect').innerText,
+                btnRollText: document.getElementById('btnRoll').innerText,
                 ...extraData
             };
 
@@ -731,6 +735,9 @@
 
         function applySyncGameState(data) {
             let startTile = tileCoords[0] || { x: 100, y: 100 };
+
+            if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
+            if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
 
             if (data.players) {
                 data.players.forEach((p, idx) => {
@@ -770,18 +777,25 @@
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
                     btnRoll.disabled = !isMyTurn || isMoving || isRolling;
+                    if (data.btnRollText) {
+                        btnRoll.innerText = data.btnRollText;
+                    } else if (isSubRollPending) {
+                        btnRoll.innerText = '🎲 サイコロを振る！';
+                    } else {
+                        btnRoll.innerText = '🎲 移動！';
+                    }
                 }
 
-                if (isMyTurn && !isMoving && !isRolling) {
+                if (isMyTurn && !isMoving && !isRolling && !isSubRollPending) {
                     document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
                     document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
                 }
             }
 
-            if (data.eventTitle && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling)) {
+            if (data.eventTitle && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling || isSubRollPending)) {
                 document.getElementById('currentEventTitle').innerText = data.eventTitle;
             }
-            if (data.eventDesc && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling)) {
+            if (data.eventDesc && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling || isSubRollPending)) {
                 document.getElementById('currentEventDesc').innerText = data.eventDesc;
             }
             if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
@@ -1112,12 +1126,23 @@
             p.listeners = Math.max(0, p.listeners + val);
             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
 
-            document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
-            document.getElementById('currentEventDesc').innerText = event.desc;
-            document.getElementById('currentEventEffect').innerText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
+            let eventTitleText = `${event.title} (出目: ${diceRoll})`;
+            let eventDescText = event.desc;
+            let eventEffectText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
+
+            document.getElementById('currentEventTitle').innerText = eventTitleText;
+            document.getElementById('currentEventDesc').innerText = eventDescText;
+            document.getElementById('currentEventEffect').innerText = eventEffectText;
             document.getElementById('btnRoll').innerText = '🎲 移動！';
 
-            if (isOnlineMode && isHost) broadcastGameState();
+            if (isOnlineMode && isHost) {
+                broadcastGameState({
+                    eventTitle: eventTitleText,
+                    eventDesc: eventDescText,
+                    eventEffect: eventEffectText,
+                    btnRollText: '🎲 移動！'
+                });
+            }
 
             setTimeout(() => { nextTurn(); }, 3000);
         }
@@ -1235,6 +1260,17 @@
                 document.getElementById('currentEventDesc').innerText = descText;
                 document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
                 document.getElementById('btnRoll').innerText = '🎲 サイコロを振る！';
+
+                if (isOnlineMode && isHost) {
+                    broadcastGameState({
+                        isSubRollPending: true,
+                        pendingTileType: tile.type,
+                        eventTitle: titleText,
+                        eventDesc: descText,
+                        eventEffect: '🎲 サイコロ待機中...',
+                        btnRollText: '🎲 サイコロを振る！'
+                    });
+                }
 
                 if (pIndex === myPlayerIndex) {
                     document.getElementById('btnRoll').disabled = false;
