@@ -120,6 +120,9 @@
         <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[180px] bg-slate-900 flex items-center justify-center">
             <canvas id="boardCanvas" class="w-full h-full object-contain"></canvas>
             
+            <!-- 分岐選択用オーバーレイコンテナ -->
+            <div id="branchOverlayContainer" class="absolute inset-0 pointer-events-none z-20"></div>
+
             <!-- ターン表示＆カメラ切替オーバーレイ -->
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2.5 py-1 text-xs flex items-center gap-1.5 backdrop-blur-sm">
@@ -407,6 +410,7 @@
         let isRolling = false;
         let isSubRollPending = false;
         let pendingTileType = null;
+        let isWaitingForBranchChoice = false; // 分岐選択待ちフラグ
 
         let tileCoords = [];
         let cityObjects = [];
@@ -1338,35 +1342,42 @@
             if (p.renderX === undefined) { p.renderX = currentTile.x; p.renderY = currentTile.y; }
             if (p.goshuX === undefined) { p.goshuX = currentTile.x; p.goshuY = currentTile.y; }
 
+            // 移動履歴（直前にいたマス）を保持して逆走を防止
+            p.lastVisitedTileIndex = p.lastVisitedTileIndex !== undefined ? p.lastVisitedTileIndex : -1;
+
             function stepNext() {
                 if (remainingSteps > 0 && p.pos < tileCoords.length - 1) {
                     let fromTile = tileCoords[p.pos];
-                    p.pos++;
-                    let toTile = tileCoords[p.pos];
-                    remainingSteps--;
 
-                    playSe('jump'); // ぴょんぴょんジャンプ音
+                    // 次の進行方向候補（隣接していて直前のマス以外のすべてのマス）を検索
+                    let possibleNextTiles = getAdjacentNextTiles(p.pos, p.lastVisitedTileIndex);
 
-                    let duration = 300;
-                    let startTime = performance.now();
-
-                    function animateStep(now) {
-                        let elapsed = now - startTime;
-                        let progress = Math.min(1, elapsed / duration);
-
-                        p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
-                        p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
-
-                        p.jumpY = -Math.sin(progress * Math.PI) * 18;
-
-                        if (progress < 1) {
-                            requestAnimationFrame(animateStep);
+                    // 進行方向の候補が複数（2つ以上）ある場合は分岐処理を起動
+                    if (possibleNextTiles.length > 1) {
+                        isWaitingForBranchChoice = true;
+                        if (pIndex === 0) {
+                            // プレイヤー本人の手番：画面上に矢印ボタンを表示して選択待ち
+                            showBranchSelectionUI(pIndex, possibleNextTiles, (chosenTileIdx) => {
+                                hideBranchSelectionUI();
+                                isWaitingForBranchChoice = false;
+                                executeSingleStep(chosenTileIdx);
+                            });
+                            return;
                         } else {
-                            p.jumpY = 0;
-                            stepNext();
+                            // CPUの手番：ランダムで選択して前進
+                            setTimeout(() => {
+                                isWaitingForBranchChoice = false;
+                                let chosen = possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
+                                executeSingleStep(chosen.tileIdx);
+                            }, 800);
+                            return;
                         }
                     }
-                    requestAnimationFrame(animateStep);
+
+                    // 候補が1つの場合はそのまま進む
+                    let nextTargetIdx = possibleNextTiles.length === 1 ? possibleNextTiles[0].tileIdx : p.pos + 1;
+                    executeSingleStep(nextTargetIdx);
+
                 } else {
                     p.jumpY = 0;
                     isMoving = false;
@@ -1376,7 +1387,129 @@
                 }
             }
 
+            function executeSingleStep(toTileIdx) {
+                let fromTile = tileCoords[p.pos];
+                p.lastVisitedTileIndex = p.pos;
+                p.pos = toTileIdx;
+                let toTile = tileCoords[p.pos];
+                remainingSteps--;
+
+                playSe('jump'); // ぴょんぴょんジャンプ音
+
+                let duration = 300;
+                let startTime = performance.now();
+
+                function animateStep(now) {
+                    let elapsed = now - startTime;
+                    let progress = Math.min(1, elapsed / duration);
+
+                    p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
+                    p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
+                    p.jumpY = -Math.sin(progress * Math.PI) * 18;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateStep);
+                    } else {
+                        p.jumpY = 0;
+                        stepNext();
+                    }
+                }
+                requestAnimationFrame(animateStep);
+            }
+
             stepNext();
+        }
+
+        // 現在地から進行可能な隣接マスを取得
+        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
+            let curr = tileCoords[currentTileIdx];
+            let candidates = [];
+
+            tileCoords.forEach((t, idx) => {
+                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
+                    let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
+                    if (manhattanDist === 1) {
+                        candidates.push({ tileIdx: idx, tile: t });
+                    }
+                }
+            });
+
+            return candidates;
+        }
+
+        // 分岐選択用UIの描画と選択処理
+        function showBranchSelectionUI(pIndex, candidates, onChoose) {
+            let container = document.getElementById('branchOverlayContainer');
+            if (!container || !canvas) return;
+            container.innerHTML = '';
+
+            let currP = players[pIndex];
+            let currTile = tileCoords[currP.pos];
+
+            // Canvas上の座標をDOM座標へ変換
+            candidates.forEach((cand, i) => {
+                let targetTile = cand.tile;
+
+                // 進行方向の矢印・ラベル決定
+                let dx = targetTile.c - currTile.c;
+                let dy = targetTile.r - currTile.r;
+
+                let arrowSymbol = '➡️';
+                if (dx === 1) arrowSymbol = '➡️ 右';
+                else if (dx === -1) arrowSymbol = '⬅️ 左';
+                else if (dy === 1) arrowSymbol = '⬇️ 下';
+                else if (dy === -1) arrowSymbol = '⬆️ 上';
+
+                let btn = document.createElement('button');
+                btn.className = 'absolute pointer-events-auto pixel-btn px-3 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
+                btn.innerHTML = `<span>${arrowSymbol}</span>`;
+
+                // カメラ位置に基づく画面上のピクセル位置を計算
+                let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
+                btn.style.left = `${screenPos.x}px`;
+                btn.style.top = `${screenPos.y}px`;
+                btn.style.transform = 'translate(-50%, -50%)';
+
+                btn.onclick = () => {
+                    playSe('dice_stop');
+                    onChoose(cand.tileIdx);
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function hideBranchSelectionUI() {
+            let container = document.getElementById('branchOverlayContainer');
+            if (container) container.innerHTML = '';
+        }
+
+        // マップ上の座標をスクリーンのピクセル位置（px）に変換
+        function calculateScreenPos(worldX, worldY, centerTile) {
+            let rect = canvas.getBoundingClientRect();
+            let screenX = 0, screenY = 0;
+
+            if (isFullMapView && tileCoords.length > 0) {
+                let minX = Math.min(...tileCoords.map(t => t.x));
+                let maxX = Math.max(...tileCoords.map(t => t.x));
+                let minY = Math.min(...tileCoords.map(t => t.y));
+                let maxY = Math.max(...tileCoords.map(t => t.y));
+                let scale = Math.min(canvas.width / (maxX - minX + 160), canvas.height / (maxY - minY + 160));
+                
+                let midX = (minX + maxX) / 2;
+                let midY = (minY + maxY) / 2;
+                
+                screenX = canvas.width / 2 + (worldX - midX) * scale;
+                screenY = canvas.height / 2 + (worldY - midY) * scale;
+            } else {
+                screenX = canvas.width / 2 + userDragOffsetX + (worldX - centerTile.x) * userZoomScale;
+                screenY = canvas.height / 2 + userDragOffsetY + (worldY - centerTile.y) * userZoomScale;
+            }
+
+            return {
+                x: (screenX / canvas.width) * rect.width,
+                y: (screenY / canvas.height) * rect.height
+            };
         }
 
         function triggerTileEvent(pIndex) {
