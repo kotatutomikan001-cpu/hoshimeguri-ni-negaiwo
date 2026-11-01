@@ -482,6 +482,7 @@
         let peer = null;
         let peerConnections = {}; // 他端末とのデータ接続オブジェクト
         let hostPeerId = null;
+        let myPlayerIndex = 0; // 🌐 自分が1P, 2P, 3Pのどれかを厳密保持 (0=1P, 1=2P, 2=3P)
 
         // 固有のプレイヤーセッションID（ブラウザタブ単位で保持）
         let mySessionId = sessionStorage.getItem('utsuro_session_id');
@@ -1211,21 +1212,24 @@
                     try { peer.destroy(); } catch(e) {}
                 }
 
-                // 部屋コードに基づく統一HostID
+                // 部屋のホストID
                 let hostId = `utsuro-sugoroku-v2-${roomCode}`;
                 hostPeerId = hostId;
 
-                // 安定接続用Peerオブジェクト生成（ID指定なしで初期化）
+                // まずゲストとしてランダムPeerIDで初期化（unavailable-id回避のため）
                 peer = new Peer();
 
-                peer.on('open', (myPeerId) => {
-                    // まず既存ホストへの接続を試みる
+                let connectionTimer = null;
+                let isConnectedToHost = false;
+
+                peer.on('open', (myRandomId) => {
+                    // ホストへ接続試行
                     let conn = peer.connect(hostId, { reliable: true });
 
-                    let connectedToHost = false;
-
                     conn.on('open', () => {
-                        connectedToHost = true;
+                        isConnectedToHost = true;
+                        if (connectionTimer) clearTimeout(connectionTimer);
+
                         isRoomHost = false;
                         peerConnections[hostId] = conn;
 
@@ -1249,17 +1253,18 @@
                         openOnlineLobby();
                     });
 
-                    // 接続エラーまたはタイムアウト時に自分が部屋のホストになる
-                    const tryBecomeHost = () => {
-                        if (connectedToHost) return;
+                    // ホストが存在しない場合は自分がホストとして部屋を作成
+                    const becomeHost = () => {
+                        if (isConnectedToHost) return;
                         try { if (conn) conn.close(); } catch(e) {}
                         try { peer.destroy(); } catch(e) {}
 
-                        // 部屋のホストとして新規作成
+                        // ホスト用固定IDで新規作成
                         peer = new Peer(hostId);
 
                         peer.on('open', (id) => {
                             isRoomHost = true;
+                            myPlayerIndex = 0;
                             lobbyMembers = [{
                                 id: 0,
                                 sessionId: mySessionId,
@@ -1278,17 +1283,22 @@
                         });
 
                         peer.on('error', (err) => {
-                            alert('オンライン部屋の作成・接続に失敗しました: ' + (err.type || err));
-                            document.getElementById('startModal').classList.remove('hidden');
+                            if (err.type === 'unavailable-id') {
+                                // 既にホストが存在している場合は再接続
+                                setTimeout(startOnlineGame, 500);
+                            } else {
+                                alert('オンライン部屋の作成・接続に失敗しました: ' + (err.type || err));
+                                document.getElementById('startModal').classList.remove('hidden');
+                            }
                         });
                     };
 
-                    conn.on('error', tryBecomeHost);
-                    setTimeout(tryBecomeHost, 1000);
+                    conn.on('error', becomeHost);
+                    connectionTimer = setTimeout(becomeHost, 1500);
                 });
 
                 peer.on('error', (err) => {
-                    console.log('Peer error:', err);
+                    console.log('Peer initialization error:', err);
                 });
             } catch (err) {
                 console.error('Online game start error:', err);
@@ -1356,9 +1366,13 @@
         function handleGuestReceivedData(data) {
             if (data.type === 'LOBBY_UPDATE') {
                 lobbyMembers = data.members;
-                let myData = lobbyMembers.find(m => m.sessionId === mySessionId);
-                if (myData && myData.char !== myChar) {
-                    selectChar(myData.char);
+                let myMemberIdx = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+                if (myMemberIdx !== -1) {
+                    myPlayerIndex = myMemberIdx;
+                    let myData = lobbyMembers[myMemberIdx];
+                    if (myData && myData.char !== myChar) {
+                        selectChar(myData.char);
+                    }
                 }
                 updateLobbyUI();
             } else if (data.type === 'JOIN_REJECT') {
@@ -1366,6 +1380,8 @@
                 leaveOnlineLobby(false);
             } else if (data.type === 'GAME_START') {
                 lobbyMembers = data.members;
+                let myMemberIdx = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+                if (myMemberIdx !== -1) myPlayerIndex = myMemberIdx;
                 execStartOnlineGame(data.members);
             } else if (data.type === 'GAME_STATE_UPDATE') {
                 // 🌐 全体ゲーム状態の完全同期受信（ゲスト端末）
@@ -1407,11 +1423,10 @@
                 let tagEl = document.getElementById('activePlayerTag');
                 if (tagEl) tagEl.innerText = `手番: ${activePlayer.name}`;
 
-                // 自分のターンかどうかでボタン制御
-                let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
+                // 自分のターンかどうかでボタン制御（myPlayerIndexと一致するかで厳密判定）
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    btnRoll.disabled = (myMemberIndex !== currentPlayerIndex) || isMoving || isRolling;
+                    btnRoll.disabled = (myPlayerIndex !== currentPlayerIndex) || isMoving || isRolling;
                 }
             }
 
@@ -1814,10 +1829,13 @@
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
-            // オンライン対戦で自分のターンでない場合は弾く
+            // オンライン対戦時：自分のターンでない場合は弾く
             if (currentRoomCode) {
-                let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
-                if (myMemberIndex !== -1 && myMemberIndex !== currentPlayerIndex && !isRoomHost) {
+                if (myPlayerIndex !== currentPlayerIndex && !isRoomHost) {
+                    // ゲストが自分のターンに押した場合はホストへサイコロ要求を送信
+                    if (myPlayerIndex === currentPlayerIndex && peerConnections[hostPeerId]) {
+                        peerConnections[hostPeerId].send({ type: 'ACTION_ROLL' });
+                    }
                     return;
                 }
             }
@@ -2241,8 +2259,7 @@
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('btnRoll').innerText = '🎲 移動！';
 
-            let myMemberIndex = lobbyMembers.findIndex(m => m.sessionId === mySessionId);
-            let isMyTurn = currentRoomCode ? (myMemberIndex === currentPlayerIndex) : (currentPlayerIndex === 0);
+            let isMyTurn = currentRoomCode ? (myPlayerIndex === currentPlayerIndex) : (currentPlayerIndex === 0);
 
             if (isMyTurn) {
                 document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
