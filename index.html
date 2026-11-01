@@ -6,6 +6,8 @@
     <title>氷室うつろ Vstreamerすごろく</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 🌐 インターネット対戦用 PeerJS ライブラリ追加 -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
         
@@ -453,6 +455,11 @@
         let currentRoomCode = '';
         let isRoomHost = false;
         let lobbyMembers = [];
+
+        // 🌐 PeerJS リアルタイム通信管理オブジェクト
+        let peer = null;
+        let peerConnections = {}; // 他端末とのデータ接続オブジェクト
+        let hostPeerId = null;
 
         // 固有のプレイヤーセッションID（ブラウザタブ単位で保持）
         let mySessionId = sessionStorage.getItem('utsuro_session_id');
@@ -1135,93 +1142,44 @@
         function setupCanvasDragAndTouch() {
             if (!canvas) return;
 
-            const onStart = (clientX, clientY) => {
+            canvas.addEventListener('mousedown', (e) => {
                 isDragging = true;
-                dragStartX = clientX - userDragOffsetX;
-                dragStartY = clientY - userDragOffsetY;
-            };
+                dragStartX = e.clientX - userDragOffsetX;
+                dragStartY = e.clientY - userDragOffsetY;
+            });
 
-            const onMove = (clientX, clientY) => {
-                if (isDragging) {
-                    userDragOffsetX = clientX - dragStartX;
-                    userDragOffsetY = clientY - dragStartY;
+            window.addEventListener('mousemove', (e) => {
+                if (isDragging && !isFullMapView) {
+                    userDragOffsetX = e.clientX - dragStartX;
+                    userDragOffsetY = e.clientY - dragStartY;
                 }
-            };
+            });
 
-            const onEnd = () => {
+            window.addEventListener('mouseup', () => {
                 isDragging = false;
-            };
-
-            canvas.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
-            window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', onEnd);
+            });
 
             canvas.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
-                    onStart(e.touches[0].clientX, e.touches[0].clientY);
+                    isDragging = true;
+                    dragStartX = e.touches[0].clientX - userDragOffsetX;
+                    dragStartY = e.touches[0].clientY - userDragOffsetY;
                 }
             }, { passive: true });
 
             window.addEventListener('touchmove', (e) => {
-                if (isDragging && e.touches.length === 1) {
-                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                if (isDragging && !isFullMapView && e.touches.length === 1) {
+                    userDragOffsetX = e.touches[0].clientX - dragStartX;
+                    userDragOffsetY = e.touches[0].clientY - dragStartY;
                 }
             }, { passive: true });
-        }
 
-        // キャラクター選択関数（即時反映）
-        function selectChar(char) {
-            myChar = char;
-            players[0].char = char;
-
-            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let btnName = `btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`;
-                let badgeName = `badge${c.charAt(0).toUpperCase() + c.slice(1)}`;
-                let btn = document.getElementById(btnName);
-                let badge = document.getElementById(badgeName);
-
-                if (btn && badge) {
-                    if (c === char) {
-                        badge.classList.remove('hidden');
-                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
-                    } else {
-                        badge.classList.add('hidden');
-                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
-                    }
-                }
+            window.addEventListener('touchend', () => {
+                isDragging = false;
             });
         }
 
-        function startCpuGame() {
-            document.getElementById('startModal').classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'VS CPU対戦中';
-            playGameBgm();
-
-            players[0].char = myChar;
-            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-            let otherChars = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== myChar);
-
-            players[0].name = charNames[myChar];
-            players[1].char = otherChars[0];
-            players[1].name = charNames[otherChars[0]] + ' (CPU)';
-            players[2].char = otherChars[1];
-            players[2].name = charNames[otherChars[1]] + ' (CPU)';
-
-            document.getElementById('p1Name').innerText = players[0].name;
-            document.getElementById('p2Name').innerText = players[1].name;
-            document.getElementById('p3Name').innerText = players[2].name;
-
-            currentPlayerIndex = 0;
-            currentTurnNumber = 1;
-            document.getElementById('turnCounter').innerText = currentTurnNumber;
-            let activePlayer = players[0];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
-            document.getElementById('currentEventTitle').innerText = '【スタート！】';
-            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-            document.getElementById('btnRoll').disabled = false;
-        }
-
-        // オンライン対戦：部屋作成/参加ロジック（切断・スタック対策・復帰機能強化版）
+        // オンライン対戦：部屋作成/参加ロジック（インターネットリアルタイム通信 P2P版）
         function startOnlineGame() {
             let codeInput = document.getElementById('roomCodeInput');
             let roomCode = codeInput ? codeInput.value.trim() : '';
@@ -1232,83 +1190,161 @@
             }
 
             currentRoomCode = roomCode;
+            document.getElementById('startModal').classList.add('hidden');
 
-            let roomKey = `utsuro_room_${roomCode}`;
-            let roomData = null;
-            let now = Date.now();
-
-            try {
-                let saved = localStorage.getItem(roomKey);
-                if (saved) roomData = JSON.parse(saved);
-            } catch (e) {}
-
-            if (roomData && roomData.members) {
-                // 5分（300,000ms）以上更新のない離脱・無効セッションをクリア
-                roomData.members = roomData.members.filter(m => (now - (m.lastActive || 0)) < 300000);
+            // 既存のPeer接続があればクリーンアップ
+            if (peer) {
+                try { peer.destroy(); } catch(e) {}
             }
 
-            if (!roomData || !roomData.members || roomData.members.length === 0) {
-                // 新規部屋作成 (ホスト)
-                isRoomHost = true;
-                roomData = {
-                    code: roomCode,
-                    hostChar: myChar,
-                    members: [{ id: 0, sessionId: mySessionId, char: myChar, name: players[0].name, isCpu: false, lastActive: now }]
-                };
-            } else {
-                // 既存部屋へ参加 or 同一セッションでの復帰
-                let existingMember = roomData.members.find(m => m.sessionId === mySessionId);
+            // 部屋コードに基づくPeerIDを生成
+            // ホストは "utsuro-sugoroku-room-[コード]" のIDを試み、失敗した場合はゲストとして接続する
+            let hostId = `utsuro-sugoroku-room-${roomCode}`;
+            hostPeerId = hostId;
 
-                if (existingMember) {
-                    // 同じブラウザからの再入室（復帰）
-                    existingMember.lastActive = now;
-                    existingMember.char = myChar;
-                    existingMember.name = players[0].name;
-                    isRoomHost = (roomData.members[0].sessionId === mySessionId);
-                } else {
+            // まずホストとして Peer オブジェクトを作成してみる
+            peer = new Peer(hostId);
+
+            peer.on('open', (id) => {
+                // 自分がホスト（部屋の作成者）
+                isRoomHost = true;
+                lobbyMembers = [{
+                    id: 0,
+                    sessionId: mySessionId,
+                    peerId: id,
+                    char: myChar,
+                    name: players[0].name,
+                    isCpu: false
+                }];
+                openOnlineLobby();
+
+                // ゲストからの接続を待受
+                peer.on('connection', (conn) => {
+                    setupHostConnection(conn);
+                });
+            });
+
+            peer.on('error', (err) => {
+                // すでにその部屋コードのホストが存在する場合（ゲストとして参加）
+                if (err.type === 'unavailable-id') {
                     isRoomHost = false;
 
-                    // 既に使用されているキャラクターを取得
-                    let usedChars = roomData.members.map(m => m.char);
+                    // ランダムなゲスト用PeerIDで接続
+                    peer = new Peer();
+                    peer.on('open', (guestId) => {
+                        let conn = peer.connect(hostId);
+                        
+                        conn.on('open', () => {
+                            // ホストへ参加申請送信
+                            conn.send({
+                                type: 'JOIN_REQUEST',
+                                sessionId: mySessionId,
+                                char: myChar,
+                                name: players[0].name
+                            });
+                        });
 
-                    if (usedChars.includes(myChar)) {
-                        // 空いているキャラを自動割り当て
-                        let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
-                        if (availableChars.length === 0) {
-                            alert('この部屋は満員(3人)です。別の部屋コードをご利用いただくか、しばらく経ってからお試しください。');
-                            return;
-                        }
-                        myChar = availableChars[0];
-                        selectChar(myChar);
-                        alert(`選択したキャラクターは既に使用中のため、空いている【${players[0].name}】に変更されました。`);
-                    }
+                        conn.on('data', (data) => {
+                            handleGuestReceivedData(data);
+                        });
 
-                    if (roomData.members.length >= 3) {
-                        alert('この部屋はすでに3名参加しています。');
+                        conn.on('close', () => {
+                            alert('ホストとの接続が切断されました。');
+                            leaveOnlineLobby(false);
+                        });
+
+                        peerConnections[hostId] = conn;
+                        openOnlineLobby();
+                    });
+                } else {
+                    alert('通信エラーが発生しました: ' + err.type);
+                    document.getElementById('startModal').classList.remove('hidden');
+                }
+            });
+        }
+
+        // ホスト側の通信制御
+        function setupHostConnection(conn) {
+            conn.on('data', (data) => {
+                if (data.type === 'JOIN_REQUEST') {
+                    if (lobbyMembers.length >= 3) {
+                        conn.send({ type: 'JOIN_REJECT', reason: '部屋が満員(3人)です。' });
                         return;
                     }
 
-                    roomData.members.push({
-                        id: roomData.members.length,
-                        sessionId: mySessionId,
-                        char: myChar,
-                        name: players[0].name,
-                        isCpu: false,
-                        lastActive: now
+                    // キャラ被りチェックと自動調整
+                    let usedChars = lobbyMembers.map(m => m.char);
+                    let assignedChar = data.char;
+                    if (usedChars.includes(assignedChar)) {
+                        let available = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                        if (available.length > 0) assignedChar = available[0];
+                    }
+
+                    let newMember = {
+                        id: lobbyMembers.length,
+                        sessionId: data.sessionId,
+                        peerId: conn.peer,
+                        char: assignedChar,
+                        name: data.name,
+                        isCpu: false
+                    };
+
+                    lobbyMembers.push(newMember);
+                    peerConnections[conn.peer] = conn;
+
+                    // 全参加者へ最新のメンバーリストを同期送信
+                    broadcastToRoom({
+                        type: 'LOBBY_UPDATE',
+                        members: lobbyMembers
                     });
+
+                    updateLobbyUI();
+                } else if (data.type === 'LEAVE') {
+                    lobbyMembers = lobbyMembers.filter(m => m.peerId !== conn.peer);
+                    delete peerConnections[conn.peer];
+                    broadcastToRoom({ type: 'LOBBY_UPDATE', members: lobbyMembers });
+                    updateLobbyUI();
+                } else if (data.type === 'ACTION_ROLL') {
+                    // 他端末からのダイス要求を全員に中継
+                    broadcastToRoom(data);
+                    handleRollButtonClick();
                 }
+            });
+
+            conn.on('close', () => {
+                lobbyMembers = lobbyMembers.filter(m => m.peerId !== conn.peer);
+                delete peerConnections[conn.peer];
+                broadcastToRoom({ type: 'LOBBY_UPDATE', members: lobbyMembers });
+                updateLobbyUI();
+            });
+        }
+
+        // ゲスト側のデータ受信処理
+        function handleGuestReceivedData(data) {
+            if (data.type === 'LOBBY_UPDATE') {
+                lobbyMembers = data.members;
+                // 自分の割り当てキャラ更新チェック
+                let myData = lobbyMembers.find(m => m.sessionId === mySessionId);
+                if (myData && myData.char !== myChar) {
+                    selectChar(myData.char);
+                }
+                updateLobbyUI();
+            } else if (data.type === 'JOIN_REJECT') {
+                alert(data.reason);
+                leaveOnlineLobby(false);
+            } else if (data.type === 'GAME_START') {
+                lobbyMembers = data.members;
+                execStartOnlineGame(data.members);
+            } else if (data.type === 'ACTION_ROLL') {
+                handleRollButtonClick();
             }
+        }
 
-            // ルーム情報を更新保存
-            try {
-                localStorage.setItem(roomKey, JSON.stringify(roomData));
-            } catch (e) {}
-
-            lobbyMembers = roomData.members;
-
-            // キャラ選択モーダルを閉じ、ロビーを表示
-            document.getElementById('startModal').classList.add('hidden');
-            openOnlineLobby();
+        // ルーム全員へデータ送信
+        function broadcastToRoom(data) {
+            Object.values(peerConnections).forEach(conn => {
+                if (conn && conn.open) conn.send(data);
+            });
         }
 
         function openOnlineLobby() {
@@ -1323,6 +1359,7 @@
         function updateLobbyUI() {
             let countEl = document.getElementById('lobbyMemberCount');
             let listEl = document.getElementById('lobbyMemberList');
+            let btnStartCpu = document.getElementById('btnStartWithCpu');
             if (!countEl || !listEl) return;
 
             countEl.innerText = lobbyMembers.length;
@@ -1360,6 +1397,11 @@
                 listEl.appendChild(div);
             }
 
+            // ホストのみがゲーム開始ボタンを操作可能
+            if (btnStartCpu) {
+                btnStartCpu.style.display = isRoomHost ? 'flex' : 'none';
+            }
+
             // 後から参加した人のためにキャラ被り防止（ボタン無効化）
             let hostChar = lobbyMembers[0] ? lobbyMembers[0].char : null;
             if (hostChar) {
@@ -1380,29 +1422,21 @@
 
         // オンラインロビーからの退室処理
         function leaveOnlineLobby(isUnload = false) {
-            if (currentRoomCode) {
-                let roomKey = `utsuro_room_${currentRoomCode}`;
+            if (peer) {
                 try {
-                    let saved = localStorage.getItem(roomKey);
-                    if (saved) {
-                        let roomData = JSON.parse(saved);
-                        if (roomData && roomData.members) {
-                            // 自分のセッションを除外
-                            roomData.members = roomData.members.filter(m => m.sessionId !== mySessionId);
-
-                            if (roomData.members.length === 0) {
-                                localStorage.removeItem(roomKey);
-                            } else {
-                                localStorage.setItem(roomKey, JSON.stringify(roomData));
-                            }
-                        }
+                    if (!isRoomHost && peerConnections[hostPeerId]) {
+                        peerConnections[hostPeerId].send({ type: 'LEAVE' });
                     }
-                } catch (e) {}
+                    peer.destroy();
+                } catch(e) {}
+                peer = null;
             }
 
+            peerConnections = {};
+            currentRoomCode = '';
+            lobbyMembers = [];
+
             if (!isUnload) {
-                currentRoomCode = '';
-                lobbyMembers = [];
                 let lobbyModal = document.getElementById('onlineLobbyModal');
                 if (lobbyModal) lobbyModal.classList.add('hidden');
                 document.getElementById('startModal').classList.remove('hidden');
@@ -1415,7 +1449,8 @@
 
         // 「この人数で始める (残りをCPUで補う)」ボタン処理
         function startOnlineGameWithCpu() {
-            // 3人に満たない枠をCPUで埋める
+            if (!isRoomHost) return;
+
             let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
             let usedChars = lobbyMembers.map(m => m.char);
 
@@ -1432,8 +1467,19 @@
                 });
             }
 
-            // プレイヤー配列に適用
-            lobbyMembers.forEach((m, idx) => {
+            // 全参加者へ対戦開始を通知
+            broadcastToRoom({
+                type: 'GAME_START',
+                members: lobbyMembers
+            });
+
+            execStartOnlineGame(lobbyMembers);
+        }
+
+        function execStartOnlineGame(members) {
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+
+            members.forEach((m, idx) => {
                 players[idx].char = m.char;
                 players[idx].name = charNames[m.char] + (m.isCpu ? ' (CPU)' : '');
             });
