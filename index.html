@@ -219,8 +219,8 @@
                 <button id="btnStartWithCpu" onclick="startOnlineGameWithCpu()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md cursor-pointer flex items-center justify-center gap-1">
                     🚀 この人数で始める (残りをCPUで補う)
                 </button>
-                <button onclick="closeOnlineLobby()" class="pixel-btn py-1.5 px-4 font-bold text-gray-300 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 cursor-pointer">
-                    ⏳ このまま待つ (またはキャンセル)
+                <button onclick="leaveOnlineLobby()" class="pixel-btn py-1.5 px-4 font-bold text-red-300 rounded-lg text-xs bg-red-950/80 hover:bg-red-900 border border-red-600 cursor-pointer">
+                    🚪 部屋を退出して戻る
                 </button>
             </div>
         </div>
@@ -454,6 +454,13 @@
         let isRoomHost = false;
         let lobbyMembers = [];
 
+        // 固有のプレイヤーセッションID（ブラウザタブ単位で保持）
+        let mySessionId = sessionStorage.getItem('utsuro_session_id');
+        if (!mySessionId) {
+            mySessionId = 'p_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            sessionStorage.setItem('utsuro_session_id', mySessionId);
+        }
+
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
         let userZoomScale = 1.8;
@@ -525,6 +532,10 @@
 
             // モバイル端末判定＆音量コントロール表示切り替え
             checkMobileDevice();
+
+            // ページを閉じる・離れる際に部屋から自動退室処理を実行
+            window.addEventListener('beforeunload', () => { leaveOnlineLobby(true); });
+            window.addEventListener('pagehide', () => { leaveOnlineLobby(true); });
 
             let savedVol = localStorage.getItem('utsuro_bgm_volume');
             if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
@@ -1156,49 +1167,49 @@
                     onMove(e.touches[0].clientX, e.touches[0].clientY);
                 }
             }, { passive: true });
-
-            window.addEventListener('touchend', onEnd);
         }
 
+        // キャラクター選択関数（即時反映）
         function selectChar(char) {
             myChar = char;
-            let names = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
             players[0].char = char;
-            players[0].name = names[char];
-
-            let rest = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== char);
-            players[1].char = rest[0];
-            players[1].name = names[rest[0]];
-            players[2].char = rest[1];
-            players[2].name = names[rest[1]];
-
-            document.getElementById('p1Name').innerText = players[0].name;
-            document.getElementById('p2Name').innerText = players[1].name;
-            document.getElementById('p3Name').innerText = players[2].name;
-            document.getElementById('activePlayerTag').innerText = `手番: ${players[0].name}`;
 
             ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                let badge = document.getElementById(`badge${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                let btnName = `btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`;
+                let badgeName = `badge${c.charAt(0).toUpperCase() + c.slice(1)}`;
+                let btn = document.getElementById(btnName);
+                let badge = document.getElementById(badgeName);
+
                 if (btn && badge) {
                     if (c === char) {
-                        // 黄色枠とスケール変更をクラスの付け替えで即座に反映
-                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
                         badge.classList.remove('hidden');
+                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
                     } else {
-                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
                         badge.classList.add('hidden');
+                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
                     }
                 }
             });
         }
 
         function startCpuGame() {
-            let modal = document.getElementById('startModal');
-            if (modal) modal.classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
-            
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU対戦中';
             playGameBgm();
+
+            players[0].char = myChar;
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+            let otherChars = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== myChar);
+
+            players[0].name = charNames[myChar];
+            players[1].char = otherChars[0];
+            players[1].name = charNames[otherChars[0]] + ' (CPU)';
+            players[2].char = otherChars[1];
+            players[2].name = charNames[otherChars[1]] + ' (CPU)';
+
+            document.getElementById('p1Name').innerText = players[0].name;
+            document.getElementById('p2Name').innerText = players[1].name;
+            document.getElementById('p3Name').innerText = players[2].name;
 
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
@@ -1210,7 +1221,7 @@
             document.getElementById('btnRoll').disabled = false;
         }
 
-        // オンライン対戦：部屋作成/参加ロジック
+        // オンライン対戦：部屋作成/参加ロジック（切断・スタック対策・復帰機能強化版）
         function startOnlineGame() {
             let codeInput = document.getElementById('roomCodeInput');
             let roomCode = codeInput ? codeInput.value.trim() : '';
@@ -1222,46 +1233,70 @@
 
             currentRoomCode = roomCode;
 
-            // ローカルストレージを使用したダミールーム情報管理（キャラ被り＆人数管理）
             let roomKey = `utsuro_room_${roomCode}`;
             let roomData = null;
+            let now = Date.now();
+
             try {
                 let saved = localStorage.getItem(roomKey);
                 if (saved) roomData = JSON.parse(saved);
             } catch (e) {}
 
-            if (!roomData) {
+            if (roomData && roomData.members) {
+                // 5分（300,000ms）以上更新のない離脱・無効セッションをクリア
+                roomData.members = roomData.members.filter(m => (now - (m.lastActive || 0)) < 300000);
+            }
+
+            if (!roomData || !roomData.members || roomData.members.length === 0) {
                 // 新規部屋作成 (ホスト)
                 isRoomHost = true;
                 roomData = {
                     code: roomCode,
                     hostChar: myChar,
-                    members: [{ id: 0, char: myChar, name: players[0].name, isCpu: false }]
+                    members: [{ id: 0, sessionId: mySessionId, char: myChar, name: players[0].name, isCpu: false, lastActive: now }]
                 };
             } else {
-                // 既存部屋に参加
-                isRoomHost = false;
+                // 既存部屋へ参加 or 同一セッションでの復帰
+                let existingMember = roomData.members.find(m => m.sessionId === mySessionId);
 
-                // 先に取られているキャラかチェック
-                let usedChars = roomData.members.map(m => m.char);
-                if (usedChars.includes(myChar)) {
-                    // 空いているキャラを自動割り当て
-                    let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
-                    if (availableChars.length === 0) {
-                        alert('この部屋は満員(3人)です。別の部屋コードをご利用ください。');
+                if (existingMember) {
+                    // 同じブラウザからの再入室（復帰）
+                    existingMember.lastActive = now;
+                    existingMember.char = myChar;
+                    existingMember.name = players[0].name;
+                    isRoomHost = (roomData.members[0].sessionId === mySessionId);
+                } else {
+                    isRoomHost = false;
+
+                    // 既に使用されているキャラクターを取得
+                    let usedChars = roomData.members.map(m => m.char);
+
+                    if (usedChars.includes(myChar)) {
+                        // 空いているキャラを自動割り当て
+                        let availableChars = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                        if (availableChars.length === 0) {
+                            alert('この部屋は満員(3人)です。別の部屋コードをご利用いただくか、しばらく経ってからお試しください。');
+                            return;
+                        }
+                        myChar = availableChars[0];
+                        selectChar(myChar);
+                        alert(`選択したキャラクターは既に使用中のため、空いている【${players[0].name}】に変更されました。`);
+                    }
+
+                    if (roomData.members.length >= 3) {
+                        alert('この部屋はすでに3名参加しています。');
                         return;
                     }
-                    myChar = availableChars[0];
-                    selectChar(myChar);
-                    alert(`部屋作成者がすでにそのキャラを選択しているため、空いている【${players[0].name}】が自動選択されました！`);
-                }
 
-                if (roomData.members.length >= 3) {
-                    alert('この部屋はすでに3名参加しています。');
-                    return;
+                    roomData.members.push({
+                        id: roomData.members.length,
+                        sessionId: mySessionId,
+                        char: myChar,
+                        name: players[0].name,
+                        isCpu: false,
+                        lastActive: now
+                    });
                 }
-
-                roomData.members.push({ id: roomData.members.length, char: myChar, name: players[0].name, isCpu: false });
             }
 
             // ルーム情報を更新保存
@@ -1301,13 +1336,14 @@
 
                 if (i < lobbyMembers.length) {
                     let m = lobbyMembers[i];
+                    let isMe = (m.sessionId === mySessionId);
                     div.innerHTML = `
                         <div class="flex items-center gap-2">
                             <span class="text-yellow-300 font-bold">${i + 1}P</span>
-                            <span class="text-white font-bold">${charNames[m.char] || m.name}</span>
+                            <span class="text-white font-bold">${charNames[m.char] || m.name} ${isMe ? '<span class="text-yellow-400 text-[10px]">(あなた)</span>' : ''}</span>
                         </div>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${i === 0 ? 'bg-purple-900 border border-purple-400 text-purple-200' : 'bg-cyan-900 border border-cyan-400 text-cyan-200'}">
-                            ${i === 0 ? '👑 ホスト (プレイヤー)' : '🎮 参加者'}
+                            ${i === 0 ? '👑 ホスト' : '🎮 参加者'}
                         </span>
                     `;
                 } else {
@@ -1342,10 +1378,39 @@
             }
         }
 
+        // オンラインロビーからの退室処理
+        function leaveOnlineLobby(isUnload = false) {
+            if (currentRoomCode) {
+                let roomKey = `utsuro_room_${currentRoomCode}`;
+                try {
+                    let saved = localStorage.getItem(roomKey);
+                    if (saved) {
+                        let roomData = JSON.parse(saved);
+                        if (roomData && roomData.members) {
+                            // 自分のセッションを除外
+                            roomData.members = roomData.members.filter(m => m.sessionId !== mySessionId);
+
+                            if (roomData.members.length === 0) {
+                                localStorage.removeItem(roomKey);
+                            } else {
+                                localStorage.setItem(roomKey, JSON.stringify(roomData));
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            if (!isUnload) {
+                currentRoomCode = '';
+                lobbyMembers = [];
+                let lobbyModal = document.getElementById('onlineLobbyModal');
+                if (lobbyModal) lobbyModal.classList.add('hidden');
+                document.getElementById('startModal').classList.remove('hidden');
+            }
+        }
+
         function closeOnlineLobby() {
-            let lobbyModal = document.getElementById('onlineLobbyModal');
-            if (lobbyModal) lobbyModal.classList.add('hidden');
-            document.getElementById('startModal').classList.remove('hidden');
+            leaveOnlineLobby(false);
         }
 
         // 「この人数で始める (残りをCPUで補う)」ボタン処理
