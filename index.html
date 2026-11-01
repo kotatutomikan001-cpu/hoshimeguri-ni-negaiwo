@@ -446,6 +446,7 @@
         let isSubRollPending = false;
         let pendingTileType = null;
         let isWaitingForBranchChoice = false; // 分岐選択待ちフラグ
+        let activeBranchCandidates = []; // 分岐予測表示用の候補情報保持
 
         let tileCoords = [];
         let cityObjects = [];
@@ -465,7 +466,8 @@
             { type: 'minus', title: '【回線落ちの悲劇】', desc: '良いところで配信が切れてリスナー一時離脱…', val: -200 },
             { type: 'item', title: '【新機材導入！】', desc: '配信が快適になる特別アイテムを獲得！', val: 0, itemName: '⚡ スパチャブースター' },
             { type: 'white', title: '【まったり雑談配信】', desc: 'コメント拾いに夢中で時間が溶ける！平穏な日常。', val: 0 },
-            { type: 'white', title: '【配信部屋のお掃除】', desc: '部屋を片付けて気分一新！特に変化なし。', val: 0 }
+            { type: 'white', title: '【配信部屋のお掃除】', desc: '部屋を片付けて気分一新！特に変化なし。', val: 0 },
+            { type: 'item', title: '【新機材導入！】', desc: '配信が快適になる特別アイテムを獲得！', val: 0, itemName: '🎁 ASMR用マイク' }
         ];
 
         window.onload = function() {
@@ -1478,37 +1480,80 @@
             stepNext();
         }
 
-        // 現在地から進行可能な隣接マスを取得（逆走・過去のマス排除＋ゴール側への進行のみ）
-        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
-            let curr = tileCoords[currentTileIdx];
-            let candidates = [];
+        // 分岐選択用UIの描画と選択処理＆着地予定マスの計算
+        function showBranchSelectionUI(pIndex, candidates, remainingSteps, onChoose) {
+            let container = document.getElementById('branchOverlayContainer');
+            if (!container || !canvas) return;
+            container.innerHTML = '';
 
-            // ゴールマスのインデックスを取得
-            let goalIdx = tileCoords.findIndex(t => t.type === 'goal');
-            if (goalIdx === -1) goalIdx = tileCoords.length - 1;
+            let currP = players[pIndex];
+            activeBranchCandidates = [];
 
-            tileCoords.forEach((t, idx) => {
-                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
-                    let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
-                    // 隣接マスかつ、スタート→ゴールに向かう進行順（またはゴールに近いインデックス）を優先
-                    if (manhattanDist === 1 && idx > lastVisitedTileIdx) {
-                        candidates.push({ tileIdx: idx, tile: t });
-                    }
-                }
-            });
-
-            // 万が一順方向の候補が無い場合は隣接マスから直前以外をバックアップ抽出
-            if (candidates.length === 0) {
-                tileCoords.forEach((t, idx) => {
-                    if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
-                        if (Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c) === 1) {
-                            candidates.push({ tileIdx: idx, tile: t });
-                        }
-                    }
+            candidates.forEach((cand) => {
+                // 残りの歩数で最終的にどのマス（インデックス）に到着するか予測計算
+                let destTileIdx = calculateBranchDestinationTile(pIndex, cand.tileIdx, remainingSteps - 1);
+                activeBranchCandidates.push({
+                    startTileIdx: cand.tileIdx,
+                    destTileIdx: destTileIdx,
+                    playerChar: currP.char
                 });
-            }
 
-            return candidates;
+                let currTile = tileCoords[currP.pos];
+                let targetTile = cand.tile;
+
+                // 進行方向の矢印・ラベル決定
+                let dx = targetTile.c - currTile.c;
+                let dy = targetTile.r - currTile.r;
+
+                let arrowSymbol = '➡️';
+                if (dx === 1) arrowSymbol = '➡️ 右';
+                else if (dx === -1) arrowSymbol = '⬅️ 左';
+                else if (dy === 1) arrowSymbol = '⬇️ 下';
+                else if (dy === -1) arrowSymbol = '⬆️ 上';
+
+                let btn = document.createElement('button');
+                btn.className = 'absolute pointer-events-auto pixel-btn px-3 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
+                btn.innerHTML = `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
+
+                let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
+                btn.style.left = `${screenPos.x}px`;
+                btn.style.top = `${screenPos.y}px`;
+                btn.style.transform = 'translate(-50%, -50%)';
+
+                btn.onclick = () => {
+                    playSe('dice_stop');
+                    activeBranchCandidates = [];
+                    onChoose(cand.tileIdx);
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        // 分岐先から残りの歩数進んだ場合の最終到着マスインデックスをシミュレート計算
+        function calculateBranchDestinationTile(pIndex, startBranchTileIdx, remSteps) {
+            let currIdx = startBranchTileIdx;
+            let lastIdx = players[pIndex].pos;
+            let steps = remSteps;
+
+            while (steps > 0) {
+                if (tileCoords[currIdx] && tileCoords[currIdx].type === 'goal') {
+                    return currIdx;
+                }
+                let nextCandidates = getAdjacentNextTiles(currIdx, lastIdx);
+                if (nextCandidates.length === 0) break;
+
+                lastIdx = currIdx;
+                currIdx = nextCandidates[0].tileIdx;
+                steps--;
+            }
+            return currIdx;
+        }
+
+        function hideBranchSelectionUI() {
+            let container = document.getElementById('branchOverlayContainer');
+            if (container) container.innerHTML = '';
+            activeBranchCandidates = [];
         }
 
         // ゴール処理（即時クリア＆リスナーボーナス加算）
@@ -1568,7 +1613,9 @@
             let candidates = [];
 
             tileCoords.forEach((t, idx) => {
-                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
+                // 1. 直前のマス（戻る方向）は排除
+                // 2. ゴールに向かって前進する方向（現在地よりインデックスが大きい順方向 idx > currentTileIdx）のみを厳密に抽出
+                if (idx > currentTileIdx && idx !== lastVisitedTileIdx) {
                     let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
                     if (manhattanDist === 1) {
                         candidates.push({ tileIdx: idx, tile: t });
@@ -1577,53 +1624,6 @@
             });
 
             return candidates;
-        }
-
-        // 分岐選択用UIの描画と選択処理
-        function showBranchSelectionUI(pIndex, candidates, onChoose) {
-            let container = document.getElementById('branchOverlayContainer');
-            if (!container || !canvas) return;
-            container.innerHTML = '';
-
-            let currP = players[pIndex];
-            let currTile = tileCoords[currP.pos];
-
-            // Canvas上の座標をDOM座標へ変換
-            candidates.forEach((cand, i) => {
-                let targetTile = cand.tile;
-
-                // 進行方向の矢印・ラベル決定
-                let dx = targetTile.c - currTile.c;
-                let dy = targetTile.r - currTile.r;
-
-                let arrowSymbol = '➡️';
-                if (dx === 1) arrowSymbol = '➡️ 右';
-                else if (dx === -1) arrowSymbol = '⬅️ 左';
-                else if (dy === 1) arrowSymbol = '⬇️ 下';
-                else if (dy === -1) arrowSymbol = '⬆️ 上';
-
-                let btn = document.createElement('button');
-                btn.className = 'absolute pointer-events-auto pixel-btn px-3 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
-                btn.innerHTML = `<span>${arrowSymbol}</span>`;
-
-                // カメラ位置に基づく画面上のピクセル位置を計算
-                let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
-                btn.style.left = `${screenPos.x}px`;
-                btn.style.top = `${screenPos.y}px`;
-                btn.style.transform = 'translate(-50%, -50%)';
-
-                btn.onclick = () => {
-                    playSe('dice_stop');
-                    onChoose(cand.tileIdx);
-                };
-
-                container.appendChild(btn);
-            });
-        }
-
-        function hideBranchSelectionUI() {
-            let container = document.getElementById('branchOverlayContainer');
-            if (container) container.innerHTML = '';
         }
 
         // マップ上の座標をスクリーンのピクセル位置（px）に変換
@@ -1654,46 +1654,6 @@
             };
         }
 
-        function triggerTileEvent(pIndex) {
-            let p = players[pIndex];
-            let tile = tileCoords[p.pos];
-
-            if (tile.type === 'plus' || tile.type === 'minus') {
-                isSubRollPending = true;
-                pendingTileType = tile.type;
-
-                let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
-                let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
-
-                document.getElementById('currentEventTitle').innerText = titleText;
-                document.getElementById('currentEventDesc').innerText = descText;
-                document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
-                document.getElementById('btnRoll').innerText = '🎲 サイコロを振る！';
-                document.getElementById('btnRoll').disabled = false;
-
-                if (pIndex !== 0) {
-                    setTimeout(() => { handleRollButtonClick(); }, 1500);
-                }
-            } else {
-                let matchingEvents = gameEvents.filter(e => e.type === tile.type);
-                if (matchingEvents.length === 0) matchingEvents = gameEvents;
-                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
-
-                document.getElementById('currentEventTitle').innerText = event.title;
-                document.getElementById('currentEventDesc').innerText = event.desc;
-
-                if (tile.type === 'item') {
-                    let itemGot = event.itemName || '⚡ スパチャブースター';
-                    document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
-                    addPlayerItem(itemGot);
-                } else {
-                    document.getElementById('currentEventEffect').innerText = '変化なし';
-                }
-
-                setTimeout(() => { nextTurn(); }, 3000);
-            }
-        }
-
         function resolveSubRollEvent(pIndex, type, diceRoll) {
             let p = players[pIndex];
             let matchingEvents = gameEvents.filter(e => e.type === type);
@@ -1716,17 +1676,6 @@
             document.getElementById('btnRoll').innerText = '🎲 移動！';
 
             setTimeout(() => { nextTurn(); }, 3000);
-        }
-
-        function addPlayerItem(itemName) {
-            let container = document.getElementById('itemListContainer');
-            if (!container) return;
-            if (container.innerText.includes('なし')) container.innerHTML = '';
-
-            let badge = document.createElement('span');
-            badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
-            badge.innerText = itemName;
-            container.appendChild(badge);
         }
 
         function nextTurn() {
@@ -1939,6 +1888,28 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
                 });
+
+                // 3.5 分岐選択時：着地予定マスに半透明のゴーストキャラを表示
+                if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
+                    activeBranchCandidates.forEach(cand => {
+                        let destTile = tileCoords[cand.destTileIdx];
+                        if (destTile) {
+                            ctx.save();
+                            ctx.globalAlpha = 0.55; // 半透明設定
+                            drawPlayerDotModel(ctx, cand.playerChar, destTile.x, destTile.y - 10, 32);
+
+                            // 到達予測マークリングの描画
+                            ctx.beginPath();
+                            ctx.arc(destTile.x, destTile.y, 20, 0, Math.PI * 2);
+                            ctx.strokeStyle = '#fde047';
+                            ctx.lineWidth = 3;
+                            ctx.setLineDash([4, 4]);
+                            ctx.stroke();
+
+                            ctx.restore();
+                        }
+                    });
+                }
 
                 // 4. プレイヤー＆ごしゅの描画
                 players.forEach((p, idx) => {
