@@ -1265,6 +1265,10 @@
             let allChars = ['utsuro', 'gengo', 'tomoko'];
             let charLabelNames = { utsuro: '氷室', gengo: 'かたる', tomoko: 'トモコ' };
 
+            // 重複チェック
+            let selectedCharsList = Object.values(onlineMemberChars);
+            let hasDuplicates = new Set(selectedCharsList).size !== selectedCharsList.length;
+
             allChars.forEach(c => {
                 let btn = document.getElementById(`btnLobby${c.charAt(0).toUpperCase() + c.slice(1)}`);
                 let statusEl = document.getElementById(`lobbyStatus${c.charAt(0).toUpperCase() + c.slice(1)}`);
@@ -1289,154 +1293,45 @@
                     statusEl.className = 'text-[9px] font-bold text-gray-400 truncate w-full text-center';
                 }
             });
-        }
 
-        function initPeerConnection(roomCode) {
-            let hostPeerId = `utsuro-sugoroku-v2-${roomCode}`;
-            if (peer) peer.destroy();
+            // ⚠️ キャラクター選択重複の警告とスタートボタン制御
+            let btnStart = document.getElementById('btnStartLobbyGame');
+            let lobbyStatusText = document.getElementById('lobbyStatusText');
 
-            peer = new Peer(hostPeerId, { debug: 1 });
-
-            peer.on('open', (id) => {
-                isHost = true;
-                myPlayerIndex = 0;
-                peerConnections = [];
-                onlineMemberChars = { 0: myChar };
-                document.getElementById('lobbyStatusText').innerText = 'ホストとして部屋を作成しました。参加者を待っています...';
-                document.getElementById('lobbyMemberCount').innerText = '1 / 3';
-                updateLobbyCharUI();
-            });
-
-            peer.on('connection', (conn) => {
-                if (peerConnections.length < 2) {
-                    peerConnections.push(conn);
-                    setupConnectionHandlers(conn);
+            if (hasDuplicates) {
+                if (lobbyStatusText) {
+                    lobbyStatusText.innerText = '⚠️ キャラクターが重複しています！別のキャラを選んでください';
+                    lobbyStatusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
                 }
-            });
-
-            peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    // ホストが既に存在する場合はゲストとして接続
-                    isHost = false;
-                    peer = new Peer({ debug: 1 });
-                    peer.on('open', () => {
-                        document.getElementById('lobbyStatusText').innerText = '部屋へ接続中...';
-                        let hostConn = peer.connect(hostPeerId);
-                        peerConnections = [hostConn];
-                        setupConnectionHandlers(hostConn);
-                    });
-                } else {
-                    alert(`接続エラー: ${err.type}`);
+                if (btnStart) {
+                    btnStart.disabled = true;
+                    btnStart.innerText = '⚠️ キャラクター重複のため開始できません';
+                    btnStart.classList.add('opacity-50', 'cursor-not-allowed');
                 }
-            });
-        }
-
-        function setupConnectionHandlers(conn) {
-            conn.on('open', () => {
-                if (isHost) {
-                    let assignedIndex = peerConnections.indexOf(conn) + 1;
-                    // デフォルトキャラ被り回避
-                    let allChars = ['utsuro', 'gengo', 'tomoko'];
-                    let usedChars = Object.values(onlineMemberChars);
-                    let freeChar = allChars.find(c => !usedChars.includes(c)) || allChars[0];
-                    onlineMemberChars[assignedIndex] = freeChar;
-
-                    updateLobbyMembers();
-                    broadcastLobbyState();
+            } else {
+                if (lobbyStatusText) {
+                    lobbyStatusText.innerText = isHost ? '準備完了！「ゲームを開始する」を押してください' : '対戦相手を待っています...';
+                    lobbyStatusText.className = 'text-xs text-cyan-300 font-bold animate-pulse mb-2';
                 }
-            });
-
-            conn.on('data', (data) => {
-                handleNetworkData(data, conn);
-            });
-
-            conn.on('close', () => {
-                let closedIdx = peerConnections.indexOf(conn);
-                if (closedIdx !== -1) {
-                    delete onlineMemberChars[closedIdx + 1];
-                }
-                peerConnections = peerConnections.filter(c => c !== conn);
-                if (isHost) {
-                    updateLobbyMembers();
-                    broadcastLobbyState();
-                }
-            });
-        }
-
-        function updateLobbyMembers() {
-            let count = peerConnections.length + 1;
-            document.getElementById('lobbyMemberCount').innerText = `${count} / 3`;
-        }
-
-        function broadcastLobbyState() {
-            let state = {
-                type: 'LOBBY_UPDATE',
-                memberCount: peerConnections.length + 1,
-                memberChars: onlineMemberChars
-            };
-            peerConnections.forEach((c, idx) => {
-                if (c.open) {
-                    c.send({ ...state, assignedPlayerIndex: idx + 1 });
-                }
-            });
-            updateLobbyCharUI();
-        }
-
-        function handleNetworkData(data, conn) {
-            if (data.type === 'REGISTER_CHAR') {
-                if (isHost) {
-                    let connIdx = peerConnections.indexOf(conn);
-                    if (connIdx !== -1) {
-                        onlineMemberChars[connIdx + 1] = data.char;
-                        broadcastLobbyState();
-                    }
-                }
-            } else if (data.type === 'LOBBY_UPDATE') {
-                if (data.assignedPlayerIndex !== undefined) {
-                    myPlayerIndex = data.assignedPlayerIndex;
-                }
-                if (data.memberChars) {
-                    onlineMemberChars = data.memberChars;
-                    if (onlineMemberChars[myPlayerIndex]) {
-                        myChar = onlineMemberChars[myPlayerIndex];
-                    }
-                }
-                document.getElementById('lobbyStatusText').innerText = '部屋に入りました！参加者を待っています...';
-                document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
-                updateLobbyCharUI();
-            } else if (data.type === 'START_GAME') {
-                document.getElementById('onlineLobbyModal').classList.add('hidden');
-                document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
-                playGameBgm();
-                myPlayerIndex = data.playerIndex;
-
-                if (data.playerConfigs) {
-                    let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-                    let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
-
-                    data.playerConfigs.forEach((cfg, idx) => {
-                        players[idx].char = cfg.char;
-                        players[idx].name = charNames[cfg.char] || 'Vstreamer';
-                        players[idx].color = charColors[cfg.char] || '#a855f7';
-                        players[idx].isHuman = cfg.isHuman;
-                    });
-
-                    document.getElementById('p1Name').innerText = players[0].name;
-                    document.getElementById('p2Name').innerText = players[1].name;
-                    document.getElementById('p3Name').innerText = players[2].name;
-                }
-                resetAllPlayerPositions();
-            } else if (data.type === 'GAME_STATE_UPDATE') {
-                applySyncGameState(data);
-            } else if (data.type === 'ACTION_ROLL') {
-                if (isHost && !isRolling && !isMoving) {
-                    handleRollButtonClick();
+                if (btnStart) {
+                    btnStart.disabled = false;
+                    btnStart.innerText = '🚀 ゲームを開始する (残りをCPUで補う)';
+                    btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             }
         }
 
         function forceStartOnlineLobby() {
             if (!isHost) { alert('ゲーム開始を行えるのはホストのみです'); return; }
+
+            // 開始時の最終重複チェック
+            let selectedCharsList = Object.values(onlineMemberChars);
+            let hasDuplicates = new Set(selectedCharsList).size !== selectedCharsList.length;
+            if (hasDuplicates) {
+                alert('⚠️ キャラクターが他のプレイヤーと重複しています！全員が異なるキャラクターを選択してください。');
+                return;
+            }
+
             execStartOnlineGame();
         }
 
