@@ -1236,13 +1236,187 @@
             initPeerConnection(roomCode);
         }
 
+        function initPeerConnection(roomCode) {
+            if (peer) {
+                try { peer.destroy(); } catch(e) {}
+            }
+            peerConnections = [];
+            onlineMemberChars = {};
+            
+            // 部屋コードに基づく統一PeerID
+            let hostPeerId = `utsuro-sugoroku-room-${roomCode}`;
+            
+            // 最初にホストとして起動を試みる
+            peer = new Peer(hostPeerId, {
+                debug: 1
+            });
+
+            peer.on('open', (id) => {
+                isHost = true;
+                myPlayerIndex = 0;
+                onlineMemberChars[0] = myChar;
+                updateLobbyCharUI();
+                document.getElementById('lobbyMemberCount').innerText = `1 / 3`;
+                document.getElementById('lobbyStatusText').innerText = '部屋を作成しました。対戦相手を待っています...';
+            });
+
+            peer.on('connection', (conn) => {
+                if (!isHost) return;
+                
+                if (peerConnections.length >= 2) {
+                    conn.send({ type: 'ERROR', message: '部屋が満員です' });
+                    setTimeout(() => conn.close(), 500);
+                    return;
+                }
+
+                peerConnections.push(conn);
+                let assignedPIdx = peerConnections.length; // 1 or 2
+                
+                conn.on('open', () => {
+                    // 参加者に割り当てインデックスを初期送信
+                    conn.send({
+                        type: 'INIT_GUEST',
+                        playerIndex: assignedPIdx,
+                        hostChar: myChar,
+                        onlineMemberChars: onlineMemberChars
+                    });
+                    
+                    document.getElementById('lobbyMemberCount').innerText = `${peerConnections.length + 1} / 3`;
+                });
+
+                setupConnectionDataHandler(conn);
+            });
+
+            peer.on('error', (err) => {
+                // ホストIDが既に使われている場合はゲストとして参加接続
+                if (err.type === 'unavailable-id') {
+                    connectAsGuest(hostPeerId);
+                } else {
+                    console.error('Peer error:', err);
+                    document.getElementById('lobbyStatusText').innerText = '接続エラーが発生しました';
+                }
+            });
+        }
+
+        function connectAsGuest(hostPeerId) {
+            isHost = false;
+            peer = new Peer({ debug: 1 });
+
+            peer.on('open', () => {
+                let conn = peer.connect(hostPeerId, { reliable: true });
+                peerConnections = [conn];
+
+                conn.on('open', () => {
+                    document.getElementById('lobbyStatusText').innerText = '部屋に参加しました！';
+                    setupConnectionDataHandler(conn);
+                    
+                    // 自分の選択キャラをホストに登録送信
+                    conn.send({
+                        type: 'REGISTER_CHAR',
+                        char: myChar
+                    });
+                });
+
+                conn.on('close', () => {
+                    alert('ホストとの接続が切断されました');
+                    leaveOnlineLobby();
+                });
+
+                conn.on('error', (e) => {
+                    alert('ホストへの接続に失敗しました');
+                    leaveOnlineLobby();
+                });
+            });
+        }
+
+        function setupConnectionDataHandler(conn) {
+            conn.on('data', (data) => {
+                if (!data || !data.type) return;
+
+                if (isHost) {
+                    // --- ホスト側の受信処理 ---
+                    if (data.type === 'REGISTER_CHAR') {
+                        let connIdx = peerConnections.indexOf(conn);
+                        if (connIdx !== -1) {
+                            let pIdx = connIdx + 1;
+                            onlineMemberChars[pIdx] = data.char;
+                            updateLobbyCharUI();
+                            broadcastLobbyState();
+                        }
+                    } else if (data.type === 'ACTION_ROLL') {
+                        handleRollButtonClick();
+                    }
+                } else {
+                    // --- ゲスト側の受信処理 ---
+                    if (data.type === 'INIT_GUEST') {
+                        myPlayerIndex = data.playerIndex;
+                        if (data.onlineMemberChars) {
+                            onlineMemberChars = data.onlineMemberChars;
+                        }
+                        onlineMemberChars[myPlayerIndex] = myChar;
+                        updateLobbyCharUI();
+                    } else if (data.type === 'LOBBY_STATE') {
+                        if (data.onlineMemberChars) {
+                            onlineMemberChars = data.onlineMemberChars;
+                            // 自分の指定が上書きされないよう維持
+                            onlineMemberChars[myPlayerIndex] = myChar;
+                        }
+                        if (data.memberCount) {
+                            document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
+                        }
+                        updateLobbyCharUI();
+                    } else if (data.type === 'START_GAME') {
+                        document.getElementById('onlineLobbyModal').classList.add('hidden');
+                        document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
+                        playGameBgm();
+
+                        resetAllPlayerPositions();
+
+                        if (data.playerConfigs) {
+                            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+                            let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
+                            
+                            data.playerConfigs.forEach((cfg, idx) => {
+                                players[idx].char = cfg.char;
+                                players[idx].name = charNames[cfg.char];
+                                players[idx].color = charColors[cfg.char];
+                                players[idx].isHuman = cfg.isHuman;
+                            });
+
+                            document.getElementById('p1Name').innerText = players[0].name;
+                            document.getElementById('p2Name').innerText = players[1].name;
+                            document.getElementById('p3Name').innerText = players[2].name;
+                        }
+                    } else if (data.type === 'GAME_STATE_UPDATE') {
+                        applySyncGameState(data);
+                    } else if (data.type === 'ERROR') {
+                        alert(data.message || 'エラーが発生しました');
+                        leaveOnlineLobby();
+                    }
+                }
+            });
+        }
+
+        function broadcastLobbyState() {
+            if (!isHost) return;
+            let state = {
+                type: 'LOBBY_STATE',
+                onlineMemberChars: onlineMemberChars,
+                memberCount: peerConnections.length + 1
+            };
+            peerConnections.forEach(c => {
+                if (c.open) c.send(state);
+            });
+        }
+
         function drawLobbyCharPreviews() {
-            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let el = document.getElementById(`prevLobby${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                if (el) {
-                    let ctxL = el.getContext('2d');
-                    ctxL.clearRect(0, 0, 24, 24);
-                    drawPlayerDotModel(ctxL, c, 12, 12, 20);
+            ['Utsuro', 'Gengo', 'Tomoko'].forEach(c => {
+                let charKey = c.toLowerCase();
+                let canvasEl = document.getElementById(`prevLobby${c}`);
+                if (canvasEl) {
+                    let lCtx = canvasEl.getContext('2d');
+                    lCtx.clearRect(0, 0, 24, 24);
+                    drawPlayerDotModel(lCtx, charKey, 12, 12, 20);
                 }
             });
         }
@@ -1254,269 +1428,537 @@
 
             if (isHost) {
                 broadcastLobbyState();
-            } else {
-                if (peerConnections.length > 0 && peerConnections[0].open) {
-                    peerConnections[0].send({ type: 'REGISTER_CHAR', playerIndex: myPlayerIndex, char: char });
-                }
+            } else if (peerConnections[0] && peerConnections[0].open) {
+                peerConnections[0].send({
+                    type: 'REGISTER_CHAR',
+                    char: char
+                });
             }
         }
 
         function updateLobbyCharUI() {
-            let allChars = ['utsuro', 'gengo', 'tomoko'];
-            let charLabelNames = { utsuro: '氷室', gengo: 'かたる', tomoko: 'トモコ' };
+            let selectedChars = Object.values(onlineMemberChars);
+            let hasDuplicate = new Set(selectedChars).size !== selectedChars.length;
 
-            // 重複チェック
-            let selectedCharsList = Object.values(onlineMemberChars);
-            let hasDuplicates = new Set(selectedCharsList).size !== selectedCharsList.length;
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let cCap = c.charAt(0).toUpperCase() + c.slice(1);
+                let btn = document.getElementById(`btnLobby${cCap}`);
+                let statusSpan = document.getElementById(`lobbyStatus${cCap}`);
 
-            allChars.forEach(c => {
-                let btn = document.getElementById(`btnLobby${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                let statusEl = document.getElementById(`lobbyStatus${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                
-                if (!btn || !statusEl) return;
-
-                // 誰がどのキャラを選んでいるか検索
-                let selectedByPIdx = Object.keys(onlineMemberChars).find(pIdx => onlineMemberChars[pIdx] === c);
-
-                if (c === myChar) {
-                    btn.classList.add('ring-2', 'ring-yellow-400');
-                    statusEl.innerText = '★ あなた';
-                    statusEl.className = 'text-[9px] font-bold text-yellow-300 truncate w-full text-center';
-                } else if (selectedByPIdx !== undefined) {
-                    btn.classList.remove('ring-2', 'ring-yellow-400');
-                    let pNum = parseInt(selectedByPIdx) + 1;
-                    statusEl.innerText = `${pNum}P 選択中`;
-                    statusEl.className = 'text-[9px] font-bold text-cyan-400 truncate w-full text-center';
-                } else {
-                    btn.classList.remove('ring-2', 'ring-yellow-400');
-                    statusEl.innerText = '選択可';
-                    statusEl.className = 'text-[9px] font-bold text-gray-400 truncate w-full text-center';
+                if (statusSpan) statusSpan.innerText = '';
+                if (btn) {
+                    if (myChar === c) {
+                        btn.classList.add('ring-2', 'ring-yellow-400');
+                    } else {
+                        btn.classList.remove('ring-2', 'ring-yellow-400');
+                    }
                 }
             });
 
-            // ⚠️ キャラクター選択重複の警告とスタートボタン制御
-            let btnStart = document.getElementById('btnStartLobbyGame');
-            let lobbyStatusText = document.getElementById('lobbyStatusText');
-
-            if (hasDuplicates) {
-                if (lobbyStatusText) {
-                    lobbyStatusText.innerText = '⚠️ キャラクターが重複しています！別のキャラを選んでください';
-                    lobbyStatusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
+            // プレイヤーの選択ラベルを更新
+            Object.keys(onlineMemberChars).forEach(pIdx => {
+                let c = onlineMemberChars[pIdx];
+                if (c) {
+                    let cCap = c.charAt(0).toUpperCase() + c.slice(1);
+                    let statusSpan = document.getElementById(`lobbyStatus${cCap}`);
+                    if (statusSpan) {
+                        let label = parseInt(pIdx) === myPlayerIndex ? 'あなた' : `${parseInt(pIdx) + 1}P`;
+                        statusSpan.innerText = statusSpan.innerText ? `${statusSpan.innerText}, ${label}` : label;
+                    }
                 }
-                if (btnStart) {
-                    btnStart.disabled = true;
-                    btnStart.innerText = '⚠️ キャラクター重複のため開始できません';
-                    btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            // ホストのゲーム開始ボタン制御
+            let startBtn = document.getElementById('btnStartLobbyGame');
+            let statusText = document.getElementById('lobbyStatusText');
+
+            if (!isHost) {
+                if (startBtn) startBtn.classList.add('hidden');
+                if (statusText) {
+                    if (hasDuplicate) {
+                        statusText.innerText = '⚠️ キャラクターが重複しています！別のキャラを選んでください';
+                        statusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
+                    } else {
+                        statusText.innerText = 'ホストがゲームを開始するのを待っています...';
+                        statusText.className = 'text-xs text-cyan-300 font-bold animate-pulse mb-2';
+                    }
                 }
             } else {
-                if (lobbyStatusText) {
-                    lobbyStatusText.innerText = isHost ? '準備完了！「ゲームを開始する」を押してください' : '対戦相手を待っています...';
-                    lobbyStatusText.className = 'text-xs text-cyan-300 font-bold animate-pulse mb-2';
-                }
-                if (btnStart) {
-                    btnStart.disabled = false;
-                    btnStart.innerText = '🚀 ゲームを開始する (残りをCPUで補う)';
-                    btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (startBtn) startBtn.classList.remove('hidden');
+                if (hasDuplicate) {
+                    if (startBtn) startBtn.disabled = true;
+                    if (statusText) {
+                        statusText.innerText = '⚠️ キャラクターが重複しています！全員別キャラを選んでください';
+                        statusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
+                    }
+                } else {
+                    if (startBtn) startBtn.disabled = false;
+                    if (statusText) {
+                        statusText.innerText = '全員の準備が整いました！';
+                        statusText.className = 'text-xs text-green-400 font-bold animate-pulse mb-2';
+                    }
                 }
             }
         }
 
         function forceStartOnlineLobby() {
-            if (!isHost) { alert('ゲーム開始を行えるのはホストのみです'); return; }
+            if (!isHost) return;
 
-            // 開始時の最終重複チェック
-            let selectedCharsList = Object.values(onlineMemberChars);
-            let hasDuplicates = new Set(selectedCharsList).size !== selectedCharsList.length;
-            if (hasDuplicates) {
-                alert('⚠️ キャラクターが他のプレイヤーと重複しています！全員が異なるキャラクターを選択してください。');
+            let selectedChars = Object.values(onlineMemberChars);
+            if (new Set(selectedChars).size !== selectedChars.length) {
+                alert('キャラクターが重複しています。参加者全員が異なるキャラクターを選択してください！');
                 return;
             }
 
-            execStartOnlineGame();
-        }
-
-        function execStartOnlineGame() {
-            document.getElementById('onlineLobbyModal').classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
-            playGameBgm();
-
-            resetAllPlayerPositions();
-
-            let humanCount = peerConnections.length + 1;
             let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
             let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
-            let allChars = ['utsuro', 'gengo', 'tomoko'];
 
-            // ホストのキャラ
-            onlineMemberChars[0] = myChar;
-
-            // 各プレイヤーのキャラと人間フラグの構成
-            let playerConfigs = [];
             let usedChars = [];
+            let playerConfigs = [0, 1, 2].map(idx => {
+                let chosenChar = onlineMemberChars[idx];
+                let isHuman = idx <= peerConnections.length;
 
-            for (let i = 0; i < 3; i++) {
-                let isH = (i < humanCount);
-                let chosenChar = onlineMemberChars[i];
-
-                // 未選択または重複した場合は未使用キャラから割当
-                if (!chosenChar || usedChars.includes(chosenChar)) {
-                    chosenChar = allChars.find(c => !usedChars.includes(c)) || allChars[0];
+                if (!chosenChar) {
+                    let available = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                    chosenChar = available[0] || 'utsuro';
                 }
                 usedChars.push(chosenChar);
 
-                playerConfigs.push({
+                return {
                     char: chosenChar,
-                    isHuman: isH
-                });
+                    isHuman: isHuman
+                };
+            });
 
-                players[i].char = chosenChar;
-                players[i].name = charNames[chosenChar];
-                players[i].color = charColors[chosenChar];
-                players[i].isHuman = isH;
-            }
+            // 全プレイヤー設定を同期適用
+            playerConfigs.forEach((cfg, idx) => {
+                players[idx].char = cfg.char;
+                players[idx].name = charNames[cfg.char];
+                players[idx].color = charColors[cfg.char];
+                players[idx].isHuman = cfg.isHuman;
+            });
 
             document.getElementById('p1Name').innerText = players[0].name;
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
 
-            // クライアント(ゲスト)全メンバーに同期送信
-            peerConnections.forEach((conn, idx) => {
-                if (conn.open) {
-                    conn.send({
-                        type: 'START_GAME',
-                        playerIndex: idx + 1,
-                        playerConfigs: playerConfigs
-                    });
-                }
-            });
+            // ゲストへゲームスタート命令をブロードキャスト
+            let startPayload = {
+                type: 'START_GAME',
+                playerConfigs: playerConfigs
+            };
+            peerConnections.forEach(c => { if (c.open) c.send(startPayload); });
 
-            myPlayerIndex = 0;
+            document.getElementById('onlineLobbyModal').classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
+            playGameBgm();
+
+            resetAllPlayerPositions();
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
-            broadcastGameState();
+            document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('currentEventTitle').innerText = '【スタート！】';
+            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll) {
+                btnRoll.disabled = false;
+                btnRoll.innerText = '🎲 移動！';
+            }
         }
 
         function leaveOnlineLobby() {
-            if (peer) peer.destroy();
+            if (peer) {
+                try { peer.destroy(); } catch(e) {}
+                peer = null;
+            }
+            peerConnections = [];
+            isOnlineMode = false;
+            isHost = false;
             document.getElementById('onlineLobbyModal').classList.add('hidden');
             document.getElementById('startModal').classList.remove('hidden');
         }
 
-        function broadcastGameState(extraData = {}) {
-            if (!isOnlineMode || !isHost) return;
-
-            let state = {
-                type: 'GAME_STATE_UPDATE',
-                currentPlayerIndex: currentPlayerIndex,
-                currentTurnNumber: currentTurnNumber,
-                isSubRollPending: isSubRollPending,
-                pendingTileType: pendingTileType,
-                players: players.map(p => ({
-                    pos: p.pos,
-                    listeners: p.listeners,
-                    finished: p.finished,
-                    rank: p.rank,
-                    items: p.items,
-                    renderX: p.renderX,
-                    renderY: p.renderY,
-                    jumpY: p.jumpY,
-                    isHuman: p.isHuman
-                })),
-                eventTitle: document.getElementById('currentEventTitle').innerText,
-                eventDesc: document.getElementById('currentEventDesc').innerText,
-                eventEffect: document.getElementById('currentEventEffect').innerText,
-                btnRollText: document.getElementById('btnRoll').innerText,
-                ...extraData
-            };
-
-            peerConnections.forEach(c => {
-                if (c.open) c.send(state);
-            });
-        }
-
         function applySyncGameState(data) {
-            let startTile = tileCoords[0] || { x: 100, y: 100 };
-
-            if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
-            if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
-
             if (data.players) {
-                data.players.forEach((p, idx) => {
-                    players[idx].pos = p.pos;
-                    players[idx].listeners = p.listeners;
-                    players[idx].finished = p.finished;
-                    players[idx].rank = p.rank;
-                    players[idx].items = p.items || [];
-                    if (p.isHuman !== undefined) players[idx].isHuman = p.isHuman;
-
-                    let tile = tileCoords[p.pos] || startTile;
-                    players[idx].renderX = (p.renderX !== undefined && p.renderX !== 0) ? p.renderX : tile.x;
-                    players[idx].renderY = (p.renderY !== undefined && p.renderY !== 0) ? p.renderY : tile.y;
-                    if (players[idx].goshuX === undefined || players[idx].goshuX === 0) players[idx].goshuX = tile.x;
-                    if (players[idx].goshuY === undefined || players[idx].goshuY === 0) players[idx].goshuY = tile.y;
-
-                    players[idx].jumpY = p.jumpY || 0;
-
-                    let listenerEl = document.getElementById(`p${idx + 1}Listeners`);
-                    if (listenerEl) listenerEl.innerText = `${p.listeners.toLocaleString()}人`;
+                data.players.forEach((pSync, idx) => {
+                    if (players[idx]) {
+                        players[idx].pos = pSync.pos;
+                        players[idx].listeners = pSync.listeners;
+                        players[idx].finished = pSync.finished;
+                        players[idx].rank = pSync.rank;
+                        if (tileCoords[pSync.pos]) {
+                            players[idx].renderX = tileCoords[pSync.pos].x;
+                            players[idx].renderY = tileCoords[pSync.pos].y;
+                        }
+                        let listenerEl = document.getElementById(`p${idx + 1}Listeners`);
+                        if (listenerEl) listenerEl.innerText = `${pSync.listeners.toLocaleString()}人`;
+                    }
                 });
             }
 
-            if (data.currentTurnNumber !== undefined) {
-                currentTurnNumber = data.currentTurnNumber;
-                let turnEl = document.getElementById('turnCounter');
-                if (turnEl) turnEl.innerText = currentTurnNumber;
+            if (data.turnNumber !== undefined) {
+                currentTurnNumber = data.turnNumber;
+                document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
             }
 
             if (data.currentPlayerIndex !== undefined) {
                 currentPlayerIndex = data.currentPlayerIndex;
                 let activePlayer = players[currentPlayerIndex];
-                let tagEl = document.getElementById('activePlayerTag');
-                if (tagEl) tagEl.innerText = `手番: ${activePlayer.name}`;
+                document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
 
-                let isMyTurn = (myPlayerIndex === currentPlayerIndex);
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    btnRoll.disabled = !isMyTurn || isMoving || isRolling;
-                    if (data.btnRollText) {
-                        btnRoll.innerText = data.btnRollText;
-                    } else if (isSubRollPending) {
-                        btnRoll.innerText = '🎲 サイコロを振る！';
-                    } else {
-                        btnRoll.innerText = '🎲 移動！';
-                    }
-                }
-
-                if (isMyTurn && !isMoving && !isRolling && !isSubRollPending) {
-                    document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
-                    document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                    btnRoll.disabled = (myPlayerIndex !== currentPlayerIndex);
+                    btnRoll.innerText = data.isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
             }
 
-            if (data.eventTitle && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling || isSubRollPending)) {
-                document.getElementById('currentEventTitle').innerText = data.eventTitle;
-            }
-            if (data.eventDesc && (myPlayerIndex !== currentPlayerIndex || isMoving || isRolling || isSubRollPending)) {
-                document.getElementById('currentEventDesc').innerText = data.eventDesc;
-            }
+            if (data.eventTitle) document.getElementById('currentEventTitle').innerText = data.eventTitle;
+            if (data.eventDesc) document.getElementById('currentEventDesc').innerText = data.eventDesc;
             if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
-            if (data.diceRoll) drawDice(data.diceRoll);
 
-            updateItemUI();
+            if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
+            if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
         }
 
+        function broadcastGameState() {
+            if (!isOnlineMode || !isHost) return;
+
+            let syncState = {
+                type: 'GAME_STATE_UPDATE',
+                turnNumber: currentTurnNumber,
+                currentPlayerIndex: currentPlayerIndex,
+                isSubRollPending: isSubRollPending,
+                pendingTileType: pendingTileType,
+                eventTitle: document.getElementById('currentEventTitle').innerText,
+                eventDesc: document.getElementById('currentEventDesc').innerText,
+                eventEffect: document.getElementById('currentEventEffect').innerText,
+                players: players.map(p => ({
+                    pos: p.pos,
+                    listeners: p.listeners,
+                    finished: p.finished,
+                    rank: p.rank
+                }))
+            };
+
+            peerConnections.forEach(c => {
+                if (c.open) c.send(syncState);
+            });
+        }
+
+        // --- ドット絵・マップ描画ロジック ---
+        function initDefaultDotGrids() {
+            let tomokoGoshuGrid = [
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#ffadad","#ffadad","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#ffadad","#ffadad","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]
+            ];
+
+            customDotData.tomoko_goshu = tomokoGoshuGrid;
+            customDotData.utsuro_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#22c55e' : col));
+            customDotData.gengo_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#06b6d4' : col));
+
+            customDotData.utsuro = [
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],
+                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
+                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
+                ["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],
+                ["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],
+                ["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],
+                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
+                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]
+            ];
+
+            customDotData.gengo = [
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],
+                ["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],
+                ["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],
+                ["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],
+                ["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],
+                ["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]
+            ];
+
+            customDotData.tomoko = [
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#ffd5b3","#ee7717","#363535","#ffd5b3","#ffd5b3","#ee7717","#363535","#ffd5b3","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],
+                ["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],
+                ["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#2f0e0e","#2f0e0e","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#ffffff","#ffffff","#ffffff","#ffffff","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#ffffff","#cca671","#cca671","#ffffff","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#831843","#831843","#831843","#831843","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#831843","#cca671","#cca671","#831843","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"]
+            ];
+
+            loadTargetDotGrid(selectedDotTarget);
+        }
+
+        function initDefaultMapGrid() {
+            customMapGrid = [
+                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
+                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
+                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
+                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
+                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
+                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
+                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
+                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
+                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
+                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
+                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
+                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
+            ];
+        }
+
+        function convertCustomGridToTileCoords() {
+            tileCoords = [];
+            window.roadConnections = [];
+            let pSize = 64;
+
+            let rawTiles = [];
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let type = customMapGrid[r] ? customMapGrid[r][c] : null;
+                    if (type) {
+                        rawTiles.push({
+                            x: c * pSize + pSize / 2,
+                            y: r * pSize + pSize / 2,
+                            type: type,
+                            r: r,
+                            c: c,
+                            visited: false
+                        });
+                    }
+                }
+            }
+
+            if (rawTiles.length === 0) return;
+
+            let startIdx = rawTiles.findIndex(t => t.type === 'start');
+            if (startIdx === -1) startIdx = 0;
+
+            let curr = rawTiles[startIdx];
+            curr.visited = true;
+            tileCoords.push(curr);
+
+            while (tileCoords.length < rawTiles.length) {
+                let neighbors = rawTiles.filter(t => !t.visited && Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c) === 1);
+
+                let nextTile = null;
+                if (neighbors.length > 0) {
+                    if (curr.r === 4 && curr.c === 5) {
+                        let downPref = neighbors.find(t => t.r === 4 && t.c === 4);
+                        if (downPref) nextTile = downPref;
+                    }
+                    if (!nextTile) {
+                        neighbors.sort((a, b) => Math.abs(b.r - curr.r) - Math.abs(a.r - curr.r));
+                        nextTile = neighbors[0];
+                    }
+                } else {
+                    let unvisited = rawTiles.filter(t => !t.visited);
+                    if (unvisited.length === 0) break;
+                    unvisited.sort((a, b) => (Math.abs(a.r - curr.r) + Math.abs(a.c - curr.c)) - (Math.abs(b.r - curr.r) + Math.abs(b.c - curr.c)));
+                    nextTile = unvisited[0];
+                }
+
+                nextTile.visited = true;
+                tileCoords.push(nextTile);
+                curr = nextTile;
+            }
+
+            let connectedPairs = new Set();
+            for (let i = 0; i < rawTiles.length; i++) {
+                for (let j = i + 1; j < rawTiles.length; j++) {
+                    let t1 = rawTiles[i];
+                    let t2 = rawTiles[j];
+                    let manhattanDist = Math.abs(t1.r - t2.r) + Math.abs(t1.c - t2.c);
+
+                    if (manhattanDist === 1) {
+                        let pairKey = `${t1.r},${t1.c}-${t2.r},${t2.c}`;
+                        if (!connectedPairs.has(pairKey)) {
+                            connectedPairs.add(pairKey);
+                            window.roadConnections.push({ x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y });
+                        }
+                    }
+                }
+            }
+
+            generateCityObjects();
+        }
+
+        function generateCityObjects() {
+            cityObjects = [];
+            if (tileCoords.length === 0) return;
+
+            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
+            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
+
+            tileCoords.forEach((t, i) => {
+                let offsets = [
+                    { dx: 38, dy: 38, type: 'house' },
+                    { dx: -38, dy: -38, type: 'tree' },
+                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' },
+                    { dx: -38, dy: 38, type: (i % 2 === 0) ? 'light' : 'house' }
+                ];
+
+                offsets.forEach(o => {
+                    let ox = t.x + o.dx;
+                    let oy = t.y + o.dy;
+                    let tooClose = tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24);
+                    if (!tooClose) {
+                        cityObjects.push({
+                            x: ox,
+                            y: oy,
+                            type: o.type,
+                            roofColor: roofs[i % roofs.length],
+                            wallColor: walls[i % walls.length]
+                        });
+                    }
+                });
+            });
+        }
+
+        function renderCustomDotGrid(context, gridData, x, y, size = 32) {
+            if (!gridData) return;
+            let pSize = size / 16;
+            context.save();
+            context.translate(x - size / 2, y - size / 2);
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = gridData[r][c];
+                    if (col && col !== '#00000000') {
+                        context.fillStyle = col;
+                        context.fillRect(c * pSize, r * pSize, pSize + 0.5, pSize + 0.5);
+                    }
+                }
+            }
+            context.restore();
+        }
+
+        function drawPlayerDotModel(context, charType, x, y, size = 32) {
+            if (customDotData[charType]) {
+                renderCustomDotGrid(context, customDotData[charType], x, y, size);
+            }
+        }
+
+        function drawGoshuDotModel(context, charType, x, y, size = 20) {
+            let goshuKey = `${charType}_goshu`;
+            if (customDotData[goshuKey]) {
+                renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
+            }
+        }
+
+        function drawCharPreviews() {
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let el = document.getElementById(`prev${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (el) {
+                    let cCtx = el.getContext('2d');
+                    cCtx.clearRect(0, 0, 28, 28);
+                    drawPlayerDotModel(cCtx, c, 14, 14, 24);
+                }
+
+                let elGoshu = document.getElementById(`prev${c.charAt(0).toUpperCase() + c.slice(1)}Goshu`);
+                if (elGoshu) {
+                    let gCtx = elGoshu.getContext('2d');
+                    gCtx.clearRect(0, 0, 20, 20);
+                    drawGoshuDotModel(gCtx, c, 10, 10, 18);
+                }
+            });
+        }
+
+        function drawDice(num) {
+            if (!diceCtx || !diceCanvas) return;
+            let w = diceCanvas.width;
+            let h = diceCanvas.height;
+            let cx = w / 2;
+            let cy = h / 2;
+            let margin = 4;
+
+            diceCtx.clearRect(0, 0, w, h);
+
+            diceCtx.fillStyle = '#ffffff';
+            diceCtx.beginPath();
+            diceCtx.roundRect ? diceCtx.roundRect(margin, margin, w - margin * 2, h - margin * 2, 6) : diceCtx.fillRect(margin, margin, w - margin * 2, h - margin * 2);
+            diceCtx.fill();
+
+            diceCtx.fillStyle = num === 1 ? '#ef4444' : '#111827';
+
+            let offset = w * 0.22;
+            let dotRadius = num === 1 ? w * 0.12 : w * 0.08;
+
+            let dots = {
+                1: [[cx, cy]],
+                2: [[cx - offset, cy - offset], [cx + offset, cy + offset]],
+                3: [[cx - offset, cy - offset], [cx, cy], [cx + offset, cy + offset]],
+                4: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy + offset], [cx + offset, cy + offset]],
+                5: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]],
+                6: [[cx - offset, cy - offset], [cx + offset, cy - offset], [cx - offset, cy], [cx + offset, cy], [cx - offset, cy + offset], [cx + offset, cy + offset]]
+            };
+
+            (dots[num] || []).forEach(d => {
+                diceCtx.beginPath();
+                diceCtx.arc(d[0], d[1], dotRadius, 0, Math.PI * 2);
+                diceCtx.fill();
+            });
+        }
+
+        // --- ゲームループ & アクション ---
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll && btnRoll.disabled) return;
+
             if (isOnlineMode && !isHost) {
-                if (peerConnections.length > 0 && peerConnections[0].open) {
+                if (peerConnections[0] && peerConnections[0].open) {
                     peerConnections[0].send({ type: 'ACTION_ROLL' });
                 }
                 return;
             }
 
             isRolling = true;
-            let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.disabled = true;
 
             let count = 0;
@@ -1525,8 +1967,6 @@
                 drawDice(roll);
                 playSe('dice_roll');
                 count++;
-
-                if (isOnlineMode && isHost) broadcastGameState({ diceRoll: roll });
 
                 if (count > 12) {
                     clearInterval(interval);
@@ -1540,7 +1980,7 @@
                         } else {
                             movePlayer(currentPlayerIndex, roll);
                         }
-                    }, 1000);
+                    }, 1200);
                 }
             }, 100);
         }
@@ -1570,7 +2010,7 @@
 
                     if (possibleNextTiles.length > 1) {
                         isWaitingForBranchChoice = true;
-                        if (pIndex === myPlayerIndex) {
+                        if (pIndex === 0 && (!isOnlineMode || myPlayerIndex === 0)) {
                             showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                 hideBranchSelectionUI();
                                 isWaitingForBranchChoice = false;
@@ -1619,8 +2059,6 @@
                     p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
                     p.jumpY = -Math.sin(progress * Math.PI) * 18;
 
-                    if (isOnlineMode && isHost) broadcastGameState();
-
                     if (progress < 1) {
                         requestAnimationFrame(animateStep);
                     } else {
@@ -1632,6 +2070,30 @@
             }
 
             stepNext();
+        }
+
+        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
+            let curr = tileCoords[currentTileIdx];
+            let candidates = [];
+
+            tileCoords.forEach((t, idx) => {
+                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
+                    let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
+                    if (manhattanDist === 1) {
+                        let isConnected = window.roadConnections && window.roadConnections.some(conn => {
+                            return (Math.abs(conn.x1 - curr.x) < 5 && Math.abs(conn.y1 - curr.y) < 5 && Math.abs(conn.x2 - t.x) < 5 && Math.abs(conn.y2 - t.y) < 5) ||
+                                   (Math.abs(conn.x2 - curr.x) < 5 && Math.abs(conn.y2 - curr.y) < 5 && Math.abs(conn.x1 - t.x) < 5 && Math.abs(conn.y1 - t.y) < 5);
+                        });
+
+                        if (isConnected || idx > currentTileIdx) {
+                            candidates.push({ tileIdx: idx, tile: t });
+                        }
+                    }
+                }
+            });
+
+            candidates.sort((a, b) => (tileCoords.length - 1 - a.tileIdx) - (tileCoords.length - 1 - b.tileIdx));
+            return candidates;
         }
 
         function showBranchSelectionUI(pIndex, candidates, remainingSteps, onChoose) {
@@ -1706,6 +2168,102 @@
             activeBranchCandidates = [];
         }
 
+        function calculateScreenPos(worldX, worldY, centerTile) {
+            let rect = canvas.getBoundingClientRect();
+            let screenX = 0, screenY = 0;
+
+            if (isFullMapView && tileCoords.length > 0) {
+                let minX = Math.min(...tileCoords.map(t => t.x));
+                let maxX = Math.max(...tileCoords.map(t => t.x));
+                let minY = Math.min(...tileCoords.map(t => t.y));
+                let maxY = Math.max(...tileCoords.map(t => t.y));
+                let scale = Math.min(canvas.width / (maxX - minX + 160), canvas.height / (maxY - minY + 160));
+
+                let midX = (minX + maxX) / 2;
+                let midY = (minY + maxY) / 2;
+
+                screenX = canvas.width / 2 + (worldX - midX) * scale;
+                screenY = canvas.height / 2 + (worldY - midY) * scale;
+            } else {
+                screenX = canvas.width / 2 + userDragOffsetX + (worldX - centerTile.x) * userZoomScale;
+                screenY = canvas.height / 2 + userDragOffsetY + (worldY - centerTile.y) * userZoomScale;
+            }
+
+            return {
+                x: (screenX / canvas.width) * rect.width,
+                y: (screenY / canvas.height) * rect.height
+            };
+        }
+
+        function triggerTileEvent(pIndex) {
+            let p = players[pIndex];
+            let tile = tileCoords[p.pos];
+
+            if (tile.type === 'plus' || tile.type === 'minus') {
+                isSubRollPending = true;
+                pendingTileType = tile.type;
+
+                let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
+                let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
+
+                document.getElementById('currentEventTitle').innerText = titleText;
+                document.getElementById('currentEventDesc').innerText = descText;
+                document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
+                
+                let btnRoll = document.getElementById('btnRoll');
+                if (btnRoll) {
+                    btnRoll.innerText = '🎲 サイコロを振る！';
+                    btnRoll.disabled = (isOnlineMode && myPlayerIndex !== pIndex);
+                }
+
+                broadcastGameState();
+
+                if (!p.isHuman) {
+                    setTimeout(() => { handleRollButtonClick(); }, 1500);
+                }
+            } else {
+                let matchingEvents = gameEvents.filter(e => e.type === tile.type);
+                if (matchingEvents.length === 0) matchingEvents = gameEvents;
+                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+
+                document.getElementById('currentEventTitle').innerText = event.title;
+                document.getElementById('currentEventDesc').innerText = event.desc;
+
+                if (tile.type === 'item') {
+                    let itemGot = event.itemName || '⚡ スパチャブースター';
+                    document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
+                    addPlayerItem(pIndex, itemGot);
+                } else {
+                    document.getElementById('currentEventEffect').innerText = '変化なし';
+                }
+
+                broadcastGameState();
+                setTimeout(() => { nextTurn(); }, 3000);
+            }
+        }
+
+        function resolveSubRollEvent(pIndex, type, diceRoll) {
+            let p = players[pIndex];
+            let matchingEvents = gameEvents.filter(e => e.type === type);
+            if (matchingEvents.length === 0) matchingEvents = gameEvents;
+            let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+
+            let val = type === 'plus' ? diceRoll * 100 : -( (7 - diceRoll) * 100 );
+
+            p.listeners = Math.max(0, p.listeners + val);
+            document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+
+            document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
+            document.getElementById('currentEventDesc').innerText = event.desc;
+            document.getElementById('currentEventEffect').innerText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
+            
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll) btnRoll.innerText = '🎲 移動！';
+
+            broadcastGameState();
+            setTimeout(() => { nextTurn(); }, 3000);
+        }
+
         function handlePlayerGoal(pIndex) {
             let p = players[pIndex];
             if (p.finished) return;
@@ -1724,128 +2282,13 @@
             document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
-            if (isOnlineMode && isHost) broadcastGameState();
+            broadcastGameState();
 
             if (players.every(player => player.finished)) {
                 setTimeout(showFinalResultModal, 3500);
             } else {
                 setTimeout(nextTurn, 3500);
             }
-        }
-
-        function showFinalResultModal() {
-            let modal = document.getElementById('resultModal');
-            let list = document.getElementById('resultRankList');
-            if (!modal || !list) return;
-
-            list.innerHTML = '';
-            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
-
-            sorted.forEach((p, idx) => {
-                let div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2 bg-slate-950 border border-purple-600 rounded-lg text-xs font-bold';
-                let medal = idx === 0 ? '🥇 1位' : (idx === 1 ? '🥈 2位' : '🥉 3位');
-                div.innerHTML = `
-                    <span class="text-yellow-300 font-bold">${medal}</span>
-                    <span class="text-white">${p.name}</span>
-                    <span class="text-cyan-300 font-mono">${p.listeners.toLocaleString()}人</span>
-                `;
-                list.appendChild(div);
-            });
-
-            modal.classList.remove('hidden');
-        }
-
-        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
-            let curr = tileCoords[currentTileIdx];
-            let candidates = [];
-
-            if (!curr) return candidates;
-
-            tileCoords.forEach((t, idx) => {
-                if (idx !== currentTileIdx && idx !== lastVisitedTileIdx) {
-                    let isConnected = window.roadConnections && window.roadConnections.some(conn => 
-                        (Math.hypot(conn.x1 - curr.x, conn.y1 - curr.y) < 5 && Math.hypot(conn.x2 - t.x, conn.y2 - t.y) < 5) ||
-                        (Math.hypot(conn.x2 - curr.x, conn.y2 - curr.y) < 5 && Math.hypot(conn.x1 - t.x, conn.y1 - t.y) < 5)
-                    );
-
-                    if (isConnected && idx > currentTileIdx) {
-                        candidates.push({ tileIdx: idx, tile: t });
-                    }
-                }
-            });
-
-            if (candidates.length === 0) {
-                tileCoords.forEach((t, idx) => {
-                    if (idx > currentTileIdx && idx !== lastVisitedTileIdx) {
-                        let manhattanDist = Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c);
-                        if (manhattanDist === 1) {
-                            candidates.push({ tileIdx: idx, tile: t });
-                        }
-                    }
-                });
-            }
-
-            return candidates;
-        }
-
-        function calculateScreenPos(worldX, worldY, centerTile) {
-            let rect = canvas.getBoundingClientRect();
-            let screenX = 0, screenY = 0;
-
-            if (isFullMapView && tileCoords.length > 0) {
-                let minX = Math.min(...tileCoords.map(t => t.x));
-                let maxX = Math.max(...tileCoords.map(t => t.x));
-                let minY = Math.min(...tileCoords.map(t => t.y));
-                let maxY = Math.max(...tileCoords.map(t => t.y));
-                let scale = Math.min(canvas.width / (maxX - minX + 160), canvas.height / (maxY - minY + 160));
-                
-                let midX = (minX + maxX) / 2;
-                let midY = (minY + maxY) / 2;
-                
-                screenX = canvas.width / 2 + (worldX - midX) * scale;
-                screenY = canvas.height / 2 + (worldY - midY) * scale;
-            } else {
-                screenX = canvas.width / 2 + userDragOffsetX + (worldX - centerTile.x) * userZoomScale;
-                screenY = canvas.height / 2 + userDragOffsetY + (worldY - centerTile.y) * userZoomScale;
-            }
-
-            return {
-                x: (screenX / canvas.width) * rect.width,
-                y: (screenY / canvas.height) * rect.height
-            };
-        }
-
-        function resolveSubRollEvent(pIndex, type, diceRoll) {
-            let p = players[pIndex];
-            let matchingEvents = gameEvents.filter(e => e.type === type);
-            if (matchingEvents.length === 0) matchingEvents = gameEvents;
-            let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
-
-            let val = (type === 'plus') ? (diceRoll * 100) : (-( (7 - diceRoll) * 100 ));
-
-            p.listeners = Math.max(0, p.listeners + val);
-            document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
-
-            let eventTitleText = `${event.title} (出目: ${diceRoll})`;
-            let eventDescText = event.desc;
-            let eventEffectText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
-
-            document.getElementById('currentEventTitle').innerText = eventTitleText;
-            document.getElementById('currentEventDesc').innerText = eventDescText;
-            document.getElementById('currentEventEffect').innerText = eventEffectText;
-            document.getElementById('btnRoll').innerText = '🎲 移動！';
-
-            if (isOnlineMode && isHost) {
-                broadcastGameState({
-                    eventTitle: eventTitleText,
-                    eventDesc: eventDescText,
-                    eventEffect: eventEffectText,
-                    btnRollText: '🎲 移動！'
-                });
-            }
-
-            setTimeout(() => { nextTurn(); }, 3000);
         }
 
         function nextTurn() {
@@ -1867,25 +2310,23 @@
 
             let activePlayer = players[currentPlayerIndex];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
-            document.getElementById('btnRoll').innerText = '🎲 移動！';
+            
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            if (isOnlineMode && isHost) broadcastGameState();
-
-            let isMyTurn = (myPlayerIndex === currentPlayerIndex);
-
-            if (isMyTurn) {
-                document.getElementById('currentEventTitle').innerText = '【あなたのターン】';
+            if (activePlayer.isHuman) {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-                document.getElementById('btnRoll').disabled = false;
+                
+                if (btnRoll) {
+                    btnRoll.disabled = (isOnlineMode && myPlayerIndex !== currentPlayerIndex);
+                }
             } else {
-                document.getElementById('btnRoll').disabled = true;
+                if (btnRoll) btnRoll.disabled = true;
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
 
-                // オンライン対戦で人間のプレイヤーの場合はCPUタイマーを動かさない
-                let shouldRunCpu = (!isOnlineMode && !activePlayer.isHuman) || (isOnlineMode && isHost && !activePlayer.isHuman);
-
-                if (shouldRunCpu) {
+                if (!isOnlineMode || isHost) {
                     setTimeout(() => {
                         isRolling = true;
                         let count = 0;
@@ -1893,8 +2334,6 @@
                             let roll = Math.floor(Math.random() * 6) + 1;
                             drawDice(roll);
                             count++;
-                            if (isOnlineMode && isHost) broadcastGameState({ diceRoll: roll });
-
                             if (count > 12) {
                                 clearInterval(interval);
                                 isRolling = false;
@@ -1905,6 +2344,7 @@
                 }
             }
 
+            broadcastGameState();
             updateItemUI();
         }
 
@@ -1922,8 +2362,8 @@
             container.innerHTML = '';
 
             let p = players[currentPlayerIndex];
-            
-            if (isOnlineMode && currentPlayerIndex !== myPlayerIndex) {
+
+            if (p.id !== myPlayerIndex && isOnlineMode) {
                 let badge = document.createElement('span');
                 badge.className = 'text-xs text-gray-400 italic';
                 badge.innerText = '🔒 対戦相手のアイテム（非公開）';
@@ -1946,315 +2386,88 @@
             }
         }
 
-        function triggerTileEvent(pIndex) {
-            let p = players[pIndex];
-            let tile = tileCoords[p.pos];
+        function showFinalResultModal() {
+            let modal = document.getElementById('resultModal');
+            let list = document.getElementById('resultRankList');
+            if (!modal || !list) return;
 
-            if (tile.type === 'plus' || tile.type === 'minus') {
-                isSubRollPending = true;
-                pendingTileType = tile.type;
+            list.innerHTML = '';
+            let sortedPlayers = [...players].sort((a, b) => b.listeners - a.listeners);
 
-                let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
-                let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
-
-                document.getElementById('currentEventTitle').innerText = titleText;
-                document.getElementById('currentEventDesc').innerText = descText;
-                document.getElementById('currentEventEffect').innerText = '🎲 サイコロ待機中...';
-                document.getElementById('btnRoll').innerText = '🎲 サイコロを振る！';
-
-                if (isOnlineMode && isHost) {
-                    broadcastGameState({
-                        isSubRollPending: true,
-                        pendingTileType: tile.type,
-                        eventTitle: titleText,
-                        eventDesc: descText,
-                        eventEffect: '🎲 サイコロ待機中...',
-                        btnRollText: '🎲 サイコロを振る！'
-                    });
-                }
-
-                if (pIndex === myPlayerIndex) {
-                    document.getElementById('btnRoll').disabled = false;
-                } else if (!isOnlineMode || isHost) {
-                    if (!p.isHuman) {
-                        setTimeout(() => { handleRollButtonClick(); }, 1500);
-                    }
-                }
-            } else {
-                let matchingEvents = gameEvents.filter(e => e.type === tile.type);
-                if (matchingEvents.length === 0) matchingEvents = gameEvents;
-                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
-
-                document.getElementById('currentEventTitle').innerText = event.title;
-                document.getElementById('currentEventDesc').innerText = event.desc;
-
-                if (tile.type === 'item') {
-                    let itemGot = event.itemName || '⚡ スパチャブースター';
-                    document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
-                    addPlayerItem(pIndex, itemGot);
-                } else {
-                    document.getElementById('currentEventEffect').innerText = '変化なし';
-                }
-
-                if (isOnlineMode && isHost) broadcastGameState();
-
-                setTimeout(() => { nextTurn(); }, 3000);
-            }
-        }
-
-        // --- マップ構築・ドット絵描画用関数 ---
-        function initDefaultDotGrids() {
-            let tomokoGoshuGrid = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#00000000","#ffe433","#00000000","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffe433","#ffe433","#ffe433","#ffe433","#ffe433","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#f472b6","#000000","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffadad","#ffadad","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#ffadad","#ffadad","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#ec3c3c","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#f472b6","#f472b6","#f472b6","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"]];
-            customDotData.tomoko_goshu = tomokoGoshuGrid;
-            customDotData.utsuro_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#22c55e' : col));
-            customDotData.gengo_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#06b6d4' : col));
-
-            customDotData.utsuro = [
-                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],
-                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
-                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
-                ["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],
-                ["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],
-                ["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],
-                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
-                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],
-                ["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]
-            ];
-            customDotData.gengo = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]];
-            customDotData.tomoko = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#ffd5b3","#ee7717","#363535","#ffd5b3","#ffd5b3","#ee7717","#363535","#ffd5b3","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#2f0e0e","#2f0e0e","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#ffffff","#ffffff","#ffffff","#ffffff","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#ffffff","#cca671","#cca671","#ffffff","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#831843","#831843","#831843","#831843","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#831843","#cca671","#cca671","#831843","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"]];
-        }
-
-        function initDefaultMapGrid() {
-            customMapGrid = [
-                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
-                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
-                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
-                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
-                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
-                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
-                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
-                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
-                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
-                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
-                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
-                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
-            ];
-        }
-
-        function convertCustomGridToTileCoords() {
-            tileCoords = [];
-            window.roadConnections = [];
-            let pSize = 64;
-            let rawTiles = [];
-
-            for (let r = 0; r < 12; r++) {
-                for (let c = 0; c < 12; c++) {
-                    let type = customMapGrid[r] ? customMapGrid[r][c] : null;
-                    if (type) {
-                        rawTiles.push({
-                            x: c * pSize + pSize / 2,
-                            y: r * pSize + pSize / 2,
-                            type: type,
-                            r: r, c: c,
-                            visited: false
-                        });
-                    }
-                }
-            }
-
-            if (rawTiles.length === 0) return;
-
-            let startIdx = rawTiles.findIndex(t => t.type === 'start');
-            if (startIdx === -1) startIdx = 0;
-
-            let curr = rawTiles[startIdx];
-            curr.visited = true;
-            tileCoords.push(curr);
-
-            while (tileCoords.length < rawTiles.length) {
-                let neighbors = rawTiles.filter(t => !t.visited && Math.abs(t.r - curr.r) + Math.abs(t.c - curr.c) === 1);
-                let nextTile = null;
-
-                if (neighbors.length > 0) {
-                    neighbors.sort((a, b) => Math.abs(b.r - curr.r) - Math.abs(a.r - curr.r));
-                    nextTile = neighbors[0];
-                } else {
-                    let unvisited = rawTiles.filter(t => !t.visited);
-                    if (unvisited.length === 0) break;
-                    unvisited.sort((a, b) => (Math.abs(a.r - curr.r) + Math.abs(a.c - curr.c)) - (Math.abs(b.r - curr.r) + Math.abs(b.c - curr.c)));
-                    nextTile = unvisited[0];
-                }
-
-                nextTile.visited = true;
-                tileCoords.push(nextTile);
-                curr = nextTile;
-            }
-
-            for (let i = 0; i < rawTiles.length; i++) {
-                for (let j = i + 1; j < rawTiles.length; j++) {
-                    let t1 = rawTiles[i];
-                    let t2 = rawTiles[j];
-                    if (Math.abs(t1.r - t2.r) + Math.abs(t1.c - t2.c) === 1) {
-                        window.roadConnections.push({ x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y });
-                    }
-                }
-            }
-
-            generateCityObjects();
-        }
-
-        function generateCityObjects() {
-            cityObjects = [];
-            if (tileCoords.length === 0) return;
-            const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
-            const walls = ['#3b82f6', '#6366f1', '#0d9488', '#475569'];
-
-            tileCoords.forEach((t, i) => {
-                let offsets = [
-                    { dx: 38, dy: 38, type: 'house' },
-                    { dx: -38, dy: -38, type: 'tree' },
-                    { dx: 38, dy: -38, type: (i % 3 === 0) ? 'building' : 'tree' }
-                ];
-                offsets.forEach(o => {
-                    let ox = t.x + o.dx;
-                    let oy = t.y + o.dy;
-                    if (!tileCoords.some(other => Math.hypot(other.x - ox, other.y - oy) < 24)) {
-                        cityObjects.push({ x: ox, y: oy, type: o.type, roofColor: roofs[i % roofs.length], wallColor: walls[i % walls.length] });
-                    }
-                });
+            sortedPlayers.forEach((p, idx) => {
+                let div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 rounded bg-slate-800 border border-purple-500';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-yellow-300 text-sm">${idx + 1}位</span>
+                        <span class="font-bold text-white text-xs">${p.name}</span>
+                    </div>
+                    <span class="font-mono text-cyan-300 font-bold text-xs">${p.listeners.toLocaleString()}人</span>
+                `;
+                list.appendChild(div);
             });
+
+            modal.classList.remove('hidden');
         }
 
         function drawCityObject(context, obj) {
             context.save();
             context.translate(obj.x, obj.y);
+
             if (obj.type === 'house') {
                 context.fillStyle = obj.roofColor || '#ef4444';
-                context.beginPath(); context.moveTo(0, -14); context.lineTo(-14, -2); context.lineTo(14, -2); context.closePath(); context.fill();
-                context.fillStyle = '#fef3c7'; context.fillRect(-10, -2, 20, 14);
-                context.fillStyle = '#78350f'; context.fillRect(-3, 4, 6, 8);
+                context.beginPath();
+                context.moveTo(0, -14);
+                context.lineTo(-14, -2);
+                context.lineTo(14, -2);
+                context.closePath();
+                context.fill();
+
+                context.fillStyle = '#fef3c7';
+                context.fillRect(-10, -2, 20, 14);
+
+                context.fillStyle = '#78350f';
+                context.fillRect(-3, 4, 6, 8);
             } else if (obj.type === 'building') {
                 context.fillStyle = obj.wallColor || '#3b82f6';
                 context.fillRect(-12, -20, 24, 36);
+
                 context.fillStyle = '#fef08a';
-                for (let r = 0; r < 3; r++) { for (let c = 0; c < 2; c++) context.fillRect(-8 + c * 9, -16 + r * 9, 5, 5); }
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 2; c++) {
+                        context.fillRect(-8 + c * 9, -16 + r * 9, 5, 5);
+                    }
+                }
             } else if (obj.type === 'tree') {
-                context.fillStyle = '#78350f'; context.fillRect(-2, 2, 4, 10);
-                context.fillStyle = '#15803d'; context.beginPath(); context.arc(0, -2, 11, 0, Math.PI * 2); context.fill();
+                context.fillStyle = '#78350f';
+                context.fillRect(-2, 2, 4, 10);
+
+                context.fillStyle = '#15803d';
+                context.beginPath();
+                context.arc(0, -2, 11, 0, Math.PI * 2);
+                context.fill();
+
+                context.fillStyle = '#22c55e';
+                context.beginPath();
+                context.arc(-2, -4, 7, 0, Math.PI * 2);
+                context.fill();
+            } else {
+                context.fillStyle = '#64748b';
+                context.fillRect(-1.5, -8, 3, 16);
+                context.fillStyle = '#fef08a';
+                context.beginPath();
+                context.arc(0, -9, 4.5, 0, Math.PI * 2);
+                context.fill();
             }
+
             context.restore();
         }
 
-        function drawPlayerDotModel(cCtx, charKey, x, y, size = 30) {
-            let grid = customDotData[charKey];
-            if (!grid) return;
-
-            cCtx.save();
-            let pSize = size / 16;
-            let startX = Math.floor(x - size / 2);
-            let startY = Math.floor(y - size / 2);
-
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    let col = grid[r][c];
-                    if (col && col !== '#00000000') {
-                        cCtx.fillStyle = col;
-                        cCtx.fillRect(
-                            Math.floor(startX + c * pSize),
-                            Math.floor(startY + r * pSize),
-                            Math.ceil(pSize) + 0.5,
-                            Math.ceil(pSize) + 0.5
-                        );
-                    }
-                }
-            }
-            cCtx.restore();
-        }
-
-        function drawGoshuDotModel(cCtx, charKey, x, y, size = 18) {
-            let goshuKey = `${charKey}_goshu`;
-            let grid = customDotData[goshuKey] || customDotData.utsuro_goshu;
-            if (!grid) return;
-
-            cCtx.save();
-            let pSize = size / 16;
-            let startX = Math.floor(x - size / 2);
-            let startY = Math.floor(y - size / 2);
-
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    let col = grid[r][c];
-                    if (col && col !== '#00000000') {
-                        cCtx.fillStyle = col;
-                        cCtx.fillRect(
-                            Math.floor(startX + c * pSize),
-                            Math.floor(startY + r * pSize),
-                            Math.ceil(pSize) + 0.5,
-                            Math.ceil(pSize) + 0.5
-                        );
-                    }
-                }
-            }
-            cCtx.restore();
-        }
-
-        function drawDice(num) {
-            if (!diceCtx) return;
-            let w = diceCanvas.width;
-            let h = diceCanvas.height;
-            diceCtx.clearRect(0, 0, w, h);
-
-            diceCtx.fillStyle = '#ffffff';
-            diceCtx.fillRect(3, 3, w - 6, h - 6);
-
-            diceCtx.fillStyle = num === 1 ? '#ef4444' : '#000000';
-            let center = w / 2;
-            let offset = w * 0.22;
-
-            let dots = {
-                1: [[center, center]],
-                2: [[center - offset, center - offset], [center + offset, center + offset]],
-                3: [[center - offset, center - offset], [center, center], [center + offset, center + offset]],
-                4: [[center - offset, center - offset], [center + offset, center - offset], [center - offset, center + offset], [center + offset, center + offset]],
-                5: [[center - offset, center - offset], [center + offset, center - offset], [center, center], [center - offset, center + offset], [center + offset, center + offset]],
-                6: [[center - offset, center - offset], [center + offset, center - offset], [center - offset, center], [center + offset, center], [center - offset, center + offset], [center + offset, center + offset]]
-            };
-
-            (dots[num] || []).forEach(d => {
-                diceCtx.beginPath();
-                diceCtx.arc(d[0], d[1], num === 1 ? w * 0.14 : w * 0.09, 0, Math.PI * 2);
-                diceCtx.fill();
-            });
-        }
-
-        function drawCharPreviews() {
-            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let el = document.getElementById(`prev${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                if (el) {
-                    let cCtx = el.getContext('2d');
-                    cCtx.clearRect(0, 0, 28, 28);
-                    drawPlayerDotModel(cCtx, c, 14, 14, 24);
-                }
-                let elGoshu = document.getElementById(`prev${c.charAt(0).toUpperCase() + c.slice(1)}Goshu`);
-                if (elGoshu) {
-                    let gCtx = elGoshu.getContext('2d');
-                    gCtx.clearRect(0, 0, 20, 20);
-                    drawGoshuDotModel(gCtx, c, 10, 10, 18);
-                }
-            });
-        }
-
-        // --- メインゲームループ ---
+        // --- メイン描画ループ ---
         function gameLoop() {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
                 ctx.fillStyle = '#22c55e';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -2266,39 +2479,50 @@
                     let minY = Math.min(...tileCoords.map(t => t.y));
                     let maxY = Math.max(...tileCoords.map(t => t.y));
 
-                    let scale = Math.min(canvas.width / (maxX - minX + 160), canvas.height / (maxY - minY + 160));
+                    let mapW = maxX - minX + 160;
+                    let mapH = maxY - minY + 160;
+                    let scale = Math.min(canvas.width / mapW, canvas.height / mapH);
+
                     ctx.translate(canvas.width / 2, canvas.height / 2);
                     ctx.scale(scale, scale);
                     ctx.translate(-(minX + maxX) / 2, -(minY + maxY) / 2);
                 } else {
                     let currP = players[currentPlayerIndex];
-                    let currTile = tileCoords[currP.pos] || tileCoords[0] || { x: 100, y: 100 };
+                    let currTile = tileCoords[currP.pos] || { x: 0, y: 0 };
                     ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
                     ctx.scale(userZoomScale, userZoomScale);
                     ctx.translate(-currTile.x, -currTile.y);
                 }
 
-                // 1. 道路
+                // 1. 道路ライン描画
                 if (window.roadConnections && window.roadConnections.length > 0) {
                     ctx.beginPath();
                     ctx.strokeStyle = '#1e293b';
                     ctx.lineWidth = 28;
                     ctx.lineCap = 'round';
-                    window.roadConnections.forEach(conn => { ctx.moveTo(conn.x1, conn.y1); ctx.lineTo(conn.x2, conn.y2); });
+                    ctx.lineJoin = 'round';
+                    window.roadConnections.forEach(conn => {
+                        ctx.moveTo(conn.x1, conn.y1);
+                        ctx.lineTo(conn.x2, conn.y2);
+                    });
                     ctx.stroke();
 
                     ctx.beginPath();
                     ctx.strokeStyle = '#64748b';
                     ctx.lineWidth = 22;
                     ctx.lineCap = 'round';
-                    window.roadConnections.forEach(conn => { ctx.moveTo(conn.x1, conn.y1); ctx.lineTo(conn.x2, conn.y2); });
+                    ctx.lineJoin = 'round';
+                    window.roadConnections.forEach(conn => {
+                        ctx.moveTo(conn.x1, conn.y1);
+                        ctx.lineTo(conn.x2, conn.y2);
+                    });
                     ctx.stroke();
                 }
 
-                // 2. 街並み
+                // 2. 街並みオブジェクト描画
                 cityObjects.forEach(obj => drawCityObject(ctx, obj));
 
-                // 3. マス目
+                // 3. マス目描画
                 let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
                 let markSymbols = { start: 'S', plus: '↑', minus: '↓', item: '🎁', white: '・', goal: '👑' };
 
@@ -2318,9 +2542,30 @@
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
                 });
 
-                // 4. プレイヤー＆ごしゅ描画
+                // 3.5 分岐選択時：着地予定マスにゴースト表示
+                if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
+                    activeBranchCandidates.forEach(cand => {
+                        let destTile = tileCoords[cand.destTileIdx];
+                        if (destTile) {
+                            ctx.save();
+                            ctx.globalAlpha = 0.55;
+                            drawPlayerDotModel(ctx, cand.playerChar, destTile.x, destTile.y - 10, 32);
+
+                            ctx.beginPath();
+                            ctx.arc(destTile.x, destTile.y, 20, 0, Math.PI * 2);
+                            ctx.strokeStyle = '#fde047';
+                            ctx.lineWidth = 3;
+                            ctx.setLineDash([4, 4]);
+                            ctx.stroke();
+
+                            ctx.restore();
+                        }
+                    });
+                }
+
+                // 4. プレイヤー＆ごしゅの描画
                 players.forEach((p, idx) => {
-                    let tile = tileCoords[p.pos] || tileCoords[0];
+                    let tile = tileCoords[p.pos];
                     if (tile) {
                         let offset = (idx - 1) * 12;
 
@@ -2337,10 +2582,13 @@
                         let dy = targetGoshuY - p.goshuY;
                         let dist = Math.hypot(dx, dy);
 
-                        p.goshuX += dx * 0.05;
-                        p.goshuY += dy * 0.05;
+                        p.goshuX += dx * 0.04;
+                        p.goshuY += dy * 0.04;
 
-                        let goshuJumpY = (dist > 1.0) ? -Math.abs(Math.sin(Date.now() / 100)) * 8 : 0;
+                        let goshuJumpY = 0;
+                        if (dist > 1.0) {
+                            goshuJumpY = -Math.abs(Math.sin(Date.now() / 100)) * 8;
+                        }
 
                         drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
                         drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJumpY, 18);
