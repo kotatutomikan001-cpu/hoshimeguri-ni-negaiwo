@@ -102,31 +102,31 @@
                 </div>
 
                 <!-- 🎵 音量調整スライダー -->
-                <div id="headerVolumeBox" class="mobile-hide-volume items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
-                    <span class="text-xs text-yellow-300">🎵</span>
-                    <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-12 sm:w-20 accent-purple-400 cursor-pointer">
-                </div>
-            </div>
+        <div id="headerVolumeBox" class="mobile-hide-volume items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
+            <span class="text-xs text-yellow-300">🎵</span>
+            <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-12 sm:w-20 accent-purple-400 cursor-pointer">
+        </div>
+    </div>
 
-            <!-- リスナー数比較 -->
-            <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
-                <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
-                    <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
-                    <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
-                    <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                </div>
-                <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
-                    <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
-                    <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
-                    <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                </div>
-                <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
-                    <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
-                    <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
-                    <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                </div>
-            </div>
-        </header>
+    <!-- リスナー数比較 -->
+    <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
+        <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
+            <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
+            <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
+            <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+        </div>
+        <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
+            <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
+            <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
+            <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+        </div>
+        <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
+            <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
+            <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
+            <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+        </div>
+    </div>
+</header>
 
         <!-- 中央エリア：すごろくマップ (Canvas) -->
         <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[220px] sm:min-h-[180px] h-[35vh] sm:h-auto bg-slate-900 flex items-center justify-center">
@@ -211,17 +211,37 @@
                 <span id="lobbyRoomCode" class="text-sm font-mono text-yellow-300 font-bold">----</span>
             </div>
             
-            <div class="my-2 p-3 bg-slate-950 rounded border border-purple-800">
+            <div class="my-1 p-2 bg-slate-950 rounded border border-purple-800">
                 <p id="lobbyStatusText" class="text-xs text-cyan-300 font-bold animate-pulse mb-2">対戦相手を待っています...</p>
-                <div class="flex items-center justify-center gap-2 text-sm font-bold text-white">
+                <div class="flex items-center justify-center gap-2 text-xs font-bold text-white mb-2">
                     <span>接続人数:</span>
-                    <span id="lobbyMemberCount" class="text-yellow-400 font-mono text-base">1 / 3</span>
+                    <span id="lobbyMemberCount" class="text-yellow-400 font-mono text-sm">1 / 3</span>
+                </div>
+
+                <!-- キャラクター選択枠 -->
+                <div class="text-xs font-bold text-purple-200 mb-1.5 text-left border-t border-purple-900 pt-2">🎨 あなたのキャラクター選択:</div>
+                <div class="grid grid-cols-3 gap-1.5 mb-2">
+                    <button id="btnLobbyUtsuro" onclick="setLobbyChar('utsuro')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-purple-400 bg-purple-950/80 cursor-pointer">
+                        <canvas id="prevLobbyUtsuro" width="24" height="24"></canvas>
+                        <span class="text-[10px] font-bold text-white mt-0.5">氷室うつろ</span>
+                        <span id="lobbyStatusUtsuro" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
+                    </button>
+                    <button id="btnLobbyGengo" onclick="setLobbyChar('gengo')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-emerald-500/50 bg-emerald-950/40 cursor-pointer">
+                        <canvas id="prevLobbyGengo" width="24" height="24"></canvas>
+                        <span class="text-[10px] font-bold text-gray-200 mt-0.5">繰言かたる</span>
+                        <span id="lobbyStatusGengo" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
+                    </button>
+                    <button id="btnLobbyTomoko" onclick="setLobbyChar('tomoko')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-pink-500/50 bg-pink-950/40 cursor-pointer">
+                        <canvas id="prevLobbyTomoko" width="24" height="24"></canvas>
+                        <span class="text-[10px] font-bold text-gray-200 mt-0.5">トモコ</span>
+                        <span id="lobbyStatusTomoko" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
+                    </button>
                 </div>
             </div>
 
             <div class="flex flex-col gap-2">
                 <button id="btnStartLobbyGame" onclick="forceStartOnlineLobby()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 shadow cursor-pointer">
-                    🚀 この人数で始める (残りをCPUで補う)
+                    🚀 ゲームを開始する (残りをCPUで補う)
                 </button>
                 <button onclick="leaveOnlineLobby()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-gray-300 rounded bg-slate-800 hover:bg-slate-700 border border-gray-600 cursor-pointer">
                     🚪 部屋を退出する
@@ -235,7 +255,7 @@
         <span class="text-purple-300 text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
     </button>
 
-    <!-- キャラクター＆対戦モード選択モーダル -->
+    <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
         <!-- 背景用カモフラージュ雪群 -->
         <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
@@ -249,14 +269,56 @@
             <span class="absolute bottom-1/3 left-1/2 text-xl text-white/25">❄️</span>
         </div>
 
-        <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
-            <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
-                <span>🎮 キャラクター選択</span>
+        <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
+            <h2 class="text-lg sm:text-xl font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
+                <span>❄️ 氷室うつろ すごろく</span>
             </h2>
-            <p class="text-xs text-purple-200 mb-3 font-bold">プレイするキャラクターを選んでください</p>
+            <p class="text-xs text-purple-200 mb-4 font-bold">プレイモードを選択してください</p>
+
+            <div class="flex flex-col gap-3">
+                <button id="btnSelectCpuMode" onclick="openCpuCharSelectModal()" class="pixel-btn py-3 px-4 font-black text-white rounded-lg text-sm bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md cursor-pointer flex items-center justify-center gap-2">
+                    <span>🤖 VS CPU対戦 (1人用)</span>
+                </button>
+
+                <button id="btnSelectOnlineMode" onclick="openRoomCodeModal()" class="pixel-btn py-3 px-4 font-black text-white rounded-lg text-sm bg-gradient-to-r from-cyan-600 to-blue-600 shadow-md cursor-pointer flex items-center justify-center gap-2">
+                    <span>🌐 オンライン対戦 (マルチ)</span>
+                </button>
+
+                <div id="modalVolumeBox" class="mobile-hide-volume items-center justify-center gap-2 bg-slate-950/80 p-2 rounded border border-purple-800/80 mt-2">
+                    <span class="text-xs text-purple-300 font-bold">🎵 BGM音量:</span>
+                    <input type="range" id="modalBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-24 accent-purple-400 cursor-pointer">
+                    <span id="bgmVolPercent" class="text-xs font-mono text-yellow-300 w-8 text-right font-bold">30%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 オンライン部屋コード入力モーダル -->
+    <div id="roomCodeModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden hidden">
+        <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-cyan-500 shadow-2xl text-center">
+            <h2 class="text-base sm:text-lg font-black text-cyan-300 mb-1">🌐 オンライン対戦</h2>
+            <p class="text-xs text-gray-300 mb-4 font-bold">合言葉（部屋コード）を入力して作成・参加します</p>
+
+            <div class="flex flex-col gap-3">
+                <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="bg-slate-950 border-2 border-cyan-500 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 font-bold text-center tracking-widest">
+                <button onclick="startOnlineGame()" class="pixel-btn py-2 px-4 font-bold text-sm text-white rounded bg-cyan-600 hover:bg-cyan-500 cursor-pointer">
+                    部屋に入る / 作成する
+                </button>
+                <button onclick="closeRoomCodeModal()" class="text-xs text-gray-400 hover:text-white mt-1">
+                    ← キャンセルして戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 CPU対戦キャラ選択モーダル -->
+    <div id="cpuCharSelectModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden hidden">
+        <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
+            <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
+            <p class="text-xs text-purple-200 mb-3 font-bold">使用するキャラクターを選んでください</p>
 
             <div class="grid grid-cols-3 gap-2 mb-3">
-                <button id="btnSelectUtsuro" onclick="selectChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 hover:bg-purple-800 cursor-pointer ring-4 ring-yellow-400 scale-105">
+                <button id="btnSelectUtsuro" onclick="selectCpuChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 cursor-pointer ring-4 ring-yellow-400 scale-105">
                     <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevUtsuro" width="28" height="28"></canvas>
@@ -264,7 +326,7 @@
                     </div>
                     <span class="text-[11px] sm:text-xs font-bold text-white">氷室うつろ</span>
                 </button>
-                <button id="btnSelectGengo" onclick="selectChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/60 cursor-pointer">
+                <button id="btnSelectGengo" onclick="selectCpuChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 cursor-pointer">
                     <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevGengo" width="28" height="28"></canvas>
@@ -272,7 +334,7 @@
                     </div>
                     <span class="text-[11px] sm:text-xs font-bold text-gray-200">繰言かたる</span>
                 </button>
-                <button id="btnSelectTomoko" onclick="selectChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 hover:bg-pink-900/60 cursor-pointer">
+                <button id="btnSelectTomoko" onclick="selectCpuChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 cursor-pointer">
                     <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
                     <div class="flex items-center justify-center gap-1 mb-1">
                         <canvas id="prevTomoko" width="28" height="28"></canvas>
@@ -282,29 +344,13 @@
                 </button>
             </div>
 
-            <div class="flex flex-col gap-2 mt-2">
-                <div id="modalVolumeBox" class="mobile-hide-volume items-center justify-center gap-2 bg-slate-950/80 p-1.5 rounded border border-purple-800/80">
-                    <span class="text-xs text-purple-300 font-bold">🎵 BGM音量:</span>
-                    <input type="range" id="modalBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-24 accent-purple-400 cursor-pointer">
-                    <span id="bgmVolPercent" class="text-xs font-mono text-yellow-300 w-8 text-right font-bold">30%</span>
-                </div>
-
-                <button id="btnStartCpu" onclick="startCpuGame()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md cursor-pointer flex items-center justify-center gap-2">
-                    <span>🤖 VS CPU対戦 (3人対戦)</span>
+            <div class="flex flex-col gap-2 mt-3">
+                <button onclick="startCpuGame()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow-md cursor-pointer">
+                    🚀 ゲームスタート！
                 </button>
-
-                <div class="flex items-center gap-2 my-0.5">
-                    <div class="flex-1 h-px bg-purple-800"></div>
-                    <span class="text-[10px] text-purple-300 font-bold">または オンライン対戦</span>
-                    <div class="flex-1 h-px bg-purple-800"></div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="flex-1 bg-slate-950 border border-purple-500 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
-                    <button id="btnStartOnline" onclick="startOnlineGame()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer flex-none w-full sm:w-auto">
-                        参加 / 作成
-                    </button>
-                </div>
+                <button onclick="closeCpuCharSelectModal()" class="text-xs text-gray-400 hover:text-white">
+                    ← モード選択へ戻る
+                </button>
             </div>
         </div>
     </div>
@@ -569,120 +615,93 @@
             requestAnimationFrame(gameLoop);
         };
 
-        function renderMapEditorCanvas() {
-            if (!mapEditorCtx) return;
-            mapEditorCtx.clearRect(0, 0, 384, 384);
-            let pSize = 32;
-            let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#e2e8f0', goal: '#a855f7' };
-            for (let r = 0; r < 12; r++) {
-                for (let c = 0; c < 12; c++) {
-                    let type = customMapGrid[r][c];
-                    if (type && typeColors[type]) {
-                        mapEditorCtx.fillStyle = typeColors[type];
-                        mapEditorCtx.beginPath();
-                        mapEditorCtx.arc(c * pSize + pSize / 2, r * pSize + pSize / 2, pSize / 2 - 4, 0, Math.PI * 2);
-                        mapEditorCtx.fill();
-                    }
-                    mapEditorCtx.strokeStyle = '#1e293b';
-                    mapEditorCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
-                }
-            }
-        }
-
-        function pushDotHistory() {
-            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
-            if (dotHistoryStack.length > 20) dotHistoryStack.shift();
-        }
-
-        function undoDotCanvas() {
-            if (dotHistoryStack.length > 0) {
-                dotGrid = dotHistoryStack.pop();
-                renderDotCanvas();
-            }
-        }
-
-        function toggleDotEyedropper() {
-            isDotEyedropper = !isDotEyedropper;
-            document.getElementById('btnDotEyedropper').classList.toggle('bg-yellow-500', isDotEyedropper);
-        }
-
-        function setDotEraser() {
-            isDotEraser = !isDotEraser;
-            document.getElementById('btnDotEraser').classList.toggle('bg-red-500', isDotEraser);
-        }
-
-        function clearDotCanvas() {
-            pushDotHistory();
-            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+        // --- デバッグメニュー関連制御 ---
+        function openDebugMenu() {
+            document.getElementById('debugModal').classList.remove('hidden');
+            renderDebugEvents();
             renderDotCanvas();
-        }
-
-        function copyDotDataToClipboard() {
-            let dataStr = JSON.stringify(dotGrid);
-            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
-            alert('ドット絵データをクリップボードにコピーしました！');
-        }
-
-        function copyEventDataToClipboard() {
-            let dataStr = JSON.stringify(gameEvents, null, 2);
-            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
-            alert('全イベントデータをクリップボードにコピーしました！');
-        }
-
-        function copyMapDataToClipboard() {
-            let dataStr = JSON.stringify(customMapGrid);
-            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
-            alert('マップデータをクリップボードにコピーしました！');
-        }
-
-        function setMapTool(tool) { selectedMapTool = tool; }
-        function clearCustomMap() {
-            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
             renderMapEditorCanvas();
         }
 
-        function loadTargetDotGrid(target) {
-            selectedDotTarget = target;
-            if (customDotData[target] && customDotData[target].some(row => row && row.some(col => col !== '#00000000'))) {
-                dotGrid = JSON.parse(JSON.stringify(customDotData[target]));
-            } else {
-                initDefaultDotGrids();
-                dotGrid = JSON.parse(JSON.stringify(customDotData[target] || customDotData.utsuro));
+        function closeDebugMenu() {
+            document.getElementById('debugModal').classList.add('hidden');
+        }
+
+        function switchDebugTab(tab) {
+            activeTab = tab;
+            document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
+            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
+            document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
+
+            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+        }
+
+        function filterDebugEvents(type) {
+            currentEventFilter = type;
+            renderDebugEvents();
+        }
+
+        function renderDebugEvents() {
+            let container = document.getElementById('debugEventsList');
+            if (!container) return;
+            container.innerHTML = '';
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+
+            list.forEach((ev, idx) => {
+                let div = document.createElement('div');
+                div.className = 'p-2 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1.5';
+                let typeBadges = { plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色' };
+
+                div.innerHTML = `
+                    <div class="flex items-center justify-between gap-1.5">
+                        <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
+                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-0.5 rounded border border-red-500">🗑️</button>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none">
+                        ${ev.type === 'item' ? `
+                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-28 bg-slate-900 border border-yellow-500/80 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                        ` : `
+                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-16 bg-slate-900 border border-cyan-500/80 rounded px-1.5 py-0.5 text-xs text-cyan-300 font-bold focus:outline-none text-right">
+                        `}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateDebugEventValue(idx, field, val) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            if (list[idx]) {
+                list[idx][field] = (field === 'val') ? parseInt(val) || 0 : val;
             }
-            renderDotCanvas();
         }
 
-        function changeDotTarget(val) {
-            saveCurrentDotGridToTarget();
-            loadTargetDotGrid(val);
-        }
-
-        function saveCurrentDotGridToTarget() {
-            if (dotGrid && dotGrid.some(row => row && row.some(col => col !== '#00000000'))) {
-                customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
-            }
-        }
-
-        function resetCurrentDotToDefault() {
-            initDefaultDotGrids();
-            loadTargetDotGrid(selectedDotTarget);
-        }
-
-        function renderDotCanvas() {
-            if (!dotCtx) return;
-            dotCtx.clearRect(0, 0, 256, 256);
-            let pSize = 256 / 16;
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    let col = dotGrid[r][c];
-                    if (col && col !== '#00000000') {
-                        dotCtx.fillStyle = col;
-                        dotCtx.fillRect(c * pSize, r * pSize, pSize, pSize);
-                    }
-                    dotCtx.strokeStyle = '#334155';
-                    dotCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
+        function deleteDebugEvent(idx) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let targetEv = list[idx];
+            if (targetEv) {
+                let realIdx = gameEvents.indexOf(targetEv);
+                if (realIdx !== -1) {
+                    gameEvents.splice(realIdx, 1);
+                    renderDebugEvents();
                 }
             }
+        }
+
+        function addNewDebugEvent() {
+            let type = currentEventFilter === 'all' ? 'plus' : currentEventFilter;
+            gameEvents.push({
+                type: type,
+                title: '【新規イベント】',
+                desc: '新しいイベント効果をここに入力してください。',
+                val: type === 'plus' ? 200 : (type === 'minus' ? -200 : 0),
+                itemName: type === 'item' ? '🎁 特製アイテム' : ''
+            });
+            renderDebugEvents();
         }
 
         function setupDotEditorEvents() {
@@ -744,8 +763,125 @@
             mapEditorCanvas.addEventListener('click', handleMapClick);
         }
 
+        function renderDotCanvas() {
+            if (!dotCtx) return;
+            dotCtx.clearRect(0, 0, 256, 256);
+            let pSize = 256 / 16;
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = dotGrid[r][c];
+                    if (col && col !== '#00000000') {
+                        dotCtx.fillStyle = col;
+                        dotCtx.fillRect(c * pSize, r * pSize, pSize, pSize);
+                    }
+                    dotCtx.strokeStyle = '#334155';
+                    dotCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
+                }
+            }
+        }
+
+        function renderMapEditorCanvas() {
+            if (!mapEditorCtx) return;
+            mapEditorCtx.clearRect(0, 0, 384, 384);
+            let pSize = 32;
+            let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#e2e8f0', goal: '#a855f7' };
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let type = customMapGrid[r] ? customMapGrid[r][c] : null;
+                    if (type && typeColors[type]) {
+                        mapEditorCtx.fillStyle = typeColors[type];
+                        mapEditorCtx.beginPath();
+                        mapEditorCtx.arc(c * pSize + pSize / 2, r * pSize + pSize / 2, pSize / 2 - 4, 0, Math.PI * 2);
+                        mapEditorCtx.fill();
+                    }
+                    mapEditorCtx.strokeStyle = '#1e293b';
+                    mapEditorCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
+                }
+            }
+        }
+
+        function pushDotHistory() {
+            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
+            if (dotHistoryStack.length > 20) dotHistoryStack.shift();
+        }
+
+        function undoDotCanvas() {
+            if (dotHistoryStack.length > 0) {
+                dotGrid = dotHistoryStack.pop();
+                renderDotCanvas();
+            }
+        }
+
+        function toggleDotEyedropper() {
+            isDotEyedropper = !isDotEyedropper;
+            document.getElementById('btnDotEyedropper').classList.toggle('bg-yellow-500', isDotEyedropper);
+        }
+
+        function setDotEraser() {
+            isDotEraser = !isDotEraser;
+            document.getElementById('btnDotEraser').classList.toggle('bg-red-500', isDotEraser);
+        }
+
+        function clearDotCanvas() {
+            pushDotHistory();
+            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            renderDotCanvas();
+        }
+
+        function changeDotTarget(val) {
+            saveCurrentDotGridToTarget();
+            loadTargetDotGrid(val);
+        }
+
+        function loadTargetDotGrid(target) {
+            selectedDotTarget = target;
+            if (customDotData[target]) {
+                dotGrid = JSON.parse(JSON.stringify(customDotData[target]));
+            } else {
+                dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            }
+            renderDotCanvas();
+        }
+
+        function saveCurrentDotGridToTarget() {
+            if (dotGrid && dotGrid.some(row => row.some(col => col !== '#00000000'))) {
+                customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
+            }
+        }
+
+        function resetCurrentDotToDefault() {
+            initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
+        }
+
+        function setMapTool(tool) { selectedMapTool = tool; }
+
+        function clearCustomMap() {
+            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+            renderMapEditorCanvas();
+        }
+
+        function copyDotDataToClipboard() {
+            let dataStr = JSON.stringify(dotGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('ドット絵データをクリップボードにコピーしました！');
+        }
+
+        function copyEventDataToClipboard() {
+            let dataStr = JSON.stringify(gameEvents, null, 2);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('全イベントデータをクリップボードにコピーしました！');
+        }
+
+        function copyMapDataToClipboard() {
+            let dataStr = JSON.stringify(customMapGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('マップデータをクリップボードにコピーしました！');
+        }
+
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
+
             goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 3000;
             goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
             goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
@@ -758,20 +894,7 @@
             } catch (e) {}
 
             convertCustomGridToTileCoords();
-
-            if (tileCoords.length > 0) {
-                players.forEach(p => {
-                    p.pos = 0;
-                    p.finished = false;
-                    p.rank = 0;
-                    let t = tileCoords[0];
-                    p.renderX = t.x;
-                    p.renderY = t.y;
-                    p.goshuX = t.x;
-                    p.goshuY = t.y;
-                });
-            }
-
+            resetAllPlayerPositions();
             drawCharPreviews();
             closeDebugMenu();
             alert('設定・変更を適用しました！');
@@ -786,17 +909,7 @@
                 initDefaultMapGrid();
                 loadDataFromLocalStorage();
                 convertCustomGridToTileCoords();
-
-                if (tileCoords.length > 0) {
-                    players.forEach(p => {
-                        p.pos = 0;
-                        let t = tileCoords[0];
-                        p.renderX = t.x;
-                        p.renderY = t.y;
-                        p.goshuX = t.x;
-                        p.goshuY = t.y;
-                    });
-                }
+                resetAllPlayerPositions();
 
                 renderDebugEvents();
                 renderDotCanvas();
@@ -814,193 +927,32 @@
                 let savedDots = localStorage.getItem('utsuro_custom_dots');
                 if (savedDots) {
                     let parsed = JSON.parse(savedDots);
-                    Object.keys(parsed).forEach(k => {
-                        if (parsed[k] && parsed[k].some(row => row && row.some(col => col !== '#00000000'))) {
-                            customDotData[k] = parsed[k];
-                        }
-                    });
-                }
-
-                // 氷室うつろのデータが空や透明になっている場合は必ずデフォルトで補完
-                if (!customDotData.utsuro || !customDotData.utsuro.some(row => row && row.some(col => col !== '#00000000'))) {
-                    initDefaultDotGrids();
+                    Object.keys(parsed).forEach(k => { if (parsed[k]) customDotData[k] = parsed[k]; });
                 }
 
                 let savedMap = localStorage.getItem('utsuro_custom_map');
-                if (savedMap) {
-                    let parsedMap = JSON.parse(savedMap);
-                    if (parsedMap && parsedMap.some(row => row && row.some(col => col !== null))) {
-                        customMapGrid = parsedMap;
-                    }
-                }
+                if (savedMap) customMapGrid = JSON.parse(savedMap);
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
-                initDefaultDotGrids();
             }
         }
 
-        function openDebugMenu() {
-            document.getElementById('debugModal').classList.remove('hidden');
-            loadTargetDotGrid(selectedDotTarget);
-            renderDebugEvents();
-            renderDotCanvas();
-            renderMapEditorCanvas();
-        }
-
-        function closeDebugMenu() {
-            document.getElementById('debugModal').classList.add('hidden');
-        }
-
-        function switchDebugTab(tab) {
-            activeTab = tab;
-            document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
-            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
-            document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
-
-            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-        }
-
-        function filterDebugEvents(type) {
-            currentEventFilter = type;
-            renderDebugEvents();
-        }
-
-        function updateDebugEventValue(idx, field, val) {
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
-            if (list[idx]) {
-                list[idx][field] = (field === 'val') ? parseInt(val) || 0 : val;
-            }
-        }
-
-        function deleteDebugEvent(idx) {
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
-            let targetEv = list[idx];
-            if (targetEv) {
-                let realIdx = gameEvents.indexOf(targetEv);
-                if (realIdx !== -1) {
-                    gameEvents.splice(realIdx, 1);
-                    renderDebugEvents();
-                }
-            }
-        }
-
-        function addNewDebugEvent() {
-            let type = currentEventFilter === 'all' ? 'plus' : currentEventFilter;
-            gameEvents.push({
-                type: type,
-                title: '【新規イベント】',
-                desc: '新しいイベント効果をここに入力してください。',
-                val: type === 'plus' ? 200 : (type === 'minus' ? -200 : 0),
-                itemName: type === 'item' ? '🎁 特製アイテム' : ''
-            });
-            renderDebugEvents();
-        }
-
-        function renderDebugEvents() {
-            let container = document.getElementById('debugEventsList');
-            if (!container) return;
-            container.innerHTML = '';
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
-
-            list.forEach((ev, idx) => {
-                let div = document.createElement('div');
-                div.className = 'p-2 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1.5';
-
-                let typeBadges = { plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色' };
-
-                div.innerHTML = `
-                    <div class="flex items-center justify-between gap-1.5">
-                        <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
-                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
-                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-0.5 rounded border border-red-500">🗑️</button>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none">
-                        ${ev.type === 'item' ? `
-                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-28 bg-slate-900 border border-yellow-500/80 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
-                        ` : `
-                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-16 bg-slate-900 border border-cyan-500/80 rounded px-1.5 py-0.5 text-xs text-cyan-300 font-bold focus:outline-none text-right">
-                        `}
-                    </div>
-                `;
-                container.appendChild(div);
+        function resetAllPlayerPositions() {
+            let startTile = tileCoords[0] || { x: 100, y: 100 };
+            players.forEach(p => {
+                p.pos = 0;
+                p.finished = false;
+                p.rank = 0;
+                p.renderX = startTile.x;
+                p.renderY = startTile.y;
+                p.goshuX = startTile.x;
+                p.goshuY = startTile.y;
             });
         }
 
-        function setupAudioUnlockers() {
-            const unlockAudio = () => {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                else if (audioCtx.state === 'suspended') audioCtx.resume();
-                attemptPlayBgm();
-            };
-            ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => window.addEventListener(evt, unlockAudio, { passive: true }));
-        }
-
-        function playSe(type) {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            const now = audioCtx.currentTime;
-            const masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0.7, now);
-            masterGain.connect(audioCtx.destination);
-
-            if (type === 'dice_roll') {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300 + Math.random() * 200, now);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.08);
-                osc.connect(gain); gain.connect(masterGain);
-                osc.start(now); osc.stop(now + 0.08);
-            } else if (type === 'dice_stop') {
-                [523.25, 659.25, 783.99].forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
-                    gain.gain.setValueAtTime(0.5, now + idx * 0.06);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
-                    osc.connect(gain); gain.connect(masterGain);
-                    osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.25);
-                });
-            } else if (type === 'jump') {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(350, now);
-                osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-                osc.connect(gain); gain.connect(masterGain);
-                osc.start(now); osc.stop(now + 0.12);
-            }
-        }
-
-        function changeBgmVolume(val) {
-            currentBgmVolume = parseFloat(val);
-            let selectAudio = document.getElementById('selectBgmAudio');
-            let gameAudio = document.getElementById('gameBgmAudio');
-            if (selectAudio) selectAudio.volume = currentBgmVolume;
-            if (gameAudio) gameAudio.volume = currentBgmVolume;
-            let percentText = document.getElementById('bgmVolPercent');
-            if (percentText) percentText.innerText = `${Math.round(currentBgmVolume * 100)}%`;
-        }
-
-        function playSelectBgm() { activeBgm = 'select'; attemptPlayBgm(); }
-        function playGameBgm() { activeBgm = 'game'; attemptPlayBgm(); }
-
-        function attemptPlayBgm() {
-            const selectAudio = document.getElementById('selectBgmAudio');
-            const gameAudio = document.getElementById('gameBgmAudio');
-            if (!selectAudio || !gameAudio) return;
-            selectAudio.volume = currentBgmVolume;
-            gameAudio.volume = currentBgmVolume;
-            if (activeBgm === 'select') { gameAudio.pause(); selectAudio.play().catch(()=>{}); }
-            else { selectAudio.pause(); gameAudio.play().catch(()=>{}); }
+        function toggleCameraView() {
+            isFullMapView = !isFullMapView;
+            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
         }
 
         function resizeCanvas() {
@@ -1011,25 +963,198 @@
 
         function setupCanvasDragAndTouch() {
             if (!canvas) return;
-            const onStart = (x, y) => { isDragging = true; dragStartX = x - userDragOffsetX; dragStartY = y - userDragOffsetY; };
-            const onMove = (x, y) => { if (isDragging) { userDragOffsetX = x - dragStartX; userDragOffsetY = y - dragStartY; } };
+
+            const onStart = (clientX, clientY) => {
+                isDragging = true;
+                dragStartX = clientX - userDragOffsetX;
+                dragStartY = clientY - userDragOffsetY;
+            };
+
+            const onMove = (clientX, clientY) => {
+                if (isDragging) {
+                    userDragOffsetX = clientX - dragStartX;
+                    userDragOffsetY = clientY - dragStartY;
+                }
+            };
+
             const onEnd = () => { isDragging = false; };
 
             canvas.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onEnd);
 
-            canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-            window.addEventListener('touchmove', (e) => { if (isDragging && e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+
             window.addEventListener('touchend', onEnd);
         }
 
-        function toggleCameraView() {
-            isFullMapView = !isFullMapView;
-            document.getElementById('btnToggleCamera').innerText = isFullMapView ? '🔍 近接表示' : '🗺️ 全体表示';
+        function changeBgmVolume(val) {
+            currentBgmVolume = parseFloat(val);
+            if (isNaN(currentBgmVolume)) currentBgmVolume = 0.3;
+
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+
+            if (selectAudio) selectAudio.volume = currentBgmVolume;
+            if (gameAudio) gameAudio.volume = currentBgmVolume;
+
+            updateVolumeControlsUI(currentBgmVolume);
+            try { localStorage.setItem('utsuro_bgm_volume', currentBgmVolume); } catch (e) {}
         }
 
-        function selectChar(char) {
+        function updateVolumeControlsUI(vol) {
+            let headerSlider = document.getElementById('headerBgmVolume');
+            let modalSlider = document.getElementById('modalBgmVolume');
+            let percentText = document.getElementById('bgmVolPercent');
+
+            if (headerSlider) headerSlider.value = vol;
+            if (modalSlider) modalSlider.value = vol;
+            if (percentText) percentText.innerText = `${Math.round(vol * 100)}%`;
+        }
+
+        function setupAudioUnlockers() {
+            const unlockAudio = () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } else if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const selectAudio = document.getElementById('selectBgmAudio');
+                const gameAudio = document.getElementById('gameBgmAudio');
+
+                if (selectAudio && activeBgm === 'select') {
+                    selectAudio.volume = currentBgmVolume;
+                    selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
+                } else if (gameAudio && activeBgm === 'game') {
+                    gameAudio.volume = currentBgmVolume;
+                    gameAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
+                }
+            };
+
+            ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
+                window.addEventListener(evt, unlockAudio, { passive: true });
+            });
+        }
+
+        function playSe(type) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.85, now);
+            masterGain.connect(audioCtx.destination);
+
+            if (type === 'dice_roll') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250 + Math.random() * 350, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.06);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.06);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 0.06);
+            } else if (type === 'dice_stop') {
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.6, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.25);
+                });
+            } else if (type === 'jump') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        }
+
+        function playSelectBgm() {
+            activeBgm = 'select';
+            attemptPlayBgm();
+        }
+
+        function playGameBgm() {
+            activeBgm = 'game';
+            attemptPlayBgm();
+        }
+
+        function attemptPlayBgm() {
+            const selectAudio = document.getElementById('selectBgmAudio');
+            const gameAudio = document.getElementById('gameBgmAudio');
+
+            if (!selectAudio || !gameAudio) return;
+
+            selectAudio.volume = currentBgmVolume;
+            gameAudio.volume = currentBgmVolume;
+
+            if (activeBgm === 'select') {
+                gameAudio.pause();
+                gameAudio.currentTime = 0;
+                let p = selectAudio.play();
+                if (p !== undefined) {
+                    p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
+                }
+            } else {
+                selectAudio.pause();
+                selectAudio.currentTime = 0;
+                let p = gameAudio.play();
+                if (p !== undefined) {
+                    p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
+                }
+            }
+        }
+
+        // --- モード切替画面制御 ---
+        function openCpuCharSelectModal() {
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('cpuCharSelectModal').classList.remove('hidden');
+            drawCharPreviews();
+        }
+
+        function closeCpuCharSelectModal() {
+            document.getElementById('cpuCharSelectModal').classList.add('hidden');
+            document.getElementById('startModal').classList.remove('hidden');
+        }
+
+        function openRoomCodeModal() {
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('roomCodeModal').classList.remove('hidden');
+        }
+
+        function closeRoomCodeModal() {
+            document.getElementById('roomCodeModal').classList.add('hidden');
+            document.getElementById('startModal').classList.remove('hidden');
+        }
+
+        function selectCpuChar(char) {
             myChar = char;
             let names = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
             players[0].char = char;
@@ -1060,22 +1185,7 @@
             });
         }
 
-        function resetAllPlayerPositions() {
-            let startTile = tileCoords[0] || { x: 100, y: 100 };
-            players.forEach((p) => {
-                p.pos = 0;
-                p.finished = false;
-                p.rank = 0;
-                p.renderX = startTile.x;
-                p.renderY = startTile.y;
-                p.goshuX = startTile.x;
-                p.goshuY = startTile.y;
-                p.jumpY = 0;
-            });
-        }
-
         function startCpuGame() {
-            // マップ座標が未構築の場合、強制的に再変換して確実にロード
             if (!tileCoords || tileCoords.length === 0) {
                 convertCustomGridToTileCoords();
             }
@@ -1085,8 +1195,7 @@
             players[1].isHuman = false;
             players[2].isHuman = false;
 
-            let modal = document.getElementById('startModal');
-            if (modal) modal.classList.add('hidden');
+            document.getElementById('cpuCharSelectModal').classList.add('hidden');
             document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
             playGameBgm();
 
@@ -1118,12 +1227,68 @@
             currentRoomCode = roomCode;
             isOnlineMode = true;
 
-            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('roomCodeModal').classList.add('hidden');
             document.getElementById('onlineLobbyModal').classList.remove('hidden');
             document.getElementById('lobbyRoomCode').innerText = roomCode;
             document.getElementById('lobbyStatusText').innerText = 'サーバー接続中...';
 
+            drawLobbyCharPreviews();
             initPeerConnection(roomCode);
+        }
+
+        function drawLobbyCharPreviews() {
+            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
+                let el = document.getElementById(`prevLobby${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (el) {
+                    let ctxL = el.getContext('2d');
+                    ctxL.clearRect(0, 0, 24, 24);
+                    drawPlayerDotModel(ctxL, c, 12, 12, 20);
+                }
+            });
+        }
+
+        function setLobbyChar(char) {
+            myChar = char;
+            onlineMemberChars[myPlayerIndex] = char;
+            updateLobbyCharUI();
+
+            if (isHost) {
+                broadcastLobbyState();
+            } else {
+                if (peerConnections.length > 0 && peerConnections[0].open) {
+                    peerConnections[0].send({ type: 'REGISTER_CHAR', playerIndex: myPlayerIndex, char: char });
+                }
+            }
+        }
+
+        function updateLobbyCharUI() {
+            let allChars = ['utsuro', 'gengo', 'tomoko'];
+            let charLabelNames = { utsuro: '氷室', gengo: 'かたる', tomoko: 'トモコ' };
+
+            allChars.forEach(c => {
+                let btn = document.getElementById(`btnLobby${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                let statusEl = document.getElementById(`lobbyStatus${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                
+                if (!btn || !statusEl) return;
+
+                // 誰がどのキャラを選んでいるか検索
+                let selectedByPIdx = Object.keys(onlineMemberChars).find(pIdx => onlineMemberChars[pIdx] === c);
+
+                if (c === myChar) {
+                    btn.classList.add('ring-2', 'ring-yellow-400');
+                    statusEl.innerText = '★ あなた';
+                    statusEl.className = 'text-[9px] font-bold text-yellow-300 truncate w-full text-center';
+                } else if (selectedByPIdx !== undefined) {
+                    btn.classList.remove('ring-2', 'ring-yellow-400');
+                    let pNum = parseInt(selectedByPIdx) + 1;
+                    statusEl.innerText = `${pNum}P 選択中`;
+                    statusEl.className = 'text-[9px] font-bold text-cyan-400 truncate w-full text-center';
+                } else {
+                    btn.classList.remove('ring-2', 'ring-yellow-400');
+                    statusEl.innerText = '選択可';
+                    statusEl.className = 'text-[9px] font-bold text-gray-400 truncate w-full text-center';
+                }
+            });
         }
 
         function initPeerConnection(roomCode) {
@@ -1136,8 +1301,10 @@
                 isHost = true;
                 myPlayerIndex = 0;
                 peerConnections = [];
+                onlineMemberChars = { 0: myChar };
                 document.getElementById('lobbyStatusText').innerText = 'ホストとして部屋を作成しました。参加者を待っています...';
                 document.getElementById('lobbyMemberCount').innerText = '1 / 3';
+                updateLobbyCharUI();
             });
 
             peer.on('connection', (conn) => {
@@ -1167,11 +1334,15 @@
         function setupConnectionHandlers(conn) {
             conn.on('open', () => {
                 if (isHost) {
+                    let assignedIndex = peerConnections.indexOf(conn) + 1;
+                    // デフォルトキャラ被り回避
+                    let allChars = ['utsuro', 'gengo', 'tomoko'];
+                    let usedChars = Object.values(onlineMemberChars);
+                    let freeChar = allChars.find(c => !usedChars.includes(c)) || allChars[0];
+                    onlineMemberChars[assignedIndex] = freeChar;
+
                     updateLobbyMembers();
                     broadcastLobbyState();
-                } else {
-                    // ゲスト側：自分が選択したキャラクターをホストに申告
-                    conn.send({ type: 'REGISTER_CHAR', char: myChar });
                 }
             });
 
@@ -1180,6 +1351,10 @@
             });
 
             conn.on('close', () => {
+                let closedIdx = peerConnections.indexOf(conn);
+                if (closedIdx !== -1) {
+                    delete onlineMemberChars[closedIdx + 1];
+                }
                 peerConnections = peerConnections.filter(c => c !== conn);
                 if (isHost) {
                     updateLobbyMembers();
@@ -1194,22 +1369,41 @@
         }
 
         function broadcastLobbyState() {
-            let state = { type: 'LOBBY_UPDATE', memberCount: peerConnections.length + 1 };
-            peerConnections.forEach(c => {
-                if (c.open) c.send(state);
+            let state = {
+                type: 'LOBBY_UPDATE',
+                memberCount: peerConnections.length + 1,
+                memberChars: onlineMemberChars
+            };
+            peerConnections.forEach((c, idx) => {
+                if (c.open) {
+                    c.send({ ...state, assignedPlayerIndex: idx + 1 });
+                }
             });
+            updateLobbyCharUI();
         }
 
         function handleNetworkData(data, conn) {
             if (data.type === 'REGISTER_CHAR') {
-                // ゲストからキャラ申告を受け取ったら接続順に応じて保持
-                let connIdx = peerConnections.indexOf(conn);
-                if (connIdx !== -1) {
-                    onlineMemberChars[connIdx + 1] = data.char;
+                if (isHost) {
+                    let connIdx = peerConnections.indexOf(conn);
+                    if (connIdx !== -1) {
+                        onlineMemberChars[connIdx + 1] = data.char;
+                        broadcastLobbyState();
+                    }
                 }
             } else if (data.type === 'LOBBY_UPDATE') {
+                if (data.assignedPlayerIndex !== undefined) {
+                    myPlayerIndex = data.assignedPlayerIndex;
+                }
+                if (data.memberChars) {
+                    onlineMemberChars = data.memberChars;
+                    if (onlineMemberChars[myPlayerIndex]) {
+                        myChar = onlineMemberChars[myPlayerIndex];
+                    }
+                }
                 document.getElementById('lobbyStatusText').innerText = '部屋に入りました！参加者を待っています...';
                 document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
+                updateLobbyCharUI();
             } else if (data.type === 'START_GAME') {
                 document.getElementById('onlineLobbyModal').classList.add('hidden');
                 document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
