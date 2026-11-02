@@ -230,36 +230,23 @@
         </div>
     </div>
 
+    <!-- 🌟 デバッグ用隠し起動ボタン (画面左上の❄️マーク) -->
+    <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
+        <span class="text-purple-300 text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
+    </button>
+
     <!-- キャラクター＆対戦モード選択モーダル -->
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
-        <!-- ❄️ カモフラージュ用 装飾雪の結晶 (静止・高密度配置) -->
-        <div class="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-75">
-            <span class="absolute top-4 left-6 text-xl text-cyan-200">❄️</span>
-            <span class="absolute top-6 left-1/4 text-sm text-purple-300">❄</span>
-            <span class="absolute top-8 right-12 text-2xl text-indigo-300">❄️</span>
-            <span class="absolute top-12 left-2/3 text-xs text-blue-200">❄</span>
-            <span class="absolute top-16 right-1/3 text-lg text-purple-200">❄️</span>
-
-            <span class="absolute top-1/4 left-8 text-2xl text-cyan-100">❄</span>
-            <span class="absolute top-1/3 left-16 text-xs text-purple-400">❄️</span>
-            <span class="absolute top-1/3 right-8 text-xl text-blue-300">❄️</span>
-            <span class="absolute top-2/5 right-20 text-sm text-indigo-200">❄</span>
-
-            <span class="absolute bottom-1/3 left-10 text-lg text-cyan-300">❄️</span>
-            <span class="absolute bottom-1/3 right-12 text-2xl text-purple-300">❄</span>
-            <span class="absolute bottom-1/4 left-24 text-xs text-indigo-100">❄️</span>
-            <span class="absolute bottom-1/4 right-1/3 text-lg text-blue-200">❄</span>
-
-            <span class="absolute bottom-12 left-1/4 text-xl text-purple-200">❄️</span>
-            <span class="absolute bottom-10 right-16 text-2xl text-cyan-200">❄️</span>
-            <span class="absolute bottom-6 left-1/2 text-sm text-indigo-300">❄</span>
-            <span class="absolute bottom-4 right-8 text-lg text-blue-300">❄️</span>
-            <span class="absolute bottom-16 right-1/4 text-xs text-purple-300">❄</span>
-        </div>
-
-        <!-- ❄️ 画面左隅の隠しデバッグ入口 (クリック可能な雪の結晶) -->
-        <div id="debugTriggerIcon" onclick="handleDebugTap()" class="absolute bottom-3 left-3 z-50 cursor-pointer hover:scale-125 active:scale-95 text-lg text-cyan-300 opacity-80 select-none p-2" title="❄️">
-            ❄️
+        <!-- 背景用カモフラージュ雪群 -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
+            <span class="absolute top-5 left-10 text-xl text-white/30">❄️</span>
+            <span class="absolute top-12 left-1/3 text-xs text-white/20">❄️</span>
+            <span class="absolute top-8 right-20 text-lg text-white/40">❄️</span>
+            <span class="absolute top-1/4 left-1/4 text-sm text-white/25">❄️</span>
+            <span class="absolute top-1/3 right-12 text-2xl text-white/30">❄️</span>
+            <span class="absolute bottom-20 left-16 text-lg text-white/35">❄️</span>
+            <span class="absolute bottom-10 right-1/4 text-xs text-white/20">❄️</span>
+            <span class="absolute bottom-1/3 left-1/2 text-xl text-white/25">❄️</span>
         </div>
 
         <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
@@ -326,22 +313,131 @@
     <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
     <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
 
-    <!-- 🛠️ 隠しデバッグパネル モーダル -->
-    <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100003] hidden">
-        <div class="pixel-box p-4 sm:p-5 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-cyan-400 shadow-2xl text-center flex flex-col gap-3">
-            <h2 class="text-sm sm:text-base font-black text-cyan-300 tracking-wider">🛠️ デバッグモード</h2>
-            <p class="text-xs text-gray-300">テスト用機能の操作</p>
-            <div class="flex flex-col gap-2 my-1">
-                <button onclick="debugAddListeners(1000)" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-cyan-700 hover:bg-cyan-600 cursor-pointer">
-                    📈 自リスナー +1,000人
-                </button>
-                <button onclick="debugGoToGoal()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-white rounded bg-purple-700 hover:bg-purple-600 cursor-pointer">
-                    🏁 ゴール直前（あと1マス）へワープ
+    <!-- 🛠️ デバッグモーダル (以前のフルカスタマイズ仕様) -->
+    <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
+        <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
+            <div class="flex-none flex items-center justify-between p-2.5 border-b border-purple-800 bg-indigo-950/80">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm sm:text-base">🛠️</span>
+                    <h3 class="text-xs sm:text-sm font-black text-yellow-300">デバッグモード & カスタマイズ</h3>
+                </div>
+                <button onclick="closeDebugMenu()" class="text-gray-400 hover:text-white font-bold px-2 py-0.5 text-xs rounded bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                    ✕ 閉じる
                 </button>
             </div>
-            <button onclick="document.getElementById('debugModal').classList.add('hidden')" class="pixel-btn py-1 px-3 font-bold text-xs text-gray-300 rounded bg-slate-800 hover:bg-slate-700 border border-gray-600 cursor-pointer mt-1">
-                閉じる
-            </button>
+
+            <!-- タブ切替 -->
+            <div class="flex-none flex border-b border-purple-800/80 bg-slate-950">
+                <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
+                    📝 イベント編集
+                </button>
+                <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                    🎨 ドット絵作成
+                </button>
+                <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                    🗺️ マップ作成
+                </button>
+            </div>
+
+            <!-- タブコンテンツエリア -->
+            <div class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-3 bg-slate-900/90">
+                <!-- イベント編集パネル -->
+                <div id="debugTabEvents" class="space-y-3">
+                    <!-- ゴール順位ボーナス設定パネル -->
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-yellow-300 font-bold">🏆 ゴール順位ボーナス設定（リスナー数）:</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-yellow-300 font-bold">1位:</span>
+                                <input type="number" id="goalBonus1st" value="3000" step="100" class="w-full bg-slate-900 border border-yellow-400 rounded px-1 py-0.5 text-xs text-yellow-300 font-bold text-right">
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-cyan-300 font-bold">2位:</span>
+                                <input type="number" id="goalBonus2nd" value="2000" step="100" class="w-full bg-slate-900 border border-cyan-400 rounded px-1 py-0.5 text-xs text-cyan-300 font-bold text-right">
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-pink-300 font-bold">3位:</span>
+                                <input type="number" id="goalBonus3rd" value="1000" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1 py-0.5 text-xs text-pink-300 font-bold text-right">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap gap-1.5">
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
+                            <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-1.5 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
+                            <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
+                            <button onclick="filterDebugEvents('minus')" id="filterBtn_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                            <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                            <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="copyEventDataToClipboard()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">📋 コピー</button>
+                            <button onclick="addNewDebugEvent()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">➕ 追加</button>
+                        </div>
+                    </div>
+                    <div id="debugEventsList" class="space-y-2"></div>
+                </div>
+
+                <!-- ドット絵ピクセルエディター -->
+                <div id="debugTabDots" class="hidden flex flex-col items-center gap-3">
+                    <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
+                        <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
+                        <select id="dotTargetSelect" onchange="changeDotTarget(this.value)" class="flex-1 bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                            <option value="utsuro">❄️ 氷室うつろ</option>
+                            <option value="gengo">🟩 繰言かたる</option>
+                            <option value="tomoko">🌸 トモコ</option>
+                            <option value="utsuro_goshu">🟢 氷室うつろのごしゅ (緑)</option>
+                            <option value="gengo_goshu">👑 繰言かたるのごしゅ (水色)</option>
+                            <option value="tomoko_goshu">🩷 トモコのごしゅ</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
+                        <span class="text-xs text-purple-300 font-bold">色:</span>
+                        <input type="color" id="dotColorPicker" value="#9333ea" class="w-6 h-6 bg-transparent cursor-pointer rounded">
+                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">🧪 スポイト</button>
+                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">消しゴム</button>
+                        <button onclick="undoDotCanvas()" class="px-1.5 py-0.5 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600">↩️ 戻す</button>
+                        <button onclick="resetCurrentDotToDefault()" class="px-1.5 py-0.5 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">元に戻す</button>
+                        <button onclick="clearDotCanvas()" class="px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">クリア</button>
+                        <button onclick="copyDotDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
+                    </div>
+
+                    <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
+                        <canvas id="dotEditorCanvas" width="256" height="256" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
+                    </div>
+                </div>
+
+                <!-- マップエディター -->
+                <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
+                    <div class="flex items-center gap-1 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
+                        <span class="text-xs text-yellow-300 font-bold">マス種類:</span>
+                        <button onclick="setMapTool('start')" id="mapTool_start" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🏁 スタート</button>
+                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-1.5 py-0.5 text-xs bg-purple-700 text-white font-bold rounded border border-purple-300">🔵 プラス</button>
+                        <button onclick="setMapTool('minus')" id="mapTool_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
+                        <button onclick="setMapTool('item')" id="mapTool_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
+                        <button onclick="setMapTool('white')" id="mapTool_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
+                        <button onclick="setMapTool('goal')" id="mapTool_goal" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">👑 ゴール</button>
+                        <button onclick="setMapTool('erase')" id="mapTool_erase" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🧹 消去</button>
+                        <button onclick="clearCustomMap()" class="px-1.5 py-0.5 text-xs bg-red-900 hover:bg-red-800 text-white rounded border border-red-600">全消去</button>
+                        <button onclick="copyMapDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
+                    </div>
+                    <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
+                        <canvas id="mapEditorCanvas" width="384" height="384" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター保存ボタン -->
+            <div class="flex-none p-2 border-t border-purple-800 bg-slate-950 flex items-center justify-between">
+                <button onclick="resetDebugDefaults()" class="px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
+                    初期リセット
+                </button>
+                <button onclick="saveDebugSettings()" class="pixel-btn px-4 py-1 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
+                    💾 設定・変更を適用
+                </button>
+            </div>
         </div>
     </div>
 
@@ -349,46 +445,12 @@
     <script>
         let canvas, ctx;
         let diceCanvas, diceCtx;
+        let dotCanvas, dotCtx;
+        let mapEditorCanvas, mapEditorCtx;
+
         let myChar = 'utsuro';
         let isFullMapView = false;
-
-        // 🛠️ デバッグタップカウント変数
-        let debugTapCount = 0;
-        let debugTapTimer = null;
-
-        function handleDebugTap() {
-            debugTapCount++;
-            clearTimeout(debugTapTimer);
-            debugTapTimer = setTimeout(() => { debugTapCount = 0; }, 2000);
-
-            if (debugTapCount >= 5) {
-                debugTapCount = 0;
-                let debugModal = document.getElementById('debugModal');
-                if (debugModal) {
-                    debugModal.classList.remove('hidden');
-                    playSe('dice_stop');
-                }
-            }
-        }
-
-        function debugAddListeners(amount) {
-            if (players[myPlayerIndex]) {
-                players[myPlayerIndex].listeners += amount;
-                let listenerEl = document.getElementById(`p${myPlayerIndex + 1}Listeners`);
-                if (listenerEl) listenerEl.innerText = `${players[myPlayerIndex].listeners.toLocaleString()}人`;
-                if (isOnlineMode && isHost) broadcastGameState();
-            }
-        }
-
-        function debugGoToGoal() {
-            if (players[myPlayerIndex] && tileCoords.length > 1) {
-                players[myPlayerIndex].pos = tileCoords.length - 2;
-                let tile = tileCoords[players[myPlayerIndex].pos];
-                players[myPlayerIndex].renderX = tile.x;
-                players[myPlayerIndex].renderY = tile.y;
-                if (isOnlineMode && isHost) broadcastGameState();
-            }
-        }
+        let activeTab = 'events';
 
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
@@ -396,13 +458,22 @@
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0;
 
+        let selectedDotTarget = 'utsuro';
         let customDotData = { utsuro: null, gengo: null, tomoko: null, utsuro_goshu: null, gengo_goshu: null, tomoko_goshu: null };
+        let dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+        let currentColor = '#9333ea';
+        let isDotEraser = false;
+        let isDotEyedropper = false;
+        let isDrawingDot = false;
+        let dotHistoryStack = [];
+
+        let selectedMapTool = 'plus';
         let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
 
         let players = [
-            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
-            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [], isHuman: false },
-            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false }
+            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
+            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [], isHuman: false },
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false }
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
@@ -419,6 +490,7 @@
         let tileCoords = [];
         let cityObjects = [];
         let gameEvents = [];
+        let currentEventFilter = 'all';
 
         let currentBgmVolume = 0.3;
         let audioUnlocked = false;
@@ -451,15 +523,41 @@
             diceCanvas = document.getElementById('diceCanvas');
             diceCtx = diceCanvas.getContext('2d');
 
+            dotCanvas = document.getElementById('dotEditorCanvas');
+            if (dotCanvas) dotCtx = dotCanvas.getContext('2d');
+
+            mapEditorCanvas = document.getElementById('mapEditorCanvas');
+            if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
+
+            let savedVol = localStorage.getItem('utsuro_bgm_volume');
+            if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
+                currentBgmVolume = parseFloat(savedVol);
+            } else {
+                currentBgmVolume = 0.3;
+            }
+
+            let savedBonuses = localStorage.getItem('utsuro_goal_bonuses');
+            if (savedBonuses) {
+                try { goalBonuses = JSON.parse(savedBonuses); } catch(e) {}
+            }
+            if (document.getElementById('goalBonus1st')) document.getElementById('goalBonus1st').value = goalBonuses[1] || 3000;
+            if (document.getElementById('goalBonus2nd')) document.getElementById('goalBonus2nd').value = goalBonuses[2] || 2000;
+            if (document.getElementById('goalBonus3rd')) document.getElementById('goalBonus3rd').value = goalBonuses[3] || 1000;
+
+            setupDotEditorEvents();
+            setupMapEditorEvents();
             setupCanvasDragAndTouch();
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
+            // デフォルトデータの強制補完とロード
             initDefaultDotGrids();
             initDefaultMapGrid();
-            gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+            loadDataFromLocalStorage();
 
+            // 確実な初期データ変換・位置設定と描画
             convertCustomGridToTileCoords();
+            resetAllPlayerPositions();
             drawCharPreviews();
             drawDice(1);
 
@@ -469,6 +567,366 @@
             document.getElementById('btnRoll').addEventListener('click', handleRollButtonClick);
             requestAnimationFrame(gameLoop);
         };
+
+        function renderMapEditorCanvas() {
+            if (!mapEditorCtx) return;
+            mapEditorCtx.clearRect(0, 0, 384, 384);
+            let pSize = 32;
+            let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#e2e8f0', goal: '#a855f7' };
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    let type = customMapGrid[r][c];
+                    if (type && typeColors[type]) {
+                        mapEditorCtx.fillStyle = typeColors[type];
+                        mapEditorCtx.beginPath();
+                        mapEditorCtx.arc(c * pSize + pSize / 2, r * pSize + pSize / 2, pSize / 2 - 4, 0, Math.PI * 2);
+                        mapEditorCtx.fill();
+                    }
+                    mapEditorCtx.strokeStyle = '#1e293b';
+                    mapEditorCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
+                }
+            }
+        }
+
+        function pushDotHistory() {
+            dotHistoryStack.push(JSON.parse(JSON.stringify(dotGrid)));
+            if (dotHistoryStack.length > 20) dotHistoryStack.shift();
+        }
+
+        function undoDotCanvas() {
+            if (dotHistoryStack.length > 0) {
+                dotGrid = dotHistoryStack.pop();
+                renderDotCanvas();
+            }
+        }
+
+        function toggleDotEyedropper() {
+            isDotEyedropper = !isDotEyedropper;
+            document.getElementById('btnDotEyedropper').classList.toggle('bg-yellow-500', isDotEyedropper);
+        }
+
+        function setDotEraser() {
+            isDotEraser = !isDotEraser;
+            document.getElementById('btnDotEraser').classList.toggle('bg-red-500', isDotEraser);
+        }
+
+        function clearDotCanvas() {
+            pushDotHistory();
+            dotGrid = Array(16).fill(null).map(() => Array(16).fill('#00000000'));
+            renderDotCanvas();
+        }
+
+        function copyDotDataToClipboard() {
+            let dataStr = JSON.stringify(dotGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('ドット絵データをクリップボードにコピーしました！');
+        }
+
+        function copyEventDataToClipboard() {
+            let dataStr = JSON.stringify(gameEvents, null, 2);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('全イベントデータをクリップボードにコピーしました！');
+        }
+
+        function copyMapDataToClipboard() {
+            let dataStr = JSON.stringify(customMapGrid);
+            navigator.clipboard ? navigator.clipboard.writeText(dataStr) : document.execCommand('copy');
+            alert('マップデータをクリップボードにコピーしました！');
+        }
+
+        function setMapTool(tool) { selectedMapTool = tool; }
+        function clearCustomMap() {
+            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+            renderMapEditorCanvas();
+        }
+
+        function loadTargetDotGrid(target) {
+            selectedDotTarget = target;
+            if (customDotData[target] && customDotData[target].some(row => row && row.some(col => col !== '#00000000'))) {
+                dotGrid = JSON.parse(JSON.stringify(customDotData[target]));
+            } else {
+                initDefaultDotGrids();
+                dotGrid = JSON.parse(JSON.stringify(customDotData[target] || customDotData.utsuro));
+            }
+            renderDotCanvas();
+        }
+
+        function changeDotTarget(val) {
+            saveCurrentDotGridToTarget();
+            loadTargetDotGrid(val);
+        }
+
+        function saveCurrentDotGridToTarget() {
+            if (dotGrid && dotGrid.some(row => row && row.some(col => col !== '#00000000'))) {
+                customDotData[selectedDotTarget] = JSON.parse(JSON.stringify(dotGrid));
+            }
+        }
+
+        function resetCurrentDotToDefault() {
+            initDefaultDotGrids();
+            loadTargetDotGrid(selectedDotTarget);
+        }
+
+        function renderDotCanvas() {
+            if (!dotCtx) return;
+            dotCtx.clearRect(0, 0, 256, 256);
+            let pSize = 256 / 16;
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    let col = dotGrid[r][c];
+                    if (col && col !== '#00000000') {
+                        dotCtx.fillStyle = col;
+                        dotCtx.fillRect(c * pSize, r * pSize, pSize, pSize);
+                    }
+                    dotCtx.strokeStyle = '#334155';
+                    dotCtx.strokeRect(c * pSize, r * pSize, pSize, pSize);
+                }
+            }
+        }
+
+        function setupDotEditorEvents() {
+            if (!dotCanvas) return;
+            let colorPicker = document.getElementById('dotColorPicker');
+            if (colorPicker) {
+                colorPicker.addEventListener('input', (e) => {
+                    currentColor = e.target.value;
+                    isDotEraser = false;
+                    let btnEraser = document.getElementById('btnDotEraser');
+                    if (btnEraser) btnEraser.classList.remove('bg-red-500');
+                });
+            }
+
+            const getPos = (e) => {
+                let rect = dotCanvas.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let x = Math.floor((clientX - rect.left) / (rect.width / 16));
+                let y = Math.floor((clientY - rect.top) / (rect.height / 16));
+                return { c: Math.max(0, Math.min(15, x)), r: Math.max(0, Math.min(15, y)) };
+            };
+
+            const paint = (e) => {
+                let pos = getPos(e);
+                if (isDotEyedropper) {
+                    currentColor = dotGrid[pos.r][pos.c] || '#00000000';
+                    if (colorPicker && currentColor !== '#00000000') colorPicker.value = currentColor;
+                    isDotEyedropper = false;
+                    document.getElementById('btnDotEyedropper').classList.remove('bg-yellow-500');
+                    return;
+                }
+                dotGrid[pos.r][pos.c] = isDotEraser ? '#00000000' : currentColor;
+                renderDotCanvas();
+            };
+
+            dotCanvas.addEventListener('mousedown', (e) => { pushDotHistory(); isDrawingDot = true; paint(e); });
+            dotCanvas.addEventListener('mousemove', (e) => { if (isDrawingDot) paint(e); });
+            window.addEventListener('mouseup', () => { isDrawingDot = false; });
+
+            dotCanvas.addEventListener('touchstart', (e) => { pushDotHistory(); isDrawingDot = true; paint(e); }, { passive: true });
+            dotCanvas.addEventListener('touchmove', (e) => { if (isDrawingDot) paint(e); }, { passive: true });
+            window.addEventListener('touchend', () => { isDrawingDot = false; });
+        }
+
+        function setupMapEditorEvents() {
+            if (!mapEditorCanvas) return;
+            const handleMapClick = (e) => {
+                let rect = mapEditorCanvas.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let c = Math.floor((clientX - rect.left) / (rect.width / 12));
+                let r = Math.floor((clientY - rect.top) / (rect.height / 12));
+                if (r >= 0 && r < 12 && c >= 0 && c < 12) {
+                    customMapGrid[r][c] = selectedMapTool === 'erase' ? null : selectedMapTool;
+                    renderMapEditorCanvas();
+                }
+            };
+            mapEditorCanvas.addEventListener('click', handleMapClick);
+        }
+
+        function saveDebugSettings() {
+            saveCurrentDotGridToTarget();
+            goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 3000;
+            goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
+            goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
+
+            try {
+                localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
+                localStorage.setItem('utsuro_custom_dots', JSON.stringify(customDotData));
+                localStorage.setItem('utsuro_custom_map', JSON.stringify(customMapGrid));
+                localStorage.setItem('utsuro_goal_bonuses', JSON.stringify(goalBonuses));
+            } catch (e) {}
+
+            convertCustomGridToTileCoords();
+
+            if (tileCoords.length > 0) {
+                players.forEach(p => {
+                    p.pos = 0;
+                    p.finished = false;
+                    p.rank = 0;
+                    let t = tileCoords[0];
+                    p.renderX = t.x;
+                    p.renderY = t.y;
+                    p.goshuX = t.x;
+                    p.goshuY = t.y;
+                });
+            }
+
+            drawCharPreviews();
+            closeDebugMenu();
+            alert('設定・変更を適用しました！');
+        }
+
+        function resetDebugDefaults() {
+            if (confirm('デバッグ設定を初期リセットしますか？')) {
+                localStorage.removeItem('utsuro_custom_events');
+                localStorage.removeItem('utsuro_custom_dots');
+                localStorage.removeItem('utsuro_custom_map');
+                initDefaultDotGrids();
+                initDefaultMapGrid();
+                loadDataFromLocalStorage();
+                convertCustomGridToTileCoords();
+
+                if (tileCoords.length > 0) {
+                    players.forEach(p => {
+                        p.pos = 0;
+                        let t = tileCoords[0];
+                        p.renderX = t.x;
+                        p.renderY = t.y;
+                        p.goshuX = t.x;
+                        p.goshuY = t.y;
+                    });
+                }
+
+                renderDebugEvents();
+                renderDotCanvas();
+                renderMapEditorCanvas();
+                drawCharPreviews();
+                alert('初期リセットが完了しました！');
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            try {
+                let savedEvents = localStorage.getItem('utsuro_custom_events');
+                gameEvents = savedEvents ? JSON.parse(savedEvents) : JSON.parse(JSON.stringify(defaultEvents));
+
+                let savedDots = localStorage.getItem('utsuro_custom_dots');
+                if (savedDots) {
+                    let parsed = JSON.parse(savedDots);
+                    Object.keys(parsed).forEach(k => {
+                        if (parsed[k] && parsed[k].some(row => row && row.some(col => col !== '#00000000'))) {
+                            customDotData[k] = parsed[k];
+                        }
+                    });
+                }
+
+                // 氷室うつろのデータが空や透明になっている場合は必ずデフォルトで補完
+                if (!customDotData.utsuro || !customDotData.utsuro.some(row => row && row.some(col => col !== '#00000000'))) {
+                    initDefaultDotGrids();
+                }
+
+                let savedMap = localStorage.getItem('utsuro_custom_map');
+                if (savedMap) {
+                    let parsedMap = JSON.parse(savedMap);
+                    if (parsedMap && parsedMap.some(row => row && row.some(col => col !== null))) {
+                        customMapGrid = parsedMap;
+                    }
+                }
+            } catch (e) {
+                gameEvents = JSON.parse(JSON.stringify(defaultEvents));
+                initDefaultDotGrids();
+            }
+        }
+
+        function openDebugMenu() {
+            document.getElementById('debugModal').classList.remove('hidden');
+            loadTargetDotGrid(selectedDotTarget);
+            renderDebugEvents();
+            renderDotCanvas();
+            renderMapEditorCanvas();
+        }
+
+        function closeDebugMenu() {
+            document.getElementById('debugModal').classList.add('hidden');
+        }
+
+        function switchDebugTab(tab) {
+            activeTab = tab;
+            document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
+            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
+            document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
+
+            document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+        }
+
+        function filterDebugEvents(type) {
+            currentEventFilter = type;
+            renderDebugEvents();
+        }
+
+        function updateDebugEventValue(idx, field, val) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            if (list[idx]) {
+                list[idx][field] = (field === 'val') ? parseInt(val) || 0 : val;
+            }
+        }
+
+        function deleteDebugEvent(idx) {
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let targetEv = list[idx];
+            if (targetEv) {
+                let realIdx = gameEvents.indexOf(targetEv);
+                if (realIdx !== -1) {
+                    gameEvents.splice(realIdx, 1);
+                    renderDebugEvents();
+                }
+            }
+        }
+
+        function addNewDebugEvent() {
+            let type = currentEventFilter === 'all' ? 'plus' : currentEventFilter;
+            gameEvents.push({
+                type: type,
+                title: '【新規イベント】',
+                desc: '新しいイベント効果をここに入力してください。',
+                val: type === 'plus' ? 200 : (type === 'minus' ? -200 : 0),
+                itemName: type === 'item' ? '🎁 特製アイテム' : ''
+            });
+            renderDebugEvents();
+        }
+
+        function renderDebugEvents() {
+            let container = document.getElementById('debugEventsList');
+            if (!container) return;
+            container.innerHTML = '';
+            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+
+            list.forEach((ev, idx) => {
+                let div = document.createElement('div');
+                div.className = 'p-2 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1.5';
+
+                let typeBadges = { plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色' };
+
+                div.innerHTML = `
+                    <div class="flex items-center justify-between gap-1.5">
+                        <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-purple-900 border border-purple-500 text-purple-200">${typeBadges[ev.type] || 'イベント'}</span>
+                        <input type="text" value="${ev.title}" onchange="updateDebugEventValue(${idx}, 'title', this.value)" class="flex-1 bg-slate-900 border border-purple-600 rounded px-2 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                        <button onclick="deleteDebugEvent(${idx})" class="text-xs bg-red-900/80 hover:bg-red-700 text-white px-2 py-0.5 rounded border border-red-500">🗑️</button>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <input type="text" value="${ev.desc}" onchange="updateDebugEventValue(${idx}, 'desc', this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none">
+                        ${ev.type === 'item' ? `
+                            <input type="text" placeholder="アイテム名" value="${ev.itemName || ''}" onchange="updateDebugEventValue(${idx}, 'itemName', this.value)" class="w-28 bg-slate-900 border border-yellow-500/80 rounded px-1.5 py-0.5 text-xs text-yellow-300 font-bold focus:outline-none">
+                        ` : `
+                            <input type="number" value="${ev.val}" onchange="updateDebugEventValue(${idx}, 'val', this.value)" class="w-16 bg-slate-900 border border-cyan-500/80 rounded px-1.5 py-0.5 text-xs text-cyan-300 font-bold focus:outline-none text-right">
+                        `}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
 
         function setupAudioUnlockers() {
             const unlockAudio = () => {
@@ -616,6 +1074,11 @@
         }
 
         function startCpuGame() {
+            // マップ座標が未構築の場合、強制的に再変換して確実にロード
+            if (!tileCoords || tileCoords.length === 0) {
+                convertCustomGridToTileCoords();
+            }
+
             isOnlineMode = false;
             players[0].isHuman = true;
             players[1].isHuman = false;
@@ -634,14 +1097,22 @@
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
             document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-            document.getElementById('btnRoll').disabled = false;
-            document.getElementById('btnRoll').innerText = '🎲 移動！';
+            
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll) {
+                btnRoll.disabled = false;
+                btnRoll.innerText = '🎲 移動！';
+            }
         }
 
         // 🌐 オンライン対戦 部屋作成/参加
         function startOnlineGame() {
             let roomCode = document.getElementById('roomCodeInput').value.trim();
             if (!roomCode) { alert('部屋コードを入力してください'); return; }
+
+            if (!tileCoords || tileCoords.length === 0) {
+                convertCustomGridToTileCoords();
+            }
 
             currentRoomCode = roomCode;
             isOnlineMode = true;
@@ -1397,7 +1868,24 @@
             customDotData.utsuro_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#22c55e' : col));
             customDotData.gengo_goshu = tomokoGoshuGrid.map(row => row.map(col => col === '#f472b6' ? '#06b6d4' : col));
 
-            customDotData.utsuro = [["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]];
+            customDotData.utsuro = [
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#00000000","#ffffff","#ffffff","#00000000","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#bababa","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#84e8f5","#bababa","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#84e8f5","#bababa","#bababa","#bababa","#bababa","#84e8f5","#bababa","#bababa","#bababa","#84e8f5","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#bababa","#bababa","#84e8f5","#ffd5b3","#ffd5b3","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#bababa","#bababa","#00000000","#00000000"],
+                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#ffd5b3","#8a8785","#4f4c4a","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
+                ["#00000000","#bababa","#00000000","#bababa","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#ffd5b3","#8a8785","#ffffff","#ffd5b3","#bababa","#00000000","#bababa","#00000000"],
+                ["#00000000","#00000000","#bababa","#bababa","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#bababa","#bababa","#00000000","#00000000"],
+                ["#00000000","#bababa","#00000000","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#fd9696","#fd9696","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#00000000","#bababa","#00000000"],
+                ["#00000000","#bababa","#00000000","#84e8f5","#84e8f5","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#84e8f5","#84e8f5","#00000000","#bababa","#00000000"],
+                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#317c81","#3b82f6","#3b82f6","#317c81","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
+                ["#00000000","#00000000","#ffffff","#ffffff","#317c81","#317c81","#000000","#3b82f6","#3b82f6","#000000","#317c81","#317c81","#ffffff","#ffffff","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#ffffff","#317c81","#317c81","#000000","#000000","#000000","#000000","#317c81","#317c81","#ffffff","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000","#00000000"],
+                ["#00000000","#00000000","#00000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#00000000","#00000000","#00000000"]
+            ];
             customDotData.gengo = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#fde047","#00000000","#00000000","#00000000"],["#00000000","#00000000","#fde047","#fde047","#fde047","#ffd5b3","#ffd5b3","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#000000","#ffd5b3","#ffd5b3","#e93f3f","#000000","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#ffd5b3","#e93f3f","#ffffff","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#00000000"],["#00000000","#fde047","#00000000","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ff9494","#ff9494","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#00000000","#fde047","#00000000"],["#00000000","#fde047","#00000000","#fde047","#fde047","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#fde047","#fde047","#00000000","#fde047","#00000000"],["#00000000","#00000000","#00000000","#00000000","#383838","#ffffff","#ef4444","#ef4444","#ef4444","#ef4444","#ffffff","#383838","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#ffffff","#ffffff","#ef4444","#ef4444","#ffffff","#ffffff","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#ffffff","#ef4444","#ef4444","#ffffff","#383838","#383838","#383838","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#383838","#383838","#383838","#383838","#ffffff","#ffffff","#383838","#383838","#383838","#383838","#00000000","#00000000","#00000000"]];
             customDotData.tomoko = [["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#ffd5b3","#ee7717","#363535","#ffd5b3","#ffd5b3","#ee7717","#363535","#ffd5b3","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#ffd5b3","#ee7717","#ffffff","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#2f0e0e","#2f0e0e","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#ffd5b3","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#966f4f","#966f4f","#ffffff","#ffffff","#ffffff","#ffffff","#966f4f","#966f4f","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#ffffff","#cca671","#cca671","#ffffff","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#966f4f","#cca671","#cca671","#831843","#831843","#831843","#831843","#cca671","#cca671","#966f4f","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#831843","#cca671","#cca671","#831843","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"],["#00000000","#00000000","#00000000","#00000000","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#cca671","#00000000","#00000000","#00000000","#00000000"]];
         }
@@ -1427,7 +1915,7 @@
 
             for (let r = 0; r < 12; r++) {
                 for (let c = 0; c < 12; c++) {
-                    let type = customMapGrid[r][c];
+                    let type = customMapGrid[r] ? customMapGrid[r][c] : null;
                     if (type) {
                         rawTiles.push({
                             x: c * pSize + pSize / 2,
