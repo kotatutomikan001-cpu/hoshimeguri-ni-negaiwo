@@ -504,6 +504,7 @@
         let isHost = false;
         let myPlayerIndex = 0;
         let currentRoomCode = '';
+        let onlineMemberChars = {}; // PIndexごとの選択キャラを記憶
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -1168,6 +1169,9 @@
                 if (isHost) {
                     updateLobbyMembers();
                     broadcastLobbyState();
+                } else {
+                    // ゲスト側：自分が選択したキャラクターをホストに申告
+                    conn.send({ type: 'REGISTER_CHAR', char: myChar });
                 }
             });
 
@@ -1197,7 +1201,13 @@
         }
 
         function handleNetworkData(data, conn) {
-            if (data.type === 'LOBBY_UPDATE') {
+            if (data.type === 'REGISTER_CHAR') {
+                // ゲストからキャラ申告を受け取ったら接続順に応じて保持
+                let connIdx = peerConnections.indexOf(conn);
+                if (connIdx !== -1) {
+                    onlineMemberChars[connIdx + 1] = data.char;
+                }
+            } else if (data.type === 'LOBBY_UPDATE') {
                 document.getElementById('lobbyStatusText').innerText = '部屋に入りました！参加者を待っています...';
                 document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
             } else if (data.type === 'START_GAME') {
@@ -1206,10 +1216,20 @@
                 playGameBgm();
                 myPlayerIndex = data.playerIndex;
 
-                if (data.humanPlayers) {
-                    data.humanPlayers.forEach((isH, idx) => {
-                        players[idx].isHuman = isH;
+                if (data.playerConfigs) {
+                    let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+                    let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
+
+                    data.playerConfigs.forEach((cfg, idx) => {
+                        players[idx].char = cfg.char;
+                        players[idx].name = charNames[cfg.char] || 'Vstreamer';
+                        players[idx].color = charColors[cfg.char] || '#a855f7';
+                        players[idx].isHuman = cfg.isHuman;
                     });
+
+                    document.getElementById('p1Name').innerText = players[0].name;
+                    document.getElementById('p2Name').innerText = players[1].name;
+                    document.getElementById('p3Name').innerText = players[2].name;
                 }
                 resetAllPlayerPositions();
             } else if (data.type === 'GAME_STATE_UPDATE') {
@@ -1233,18 +1253,50 @@
 
             resetAllPlayerPositions();
 
-            // オンライン参加人数に応じて人間プレイヤーフラグを設定
             let humanCount = peerConnections.length + 1;
-            players.forEach((p, idx) => {
-                p.isHuman = (idx < humanCount);
-            });
+            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
+            let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
+            let allChars = ['utsuro', 'gengo', 'tomoko'];
 
+            // ホストのキャラ
+            onlineMemberChars[0] = myChar;
+
+            // 各プレイヤーのキャラと人間フラグの構成
+            let playerConfigs = [];
+            let usedChars = [];
+
+            for (let i = 0; i < 3; i++) {
+                let isH = (i < humanCount);
+                let chosenChar = onlineMemberChars[i];
+
+                // 未選択または重複した場合は未使用キャラから割当
+                if (!chosenChar || usedChars.includes(chosenChar)) {
+                    chosenChar = allChars.find(c => !usedChars.includes(c)) || allChars[0];
+                }
+                usedChars.push(chosenChar);
+
+                playerConfigs.push({
+                    char: chosenChar,
+                    isHuman: isH
+                });
+
+                players[i].char = chosenChar;
+                players[i].name = charNames[chosenChar];
+                players[i].color = charColors[chosenChar];
+                players[i].isHuman = isH;
+            }
+
+            document.getElementById('p1Name').innerText = players[0].name;
+            document.getElementById('p2Name').innerText = players[1].name;
+            document.getElementById('p3Name').innerText = players[2].name;
+
+            // クライアント(ゲスト)全メンバーに同期送信
             peerConnections.forEach((conn, idx) => {
                 if (conn.open) {
                     conn.send({
                         type: 'START_GAME',
                         playerIndex: idx + 1,
-                        humanPlayers: players.map(p => p.isHuman)
+                        playerConfigs: playerConfigs
                     });
                 }
             });
