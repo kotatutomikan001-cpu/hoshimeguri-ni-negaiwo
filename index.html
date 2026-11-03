@@ -1439,8 +1439,9 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // ゲストからのサイコロ振り要求
-                        if (data.playerIndex === currentPlayerIndex && !isRolling && !isMoving) {
+                        // ゲストからのサイコロ振り要求を確実に処理
+                        let requestingPIdx = data.playerIndex;
+                        if (requestingPIdx === currentPlayerIndex && !isRolling && !isMoving) {
                             handleRollButtonClick();
                         }
                     }
@@ -1737,8 +1738,8 @@
 
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    let isMyTurn = (myPlayerIndex === currentPlayerIndex);
-                    // 移動・回転状態を更新して確実に自分の番で有効化
+                    // オンライン対戦時は自分の手番(myPlayerIndex == currentPlayerIndex)の時だけボタンを有効化
+                    let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
                     let movingOrRolling = (isMoving || isRolling);
                     btnRoll.disabled = !isMyTurn || movingOrRolling;
                     btnRoll.innerText = isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
@@ -2459,36 +2460,32 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            let canRoll = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
+            // オンラインモードで自分の手番(myPlayerIndex == currentPlayerIndex)の時、またはローカルで人間操作の時に有効化
+            let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
 
-            if (activePlayer.isHuman) {
-                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
-                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-                
-                if (btnRoll) {
-                    btnRoll.disabled = !canRoll || isMoving || isRolling;
-                }
-            } else {
-                if (btnRoll) btnRoll.disabled = true;
-                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
-                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が考え中...`;
+            document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
+            document.getElementById('currentEventDesc').innerText = isMyTurn ? `${activePlayer.name}さんの番です。サイコロを振ってください。` : `${activePlayer.name}が操作中...`;
 
-                if (!isOnlineMode || isHost) {
-                    setTimeout(() => {
-                        isRolling = true;
-                        let count = 0;
-                        let interval = setInterval(() => {
-                            let roll = Math.floor(Math.random() * 6) + 1;
-                            drawDice(roll);
-                            count++;
-                            if (count > 12) {
-                                clearInterval(interval);
-                                isRolling = false;
-                                movePlayer(currentPlayerIndex, roll);
-                            }
-                        }, 100);
-                    }, 1500);
-                }
+            if (btnRoll) {
+                btnRoll.disabled = !isMyTurn || isMoving || isRolling;
+            }
+
+            if (!activePlayer.isHuman && (!isOnlineMode || isHost)) {
+                // CPUプレイヤーの自動サイコロ処理
+                setTimeout(() => {
+                    isRolling = true;
+                    let count = 0;
+                    let interval = setInterval(() => {
+                        let roll = Math.floor(Math.random() * 6) + 1;
+                        drawDice(roll);
+                        count++;
+                        if (count > 12) {
+                            clearInterval(interval);
+                            isRolling = false;
+                            movePlayer(currentPlayerIndex, roll);
+                        }
+                    }, 100);
+                }, 1500);
             }
 
             broadcastGameState();
