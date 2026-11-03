@@ -2259,7 +2259,8 @@
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
                     btnRoll.innerText = '🎲 サイコロを振る！';
-                    btnRoll.disabled = (pIndex !== myPlayerIndex);
+                    let canRoll = isOnlineMode ? (myPlayerIndex === pIndex) : p.isHuman;
+                    btnRoll.disabled = !canRoll;
                 }
 
                 broadcastGameState();
@@ -2364,14 +2365,14 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            let isMyTurn = (myPlayerIndex === currentPlayerIndex);
+            let canRoll = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
 
             if (activePlayer.isHuman) {
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
                 
                 if (btnRoll) {
-                    btnRoll.disabled = !isMyTurn;
+                    btnRoll.disabled = !canRoll || isMoving || isRolling;
                 }
             } else {
                 if (btnRoll) btnRoll.disabled = true;
