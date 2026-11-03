@@ -1605,10 +1605,17 @@
                         players[idx].listeners = pSync.listeners;
                         players[idx].finished = pSync.finished;
                         players[idx].rank = pSync.rank;
-                        if (tileCoords[pSync.pos]) {
+                        
+                        // 座標の滑らかな同期 (アニメーション中のリアルタイム位置補正)
+                        if (pSync.renderX !== undefined && pSync.renderY !== undefined) {
+                            players[idx].renderX = pSync.renderX;
+                            players[idx].renderY = pSync.renderY;
+                            players[idx].jumpY = pSync.jumpY || 0;
+                        } else if (tileCoords[pSync.pos]) {
                             players[idx].renderX = tileCoords[pSync.pos].x;
                             players[idx].renderY = tileCoords[pSync.pos].y;
                         }
+
                         let listenerEl = document.getElementById(`p${idx + 1}Listeners`);
                         if (listenerEl) listenerEl.innerText = `${pSync.listeners.toLocaleString()}人`;
                     }
@@ -1627,7 +1634,9 @@
 
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    btnRoll.disabled = (myPlayerIndex !== currentPlayerIndex);
+                    // 現在のアクティブプレイヤーかつ移動中/サイコロ回転中でなければボタンを有効化
+                    let isMyTurn = (myPlayerIndex === currentPlayerIndex);
+                    btnRoll.disabled = !isMyTurn || data.isMoving || data.isRolling;
                     btnRoll.innerText = data.isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
             }
@@ -1649,11 +1658,16 @@
                 currentPlayerIndex: currentPlayerIndex,
                 isSubRollPending: isSubRollPending,
                 pendingTileType: pendingTileType,
+                isMoving: isMoving,
+                isRolling: isRolling,
                 eventTitle: document.getElementById('currentEventTitle').innerText,
                 eventDesc: document.getElementById('currentEventDesc').innerText,
                 eventEffect: document.getElementById('currentEventEffect').innerText,
                 players: players.map(p => ({
                     pos: p.pos,
+                    renderX: p.renderX,
+                    renderY: p.renderY,
+                    jumpY: p.jumpY,
                     listeners: p.listeners,
                     finished: p.finished,
                     rank: p.rank
@@ -2073,6 +2087,11 @@
                     p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
                     p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
                     p.jumpY = -Math.sin(progress * Math.PI) * 18;
+
+                    // 移動中のリアルタイム位置を相手に送信してワープを防ぐ
+                    if (isOnlineMode && isHost) {
+                        broadcastGameState();
+                    }
 
                     if (progress < 1) {
                         requestAnimationFrame(animateStep);
