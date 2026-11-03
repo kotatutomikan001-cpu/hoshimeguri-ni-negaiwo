@@ -1631,6 +1631,11 @@
                 document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
             }
 
+            if (data.isMoving !== undefined) isMoving = data.isMoving;
+            if (data.isRolling !== undefined) isRolling = data.isRolling;
+            if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
+            if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
+
             if (data.currentPlayerIndex !== undefined) {
                 currentPlayerIndex = data.currentPlayerIndex;
                 let activePlayer = players[currentPlayerIndex];
@@ -1640,9 +1645,9 @@
                 if (btnRoll) {
                     let isMyTurn = (myPlayerIndex === currentPlayerIndex);
                     // 移動・回転状態を更新して確実に自分の番で有効化
-                    let movingOrRolling = (data.isMoving || data.isRolling);
+                    let movingOrRolling = (isMoving || isRolling);
                     btnRoll.disabled = !isMyTurn || movingOrRolling;
-                    btnRoll.innerText = data.isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
+                    btnRoll.innerText = isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
             }
 
@@ -1650,11 +1655,6 @@
             if (data.eventDesc) document.getElementById('currentEventDesc').innerText = data.eventDesc;
             if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
 
-            if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
-            if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
-            if (data.isMoving !== undefined) isMoving = data.isMoving;
-            if (data.isRolling !== undefined) isRolling = data.isRolling;
-            
             updateItemUI();
         }
 
