@@ -1639,8 +1639,9 @@
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
                     let isMyTurn = (myPlayerIndex === currentPlayerIndex);
-                    // 現在の自分の番でかつ、移動・回転中でない場合ボタンを有効化
-                    btnRoll.disabled = !isMyTurn || data.isMoving || data.isRolling;
+                    // 移動・回転状態を更新して確実に自分の番で有効化
+                    let movingOrRolling = (data.isMoving || data.isRolling);
+                    btnRoll.disabled = !isMyTurn || movingOrRolling;
                     btnRoll.innerText = data.isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
             }
@@ -2337,6 +2338,10 @@
         }
 
         function nextTurn() {
+            // 手番移行時に移動・サイコロ振りのフラグをクリア
+            isMoving = false;
+            isRolling = false;
+
             let checkCount = 0;
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
