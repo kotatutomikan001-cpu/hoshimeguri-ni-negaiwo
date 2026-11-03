@@ -92,7 +92,7 @@
         <header class="flex-none flex flex-col sm:flex-row items-stretch sm:items-center justify-between pixel-box p-1.5 sm:p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500 gap-1.5">
             <div class="flex items-center justify-between sm:justify-start gap-2">
                 <div class="flex items-center gap-1.5">
-                    <div class="w-7 h-7 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs sm:text-lg flex-none">
+                    <div class="w-7 h-7 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs sm:text-lg flex-none select-none">
                         ❄️
                     </div>
                     <div>
@@ -102,34 +102,34 @@
                 </div>
 
                 <!-- 🎵 音量調整スライダー -->
-        <div id="headerVolumeBox" class="mobile-hide-volume items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
-            <span class="text-xs text-yellow-300">🎵</span>
-            <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-12 sm:w-20 accent-purple-400 cursor-pointer">
-        </div>
-    </div>
+                <div id="headerVolumeBox" class="mobile-hide-volume items-center gap-1 bg-indigo-950/80 px-2 py-1 rounded border border-purple-500/60">
+                    <span class="text-xs text-yellow-300">🎵</span>
+                    <input type="range" id="headerBgmVolume" min="0" max="1" step="0.05" value="0.3" oninput="changeBgmVolume(this.value)" class="w-12 sm:w-20 accent-purple-400 cursor-pointer">
+                </div>
+            </div>
 
-    <!-- リスナー数比較 -->
-    <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
-        <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
-            <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
-            <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
-            <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-        </div>
-        <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
-            <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
-            <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
-            <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-        </div>
-        <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
-            <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
-            <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
-            <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-        </div>
-    </div>
-</header>
+            <!-- リスナー数比較 -->
+            <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
+                <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
+                    <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
+                    <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
+                    <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                </div>
+                <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
+                    <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
+                    <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
+                    <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                </div>
+                <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
+                    <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
+                    <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
+                    <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                </div>
+            </div>
+        </header>
 
         <!-- 中央エリア：すごろくマップ (Canvas) -->
-        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[220px] sm:min-h-[180px] h-[35vh] sm:h-auto bg-slate-900 flex items-center justify-center">
+        <section class="flex-1 relative pixel-box rounded-lg overflow-hidden min-h-[220px] sm:min-h-[180px] h-[35vh] sm:h-auto bg-green-800 flex items-center justify-center">
             <canvas id="boardCanvas" class="w-full h-full object-contain touch-none"></canvas>
             
             <!-- 分岐選択用オーバーレイコンテナ -->
@@ -152,7 +152,7 @@
             <!-- サイコロ＆操作パネル -->
             <div class="pixel-box p-1.5 sm:p-2 rounded-lg flex sm:flex-col items-center justify-between sm:justify-center gap-2 bg-slate-900 border-2 border-purple-500">
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <canvas id="diceCanvas" width="40" height="40" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner sm:w-12 sm:h-12"></canvas>
+                    <canvas id="diceCanvas" width="48" height="48" class="bg-slate-950 border-2 border-slate-700 rounded-lg shadow-inner w-10 h-10 sm:w-12 sm:h-12 flex-none"></canvas>
                     <div class="flex flex-col">
                         <span id="activePlayerTag" class="text-[11px] sm:text-xs font-bold text-purple-300">手番: 氷室うつろ</span>
                         <span id="diceResultText" class="text-[11px] sm:text-xs font-bold text-yellow-300">準備完了</span>
@@ -359,7 +359,7 @@
     <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
     <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
 
-    <!-- 🛠️ デバッグモーダル (以前のフルカスタマイズ仕様) -->
+    <!-- 🛠️ デバッグモーダル (フルカスタマイズ仕様) -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
         <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
             <div class="flex-none flex items-center justify-between p-2.5 border-b border-purple-800 bg-indigo-950/80">
@@ -2468,7 +2468,8 @@
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                ctx.fillStyle = '#22c55e';
+                // マップ背景色を明るい黄緑色（草地風）に設定
+                ctx.fillStyle = '#6ee7b7';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.save();
@@ -2497,7 +2498,7 @@
                 // 1. 道路ライン描画
                 if (window.roadConnections && window.roadConnections.length > 0) {
                     ctx.beginPath();
-                    ctx.strokeStyle = '#1e293b';
+                    ctx.strokeStyle = '#0f172a';
                     ctx.lineWidth = 28;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -2508,7 +2509,7 @@
                     ctx.stroke();
 
                     ctx.beginPath();
-                    ctx.strokeStyle = '#64748b';
+                    ctx.strokeStyle = '#334155';
                     ctx.lineWidth = 22;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -2524,7 +2525,7 @@
 
                 // 3. マス目描画
                 let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
-                let markSymbols = { start: 'S', plus: '↑', minus: '↓', item: '🎁', white: '・', goal: '👑' };
+                let markSymbols = { start: 'S', plus: '📈', minus: '📉', item: '🎁', white: '・', goal: '👑' };
 
                 tileCoords.forEach(t => {
                     ctx.beginPath();
@@ -2542,7 +2543,7 @@
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
                 });
 
-                // 3.5 分岐選択時：着地予定マスにゴースト表示
+                // 3.5 分岐選択時：ゴーストキャラ表示
                 if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
                     activeBranchCandidates.forEach(cand => {
                         let destTile = tileCoords[cand.destTileIdx];
@@ -2585,10 +2586,7 @@
                         p.goshuX += dx * 0.04;
                         p.goshuY += dy * 0.04;
 
-                        let goshuJumpY = 0;
-                        if (dist > 1.0) {
-                            goshuJumpY = -Math.abs(Math.sin(Date.now() / 100)) * 8;
-                        }
+                        let goshuJumpY = (dist > 1.0) ? -Math.abs(Math.sin(Date.now() / 100)) * 8 : 0;
 
                         drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
                         drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJumpY, 18);
