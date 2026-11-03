@@ -158,7 +158,7 @@
                         <span id="diceResultText" class="text-[11px] sm:text-xs font-bold text-yellow-300">準備完了</span>
                     </div>
                 </div>
-                <button id="btnRoll" class="pixel-btn py-2 px-4 sm:px-6 font-black text-white rounded-lg text-xs sm:text-base w-auto sm:w-full shadow-md cursor-pointer flex-none">
+                <button id="btnRoll" class="pixel-btn py-2 px-4 sm:px-6 font-black text-white rounded-lg text-xs sm:text-base w-auto sm:w-full shadow-md cursor-pointer flex-none" disabled>
                     🎲 移動！
                 </button>
             </div>
@@ -1387,6 +1387,21 @@
                             document.getElementById('p2Name').innerText = players[1].name;
                             document.getElementById('p3Name').innerText = players[2].name;
                         }
+
+                        currentPlayerIndex = 0;
+                        currentTurnNumber = 1;
+                        document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+
+                        let activePlayer = players[0];
+                        document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+                        document.getElementById('currentEventTitle').innerText = '【スタート！】';
+                        document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+
+                        let btnRoll = document.getElementById('btnRoll');
+                        if (btnRoll) {
+                            btnRoll.innerText = '🎲 移動！';
+                            btnRoll.disabled = (myPlayerIndex !== 0);
+                        }
                     } else if (data.type === 'GAME_STATE_UPDATE') {
                         applySyncGameState(data);
                     } else if (data.type === 'ERROR') {
@@ -1565,8 +1580,8 @@
             
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
-                btnRoll.disabled = false;
                 btnRoll.innerText = '🎲 移動！';
+                btnRoll.disabled = (myPlayerIndex !== 0);
             }
         }
 
