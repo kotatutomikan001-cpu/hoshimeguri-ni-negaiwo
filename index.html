@@ -1191,6 +1191,7 @@
             }
 
             isOnlineMode = false;
+            myPlayerIndex = 0;
             players[0].isHuman = true;
             players[1].isHuman = false;
             players[2].isHuman = false;
@@ -1344,7 +1345,10 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        handleRollButtonClick();
+                        // ゲストからのサイコロ振り要求
+                        if (data.playerIndex === currentPlayerIndex && !isRolling && !isMoving) {
+                            handleRollButtonClick();
+                        }
                     }
                 } else {
                     // --- ゲスト側の受信処理 ---
@@ -1634,8 +1638,8 @@
 
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    // 現在のアクティブプレイヤーかつ移動中/サイコロ回転中でなければボタンを有効化
                     let isMyTurn = (myPlayerIndex === currentPlayerIndex);
+                    // 現在の自分の番でかつ、移動・回転中でない場合ボタンを有効化
                     btnRoll.disabled = !isMyTurn || data.isMoving || data.isRolling;
                     btnRoll.innerText = data.isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
@@ -1647,6 +1651,10 @@
 
             if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
             if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
+            if (data.isMoving !== undefined) isMoving = data.isMoving;
+            if (data.isRolling !== undefined) isRolling = data.isRolling;
+            
+            updateItemUI();
         }
 
         function broadcastGameState() {
@@ -1982,7 +1990,10 @@
 
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
-                    peerConnections[0].send({ type: 'ACTION_ROLL' });
+                    peerConnections[0].send({ 
+                        type: 'ACTION_ROLL',
+                        playerIndex: myPlayerIndex
+                    });
                 }
                 return;
             }
@@ -2039,7 +2050,7 @@
 
                     if (possibleNextTiles.length > 1) {
                         isWaitingForBranchChoice = true;
-                        if (pIndex === 0 && (!isOnlineMode || myPlayerIndex === 0)) {
+                        if (pIndex === myPlayerIndex) {
                             showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                 hideBranchSelectionUI();
                                 isWaitingForBranchChoice = false;
@@ -2247,7 +2258,7 @@
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
                     btnRoll.innerText = '🎲 サイコロを振る！';
-                    btnRoll.disabled = (isOnlineMode && myPlayerIndex !== pIndex);
+                    btnRoll.disabled = (pIndex !== myPlayerIndex);
                 }
 
                 broadcastGameState();
@@ -2348,12 +2359,14 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
+            let isMyTurn = (myPlayerIndex === currentPlayerIndex);
+
             if (activePlayer.isHuman) {
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
                 
                 if (btnRoll) {
-                    btnRoll.disabled = (isOnlineMode && myPlayerIndex !== currentPlayerIndex);
+                    btnRoll.disabled = !isMyTurn;
                 }
             } else {
                 if (btnRoll) btnRoll.disabled = true;
