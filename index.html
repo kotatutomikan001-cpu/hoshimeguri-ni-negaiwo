@@ -1342,10 +1342,8 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // 送信元ゲストが主張する playerIndex を直接採用（手番チェック）
                         let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : (peerConnections.indexOf(conn) + 1);
                         
-                        // 現在の手番と送信元プレイヤーが一致していれば、ホスト側で即座にサイコロ実行
                         if (senderIndex === currentPlayerIndex && !isRolling && !isMoving) {
                             executeRollForCurrentPlayer();
                         }
@@ -2352,58 +2350,45 @@
 
         function nextTurn() {
             isMoving = false;
-            isRolling = false;
-
             let checkCount = 0;
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
                 checkCount++;
+                if (currentPlayerIndex === 0) {
+                    currentTurnNumber++;
+                    document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+                }
             } while (players[currentPlayerIndex].finished && checkCount <= players.length);
-
-            if (players.every(p => p.finished)) {
-                showFinalResultModal();
-                return;
-            }
-
-            if (currentPlayerIndex === 0) {
-                currentTurnNumber++;
-                document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
-            }
 
             let activePlayer = players[currentPlayerIndex];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
-            
-            let btnRoll = document.getElementById('btnRoll');
-            if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
+            let canRoll = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
 
-            document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
-            document.getElementById('currentEventDesc').innerText = isMyTurn ? `${activePlayer.name}さんの番です。サイコロを振ってください。` : `${activePlayer.name}が操作中...`;
+            if (activePlayer.isHuman) {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                document.getElementById('currentEventEffect').innerText = '-';
 
-            if (btnRoll) {
-                btnRoll.disabled = !isMyTurn || isMoving || isRolling;
-            }
+                let btnRoll = document.getElementById('btnRoll');
+                if (btnRoll) {
+                    btnRoll.disabled = !canRoll;
+                    btnRoll.innerText = '🎲 移動！';
+                }
+            } else {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name} (CPU) のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中...`;
+                document.getElementById('currentEventEffect').innerText = '-';
 
-            if (!activePlayer.isHuman && (!isOnlineMode || isHost)) {
-                setTimeout(() => {
-                    isRolling = true;
-                    let count = 0;
-                    let interval = setInterval(() => {
-                        let roll = Math.floor(Math.random() * 6) + 1;
-                        drawDice(roll);
-                        count++;
-                        if (count > 12) {
-                            clearInterval(interval);
-                            isRolling = false;
-                            movePlayer(currentPlayerIndex, roll);
-                        }
-                    }, 100);
-                }, 1500);
+                let btnRoll = document.getElementById('btnRoll');
+                if (btnRoll) btnRoll.disabled = true;
+
+                if (!isOnlineMode || isHost) {
+                    setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
+                }
             }
 
             broadcastGameState();
-            updateItemUI();
         }
 
         function updateItemUI() {
