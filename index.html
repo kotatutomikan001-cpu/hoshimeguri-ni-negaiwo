@@ -1342,13 +1342,12 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // 通信コネクションのインデックスから正確に送信者プレイヤー番号を確定 (+1)
-                        let connIdx = peerConnections.indexOf(conn);
-                        let senderIndex = (connIdx !== -1) ? (connIdx + 1) : data.playerIndex;
+                        // 送信元ゲストが主張する playerIndex を直接採用（手番チェック）
+                        let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : (peerConnections.indexOf(conn) + 1);
                         
                         // 現在の手番と送信元プレイヤーが一致していれば、ホスト側で即座にサイコロ実行
                         if (senderIndex === currentPlayerIndex && !isRolling && !isMoving) {
-                            handleRollButtonClick();
+                            executeRollForCurrentPlayer();
                         }
                     }
                 } else {
@@ -1992,7 +1991,13 @@
                 return;
             }
 
+            executeRollForCurrentPlayer();
+        }
+
+        function executeRollForCurrentPlayer() {
+            if (isRolling || isMoving) return;
             isRolling = true;
+            let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.disabled = true;
 
             let count = 0;
