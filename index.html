@@ -1342,7 +1342,9 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        if (data.playerIndex === currentPlayerIndex && !isRolling && !isMoving) {
+                        // 2P/3Pなどのゲストから送られてきたサイコロ要求を処理
+                        let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : peerConnections.indexOf(conn) + 1;
+                        if (senderIndex === currentPlayerIndex && !isRolling && !isMoving) {
                             handleRollButtonClick();
                         }
                     }
@@ -1978,6 +1980,7 @@
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
                     if (btnRoll) btnRoll.disabled = true;
+                    // 2P端末自身の myPlayerIndex を添えてホストにサイコロ実行を請求
                     peerConnections[0].send({ 
                         type: 'ACTION_ROLL',
                         playerIndex: myPlayerIndex
