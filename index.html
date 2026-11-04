@@ -1342,8 +1342,10 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // 2P/3Pなどのゲストから送られてきたサイコロ要求を処理
-                        let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : peerConnections.indexOf(conn) + 1;
+                        // 送信元プレイヤーのインデックスを判定（送信データ優先、無ければ接続順）
+                        let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : (peerConnections.indexOf(conn) + 1);
+                        
+                        // 現在の手番のプレイヤーからのサイコロ要請であればホストが代理実行
                         if (senderIndex === currentPlayerIndex && !isRolling && !isMoving) {
                             handleRollButtonClick();
                         }
@@ -1980,7 +1982,7 @@
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
                     if (btnRoll) btnRoll.disabled = true;
-                    // 2P端末自身の myPlayerIndex を添えてホストにサイコロ実行を請求
+                    // 2P端末自身の myPlayerIndex を添えてホストにサイコロ実行を確実請求
                     peerConnections[0].send({ 
                         type: 'ACTION_ROLL',
                         playerIndex: myPlayerIndex
