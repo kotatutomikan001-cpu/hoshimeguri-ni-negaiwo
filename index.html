@@ -2084,6 +2084,7 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll && btnRoll.disabled) return;
 
+            // ゲスト（2P・3P）の場合：ホストへサイコロ要求信号を送信
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
                     peerConnections[0].send({ 
