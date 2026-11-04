@@ -550,7 +550,7 @@
         let isHost = false;
         let myPlayerIndex = 0;
         let currentRoomCode = '';
-        let onlineMemberChars = {}; // PIndexごとの選択キャラを記憶
+        let onlineMemberChars = {};
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -597,12 +597,10 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
-            // デフォルトデータの強制補完とロード
             initDefaultDotGrids();
             initDefaultMapGrid();
             loadDataFromLocalStorage();
 
-            // 確実な初期データ変換・位置設定と描画
             convertCustomGridToTileCoords();
             resetAllPlayerPositions();
             drawCharPreviews();
@@ -615,7 +613,6 @@
             requestAnimationFrame(gameLoop);
         };
 
-        // --- デバッグメニュー関連制御 ---
         function openDebugMenu() {
             document.getElementById('debugModal').classList.remove('hidden');
             renderDebugEvents();
@@ -1132,7 +1129,6 @@
             }
         }
 
-        // --- モード切替画面制御 ---
         function openCpuCharSelectModal() {
             document.getElementById('startModal').classList.add('hidden');
             document.getElementById('cpuCharSelectModal').classList.remove('hidden');
@@ -1190,7 +1186,6 @@
                 convertCustomGridToTileCoords();
             }
 
-            // Close peer connection if active to prevent unwanted WebSocket calls
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
                 peer = null;
@@ -1222,7 +1217,6 @@
             }
         }
 
-        // 🌐 オンライン対戦 部屋作成/参加
         function startOnlineGame() {
             let roomCode = document.getElementById('roomCodeInput').value.trim();
             if (!roomCode) { alert('部屋コードを入力してください'); return; }
@@ -1250,14 +1244,10 @@
             peerConnections = [];
             onlineMemberChars = {};
             
-            // 部屋コードに基づく統一PeerID
             let hostPeerId = `utsuro-sugoroku-room-${roomCode}`;
             
             try {
-                // 最初にホストとして起動を試みる
-                peer = new Peer(hostPeerId, {
-                    debug: 1
-                });
+                peer = new Peer(hostPeerId, { debug: 1 });
 
                 peer.on('open', (id) => {
                     isHost = true;
@@ -1278,10 +1268,9 @@
                     }
 
                     peerConnections.push(conn);
-                    let assignedPIdx = peerConnections.length; // 1 or 2
+                    let assignedPIdx = peerConnections.length;
                     
                     conn.on('open', () => {
-                        // 参加者に割り当てインデックスを初期送信
                         conn.send({
                             type: 'INIT_GUEST',
                             playerIndex: assignedPIdx,
@@ -1296,101 +1285,17 @@
                 });
 
                 peer.on('error', (err) => {
-                    // ホストIDが既に使われている場合はゲストとして参加接続
                     if (err.type === 'unavailable-id') {
                         connectAsGuest(hostPeerId);
                     } else {
                         console.error('Peer error:', err);
-                        document.getElementById('lobbyStatusText').innerText = '通信環境の制限によりオンライン接続に失敗しました。VS CPUモードでお楽しみください。';
+                        document.getElementById('lobbyStatusText').innerText = '接続エラーが発生しました';
                     }
                 });
             } catch (e) {
-                console.error('WebSocket security restriction caught:', e);
-                document.getElementById('lobbyStatusText').innerText = 'この環境ではセキュリティ制限によりオンライン対戦を利用できません。';
+                console.error('WebSocket error:', e);
+                document.getElementById('lobbyStatusText').innerText = 'オンライン機能の接続に失敗しました';
             }
-        }
-
-        // 🌐 オンライン対戦 部屋作成/参加
-        function startOnlineGame() {
-            let roomCode = document.getElementById('roomCodeInput').value.trim();
-            if (!roomCode) { alert('部屋コードを入力してください'); return; }
-
-            if (!tileCoords || tileCoords.length === 0) {
-                convertCustomGridToTileCoords();
-            }
-
-            currentRoomCode = roomCode;
-            isOnlineMode = true;
-
-            document.getElementById('roomCodeModal').classList.add('hidden');
-            document.getElementById('onlineLobbyModal').classList.remove('hidden');
-            document.getElementById('lobbyRoomCode').innerText = roomCode;
-            document.getElementById('lobbyStatusText').innerText = 'サーバー接続中...';
-
-            drawLobbyCharPreviews();
-            initPeerConnection(roomCode);
-        }
-
-        function initPeerConnection(roomCode) {
-            if (peer) {
-                try { peer.destroy(); } catch(e) {}
-            }
-            peerConnections = [];
-            onlineMemberChars = {};
-            
-            // 部屋コードに基づく統一PeerID
-            let hostPeerId = `utsuro-sugoroku-room-${roomCode}`;
-            
-            // 最初にホストとして起動を試みる
-            peer = new Peer(hostPeerId, {
-                debug: 1
-            });
-
-            peer.on('open', (id) => {
-                isHost = true;
-                myPlayerIndex = 0;
-                onlineMemberChars[0] = myChar;
-                updateLobbyCharUI();
-                document.getElementById('lobbyMemberCount').innerText = `1 / 3`;
-                document.getElementById('lobbyStatusText').innerText = '部屋を作成しました。対戦相手を待っています...';
-            });
-
-            peer.on('connection', (conn) => {
-                if (!isHost) return;
-                
-                if (peerConnections.length >= 2) {
-                    conn.send({ type: 'ERROR', message: '部屋が満員です' });
-                    setTimeout(() => conn.close(), 500);
-                    return;
-                }
-
-                peerConnections.push(conn);
-                let assignedPIdx = peerConnections.length; // 1 or 2
-                
-                conn.on('open', () => {
-                    // 参加者に割り当てインデックスを初期送信
-                    conn.send({
-                        type: 'INIT_GUEST',
-                        playerIndex: assignedPIdx,
-                        hostChar: myChar,
-                        onlineMemberChars: onlineMemberChars
-                    });
-                    
-                    document.getElementById('lobbyMemberCount').innerText = `${peerConnections.length + 1} / 3`;
-                });
-
-                setupConnectionDataHandler(conn);
-            });
-
-            peer.on('error', (err) => {
-                // ホストIDが既に使われている場合はゲストとして参加接続
-                if (err.type === 'unavailable-id') {
-                    connectAsGuest(hostPeerId);
-                } else {
-                    console.error('Peer error:', err);
-                    document.getElementById('lobbyStatusText').innerText = '接続エラーが発生しました';
-                }
-            });
         }
 
         function connectAsGuest(hostPeerId) {
@@ -1405,7 +1310,6 @@
                     document.getElementById('lobbyStatusText').innerText = '部屋に参加しました！';
                     setupConnectionDataHandler(conn);
                     
-                    // 自分の選択キャラをホストに登録送信
                     conn.send({
                         type: 'REGISTER_CHAR',
                         char: myChar
@@ -1429,7 +1333,6 @@
                 if (!data || !data.type) return;
 
                 if (isHost) {
-                    // --- ホスト側の受信処理 ---
                     if (data.type === 'REGISTER_CHAR') {
                         let connIdx = peerConnections.indexOf(conn);
                         if (connIdx !== -1) {
@@ -1439,14 +1342,11 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // ゲストからのサイコロ振り要求を確実に処理
-                        let requestingPIdx = data.playerIndex;
-                        if (requestingPIdx === currentPlayerIndex && !isRolling && !isMoving) {
+                        if (data.playerIndex === currentPlayerIndex && !isRolling && !isMoving) {
                             handleRollButtonClick();
                         }
                     }
                 } else {
-                    // --- ゲスト側の受信処理 ---
                     if (data.type === 'INIT_GUEST') {
                         myPlayerIndex = data.playerIndex;
                         if (data.onlineMemberChars) {
@@ -1457,7 +1357,6 @@
                     } else if (data.type === 'LOBBY_STATE') {
                         if (data.onlineMemberChars) {
                             onlineMemberChars = data.onlineMemberChars;
-                            // 自分の指定が上書きされないよう維持
                             onlineMemberChars[myPlayerIndex] = myChar;
                         }
                         if (data.memberCount) {
@@ -1569,7 +1468,6 @@
                 }
             });
 
-            // プレイヤーの選択ラベルを更新
             Object.keys(onlineMemberChars).forEach(pIdx => {
                 let c = onlineMemberChars[pIdx];
                 if (c) {
@@ -1582,7 +1480,6 @@
                 }
             });
 
-            // ホストのゲーム開始ボタン制御
             let startBtn = document.getElementById('btnStartLobbyGame');
             let statusText = document.getElementById('lobbyStatusText');
 
@@ -1644,7 +1541,6 @@
                 };
             });
 
-            // 全プレイヤー設定を同期適用
             playerConfigs.forEach((cfg, idx) => {
                 players[idx].char = cfg.char;
                 players[idx].name = charNames[cfg.char];
@@ -1656,7 +1552,6 @@
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
 
-            // ゲストへゲームスタート命令をブロードキャスト
             let startPayload = {
                 type: 'START_GAME',
                 playerConfigs: playerConfigs
@@ -1705,7 +1600,6 @@
                         players[idx].finished = pSync.finished;
                         players[idx].rank = pSync.rank;
                         
-                        // 座標の滑らかな同期 (アニメーション中のリアルタイム位置補正)
                         if (pSync.renderX !== undefined && pSync.renderY !== undefined) {
                             players[idx].renderX = pSync.renderX;
                             players[idx].renderY = pSync.renderY;
@@ -1738,7 +1632,6 @@
 
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
-                    // オンライン対戦時は自分の手番(myPlayerIndex == currentPlayerIndex)の時だけボタンを有効化
                     let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
                     let movingOrRolling = (isMoving || isRolling);
                     btnRoll.disabled = !isMyTurn || movingOrRolling;
@@ -1783,7 +1676,6 @@
             });
         }
 
-        // --- ドット絵・マップ描画ロジック ---
         function initDefaultDotGrids() {
             let tomokoGoshuGrid = [
                 ["#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000","#00000000"],
@@ -2077,16 +1969,15 @@
             });
         }
 
-        // --- ゲームループ & アクション ---
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
 
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll && btnRoll.disabled) return;
 
-            // ゲスト（2P・3P）の場合：ホストへサイコロ要求信号を送信
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
+                    if (btnRoll) btnRoll.disabled = true;
                     peerConnections[0].send({ 
                         type: 'ACTION_ROLL',
                         playerIndex: myPlayerIndex
@@ -2135,19 +2026,25 @@
             p.lastVisitedTileIndex = p.lastVisitedTileIndex !== undefined ? p.lastVisitedTileIndex : -1;
 
             function stepNext() {
-                if (tileCoords[p.pos] && tileCoords[p.pos].type === 'goal') {
-                    p.jumpY = 0;
-                    isMoving = false;
-                    handlePlayerGoal(pIndex);
-                    return;
-                }
+                if (remainingSteps > 0) {
+                    if (tileCoords[p.pos].type === 'goal') {
+                        p.jumpY = 0;
+                        isMoving = false;
+                        handlePlayerGoal(pIndex);
+                        return;
+                    }
 
-                if (remainingSteps > 0 && p.pos < tileCoords.length - 1) {
                     let possibleNextTiles = getAdjacentNextTiles(p.pos, p.lastVisitedTileIndex);
+                    if (possibleNextTiles.length === 0) {
+                        p.jumpY = 0;
+                        isMoving = false;
+                        setTimeout(() => { triggerTileEvent(pIndex); }, 300);
+                        return;
+                    }
 
                     if (possibleNextTiles.length > 1) {
-                        isWaitingForBranchChoice = true;
-                        if (pIndex === myPlayerIndex) {
+                        if (p.isHuman && (!isOnlineMode || myPlayerIndex === pIndex)) {
+                            isWaitingForBranchChoice = true;
                             showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                 hideBranchSelectionUI();
                                 isWaitingForBranchChoice = false;
@@ -2155,6 +2052,7 @@
                             });
                             return;
                         } else {
+                            isWaitingForBranchChoice = true;
                             setTimeout(() => {
                                 isWaitingForBranchChoice = false;
                                 let chosen = possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
@@ -2164,7 +2062,7 @@
                         }
                     }
 
-                    let nextTargetIdx = possibleNextTiles.length === 1 ? possibleNextTiles[0].tileIdx : p.pos + 1;
+                    let nextTargetIdx = possibleNextTiles[0].tileIdx;
                     executeSingleStep(nextTargetIdx);
 
                 } else {
@@ -2196,7 +2094,6 @@
                     p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
                     p.jumpY = -Math.sin(progress * Math.PI) * 18;
 
-                    // 移動中のリアルタイム位置を相手に送信してワープを防ぐ
                     if (isOnlineMode && isHost) {
                         broadcastGameState();
                     }
@@ -2385,6 +2282,14 @@
             }
         }
 
+        function addPlayerItem(pIndex, itemName) {
+            if (players[pIndex]) {
+                if (!players[pIndex].items) players[pIndex].items = [];
+                players[pIndex].items.push(itemName);
+                updateItemUI();
+            }
+        }
+
         function resolveSubRollEvent(pIndex, type, diceRoll) {
             let p = players[pIndex];
             let matchingEvents = gameEvents.filter(e => e.type === type);
@@ -2435,7 +2340,6 @@
         }
 
         function nextTurn() {
-            // 手番移行時に移動・サイコロ振りのフラグをクリア
             isMoving = false;
             isRolling = false;
 
@@ -2461,7 +2365,6 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            // オンラインモードで自分の手番(myPlayerIndex == currentPlayerIndex)の時、またはローカルで人間操作の時に有効化
             let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
 
             document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
@@ -2472,7 +2375,6 @@
             }
 
             if (!activePlayer.isHuman && (!isOnlineMode || isHost)) {
-                // CPUプレイヤーの自動サイコロ処理
                 setTimeout(() => {
                     isRolling = true;
                     let count = 0;
@@ -2491,14 +2393,6 @@
 
             broadcastGameState();
             updateItemUI();
-        }
-
-        function addPlayerItem(pIndex, itemName) {
-            let p = players[pIndex];
-            if (p) {
-                p.items.push(itemName);
-                updateItemUI();
-            }
         }
 
         function updateItemUI() {
@@ -2608,12 +2502,10 @@
             context.restore();
         }
 
-        // --- メイン描画ループ ---
         function gameLoop() {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // マップ背景色を明るい黄緑色（草地風）に設定
                 ctx.fillStyle = '#6ee7b7';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -2640,7 +2532,6 @@
                     ctx.translate(-currTile.x, -currTile.y);
                 }
 
-                // 1. 道路ライン描画
                 if (window.roadConnections && window.roadConnections.length > 0) {
                     ctx.beginPath();
                     ctx.strokeStyle = '#0f172a';
@@ -2665,10 +2556,8 @@
                     ctx.stroke();
                 }
 
-                // 2. 街並みオブジェクト描画
                 cityObjects.forEach(obj => drawCityObject(ctx, obj));
 
-                // 3. マス目描画
                 let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
                 let markSymbols = { start: 'S', plus: '📈', minus: '📉', item: '🎁', white: '・', goal: '👑' };
 
@@ -2688,7 +2577,6 @@
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
                 });
 
-                // 3.5 分岐選択時：ゴーストキャラ表示
                 if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
                     activeBranchCandidates.forEach(cand => {
                         let destTile = tileCoords[cand.destTileIdx];
@@ -2709,7 +2597,6 @@
                     });
                 }
 
-                // 4. プレイヤー＆ごしゅの描画
                 players.forEach((p, idx) => {
                     let tile = tileCoords[p.pos];
                     if (tile) {
