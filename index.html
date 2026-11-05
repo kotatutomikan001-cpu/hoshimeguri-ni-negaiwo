@@ -257,18 +257,6 @@
 
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
-        <!-- 背景用カモフラージュ雪群 -->
-        <div class="absolute inset-0 pointer-events-none overflow-hidden select-none">
-            <span class="absolute top-5 left-10 text-xl text-white/30">❄️</span>
-            <span class="absolute top-12 left-1/3 text-xs text-white/20">❄️</span>
-            <span class="absolute top-8 right-20 text-lg text-white/40">❄️</span>
-            <span class="absolute top-1/4 left-1/4 text-sm text-white/25">❄️</span>
-            <span class="absolute top-1/3 right-12 text-2xl text-white/30">❄️</span>
-            <span class="absolute bottom-20 left-16 text-lg text-white/35">❄️</span>
-            <span class="absolute bottom-10 right-1/4 text-xs text-white/20">❄️</span>
-            <span class="absolute bottom-1/3 left-1/2 text-xl text-white/25">❄️</span>
-        </div>
-
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-lg sm:text-xl font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
                 <span>❄️ 氷室うつろ すごろく</span>
@@ -359,7 +347,7 @@
     <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
     <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
 
-    <!-- 🛠️ デバッグモーダル (フルカスタマイズ仕様) -->
+    <!-- 🛠️ デバッグモーダル -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
         <div class="pixel-box w-full max-w-2xl h-[85vh] max-h-[85vh] rounded-xl bg-slate-900 border-2 border-purple-500 flex flex-col overflow-hidden shadow-2xl">
             <div class="flex-none flex items-center justify-between p-2.5 border-b border-purple-800 bg-indigo-950/80">
@@ -387,9 +375,7 @@
 
             <!-- タブコンテンツエリア -->
             <div class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-3 bg-slate-900/90">
-                <!-- イベント編集パネル -->
                 <div id="debugTabEvents" class="space-y-3">
-                    <!-- ゴール順位ボーナス設定パネル -->
                     <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-yellow-300 font-bold">🏆 ゴール順位ボーナス設定（リスナー数）:</span>
                         <div class="grid grid-cols-3 gap-2">
@@ -425,7 +411,6 @@
                     <div id="debugEventsList" class="space-y-2"></div>
                 </div>
 
-                <!-- ドット絵ピクセルエディター -->
                 <div id="debugTabDots" class="hidden flex flex-col items-center gap-3">
                     <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
                         <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
@@ -455,7 +440,6 @@
                     </div>
                 </div>
 
-                <!-- マップエディター -->
                 <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
                     <div class="flex items-center gap-1 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
                         <span class="text-xs text-yellow-300 font-bold">マス種類:</span>
@@ -475,7 +459,6 @@
                 </div>
             </div>
 
-            <!-- フッター保存ボタン -->
             <div class="flex-none p-2 border-t border-purple-800 bg-slate-950 flex items-center justify-between">
                 <button onclick="resetDebugDefaults()" class="px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
                     初期リセット
@@ -526,6 +509,7 @@
 
         let currentPlayerIndex = 0;
         let currentTurnNumber = 1;
+        let currentDiceVal = 1; // 🎲 同期用出目変数
         let isMoving = false;
         let isRolling = false;
         let isSubRollPending = false;
@@ -1204,6 +1188,8 @@
             resetAllPlayerPositions();
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
+            currentDiceVal = 1;
+            drawDice(1);
             document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
@@ -1390,6 +1376,8 @@
 
                         currentPlayerIndex = 0;
                         currentTurnNumber = 1;
+                        currentDiceVal = 1;
+                        drawDice(1);
                         document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
 
                         let activePlayer = players[0];
@@ -1567,13 +1555,15 @@
             resetAllPlayerPositions();
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
+            currentDiceVal = 1;
+            drawDice(1);
             document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
 
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
             document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
-            
+
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
                 btnRoll.innerText = '🎲 移動！';
@@ -1617,6 +1607,11 @@
                 });
             }
 
+            if (data.currentDiceVal !== undefined) {
+                currentDiceVal = data.currentDiceVal;
+                drawDice(currentDiceVal);
+            }
+
             if (data.turnNumber !== undefined) {
                 currentTurnNumber = data.turnNumber;
                 document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
@@ -1655,6 +1650,7 @@
                 type: 'GAME_STATE_UPDATE',
                 turnNumber: currentTurnNumber,
                 currentPlayerIndex: currentPlayerIndex,
+                currentDiceVal: currentDiceVal, // 🎲 出目を同期データに追加
                 isSubRollPending: isSubRollPending,
                 pendingTileType: pendingTileType,
                 isMoving: isMoving,
@@ -1980,7 +1976,6 @@
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
                     if (btnRoll) btnRoll.disabled = true;
-                    // 2P/3Pゲスト端末自身の myPlayerIndex を確実にホストへ送信
                     peerConnections[0].send({ 
                         type: 'ACTION_ROLL',
                         playerIndex: myPlayerIndex
@@ -2001,9 +1996,14 @@
             let count = 0;
             let interval = setInterval(() => {
                 let roll = Math.floor(Math.random() * 6) + 1;
+                currentDiceVal = roll; // 出目の更新
                 drawDice(roll);
                 playSe('dice_roll');
                 count++;
+
+                if (isOnlineMode && isHost) {
+                    broadcastGameState();
+                }
 
                 if (count > 12) {
                     clearInterval(interval);
@@ -2267,8 +2267,9 @@
 
                 broadcastGameState();
 
-                if (!p.isHuman) {
-                    setTimeout(() => { handleRollButtonClick(); }, 1500);
+                // 🤖 CPUまたは非人間プレイヤーの場合、ホストが代理でサイコロを進行
+                if (!p.isHuman && (!isOnlineMode || isHost)) {
+                    setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
                 }
             } else {
                 let matchingEvents = gameEvents.filter(e => e.type === tile.type);
@@ -2287,7 +2288,9 @@
                 }
 
                 broadcastGameState();
-                setTimeout(() => { nextTurn(); }, 3000);
+                if (!isOnlineMode || isHost) {
+                    setTimeout(() => { nextTurn(); }, 3000);
+                }
             }
         }
 
@@ -2318,7 +2321,9 @@
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
             broadcastGameState();
-            setTimeout(() => { nextTurn(); }, 3000);
+            if (!isOnlineMode || isHost) {
+                setTimeout(() => { nextTurn(); }, 3000);
+            }
         }
 
         function handlePlayerGoal(pIndex) {
@@ -2344,7 +2349,9 @@
             if (players.every(player => player.finished)) {
                 setTimeout(showFinalResultModal, 3500);
             } else {
-                setTimeout(nextTurn, 3500);
+                if (!isOnlineMode || isHost) {
+                    setTimeout(nextTurn, 3500);
+                }
             }
         }
 
