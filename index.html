@@ -191,6 +191,19 @@
     </main>
 
     <!-- 🌟 リザルト（結果発表）モーダル -->
+    <!-- 🎬 オープニング会話オーバーレイ -->
+    <div id="openingOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3 z-[100003]" onclick="advanceOpening()">
+        <button onclick="event.stopPropagation(); endOpening();" class="absolute top-3 right-3 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
+        <div class="pixel-box relative max-w-lg w-full bg-slate-900 border-2 border-purple-400 rounded-xl p-3 sm:p-4 flex gap-3 items-center shadow-2xl mb-4 sm:mb-0">
+            <canvas id="openingFaceCanvas" width="72" height="72" class="flex-none bg-slate-950 rounded-lg border border-purple-700"></canvas>
+            <div class="flex-1 min-w-0">
+                <div id="openingSpeaker" class="text-sm font-black text-yellow-300 mb-0.5"></div>
+                <p id="openingText" class="text-sm text-white font-bold leading-relaxed min-h-[3.2em]"></p>
+                <div class="text-right text-[11px] text-purple-300 font-bold animate-pulse">▼ タップでつぎへ</div>
+            </div>
+        </div>
+    </div>
+
     <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100001] hidden">
         <div class="pixel-box p-4 sm:p-5 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center flex flex-col gap-3">
             <h2 class="text-base sm:text-lg font-black text-yellow-300 tracking-wider">🎉 最終結果発表 🎉</h2>
@@ -256,6 +269,34 @@
     </button>
 
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
+    <!-- 🎬 タイトル画面 -->
+    <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-black flex items-center justify-center p-3 z-[100004] overflow-hidden">
+        <div class="text-center max-w-md w-full">
+            <div class="text-[11px] tracking-[0.35em] text-cyan-300 font-black mb-1">VSTREAMER SUGOROKU</div>
+            <h1 class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 mb-1">氷室うつろ</h1>
+            <div class="text-2xl sm:text-3xl font-black text-white mb-4">❄️ すごろく ❄️</div>
+            <div class="flex items-end justify-center gap-4 mb-3">
+                <div class="flex flex-col items-center gap-1">
+                    <canvas id="titlePrevUtsuro" width="72" height="72"></canvas>
+                    <span class="text-[11px] font-bold text-purple-200">氷室うつろ</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <canvas id="titlePrevGengo" width="72" height="72"></canvas>
+                    <span class="text-[11px] font-bold text-emerald-200">繰言かたる</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <canvas id="titlePrevTomoko" width="72" height="72"></canvas>
+                    <span class="text-[11px] font-bold text-pink-200">トモコ</span>
+                </div>
+            </div>
+            <p class="text-xs text-purple-200 font-bold mb-5">〜 配信コラボすごろく！サイコロを振ってゴールを目指せ 〜</p>
+            <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
+                ▶ タップしてスタート
+            </button>
+            <p class="text-[10px] text-gray-400 mt-3 font-bold">VS CPU / オンライン対戦対応</p>
+        </div>
+    </div>
+
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-lg sm:text-xl font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
@@ -394,6 +435,18 @@
                         </div>
                     </div>
 
+                    <div class="bg-emerald-950/90 p-2 rounded-lg border border-emerald-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-emerald-300 font-bold">📊 Googleスプレッドシート連携（イベント）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">シートを「リンクを知っている全員が閲覧可」にしてURLを貼ると、起動時にイベントを読み込みます。列は type / title / desc / val / itemName（1行目はヘッダー）。typeは plus・minus・item・white（プラス等の日本語でもOK）。</span>
+                        <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEventsFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="sheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
+
                     <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap gap-1.5">
                         <div class="flex items-center gap-1 flex-wrap">
                             <span class="text-xs text-yellow-300 font-bold flex-none">絞り込み:</span>
@@ -435,6 +488,17 @@
                         <button onclick="copyDotDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
                     </div>
 
+                    <div class="flex flex-col gap-1.5 w-full max-w-xs bg-slate-950 p-2 rounded-lg border border-emerald-700">
+                        <span class="text-xs text-emerald-300 font-bold">🖼️ PNGに差し替え（上の「編集対象」に適用）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">クリスタ等で描いた透過PNGを選ぶと、そのキャラはドット絵の代わりにPNGで表示されます（盤面・プレビュー・分岐表示すべて）。自動で最大256pxに縮小して保存するので、大きな絵でもOK。</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="document.getElementById('charPngInput').click()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">PNGを読み込む</button>
+                            <button onclick="removeCharPng()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">PNGを解除</button>
+                            <span id="charPngStatus" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                        <input type="file" id="charPngInput" accept="image/*" class="hidden" onchange="importCharPng(this)">
+                    </div>
+
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
                         <canvas id="dotEditorCanvas" width="256" height="256" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
                     </div>
@@ -451,6 +515,7 @@
                         <button onclick="setMapTool('goal')" id="mapTool_goal" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">👑 ゴール</button>
                         <button onclick="setMapTool('erase')" id="mapTool_erase" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🧹 消去</button>
                         <button onclick="clearCustomMap()" class="px-1.5 py-0.5 text-xs bg-red-900 hover:bg-red-800 text-white rounded border border-red-600">全消去</button>
+                        <button onclick="restoreOriginalMap()" class="px-1.5 py-0.5 text-xs bg-indigo-700 hover:bg-indigo-600 text-white rounded font-bold border border-indigo-400">🗺️ 最初のマップに戻す</button>
                         <button onclick="copyMapDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
                     </div>
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
@@ -601,6 +666,7 @@
             convertCustomGridToTileCoords();
             resetAllPlayerPositions();
             drawCharPreviews();
+            drawTitlePreviews();
             drawDice(1);
 
             setupAudioUnlockers();
@@ -829,6 +895,7 @@
 
         function loadTargetDotGrid(target) {
             selectedDotTarget = target;
+            refreshCharPngStatus();
             if (customDotData[target]) {
                 dotGrid = JSON.parse(JSON.stringify(customDotData[target]));
             } else {
@@ -899,6 +966,10 @@
                 localStorage.removeItem('utsuro_custom_events');
                 localStorage.removeItem('utsuro_custom_dots');
                 localStorage.removeItem('utsuro_custom_map');
+                localStorage.removeItem('utsuro_events_sheet_url');
+                localStorage.removeItem('utsuro_char_images');
+                charImageData = {};
+                refreshCharImageObjects();
                 initDefaultDotGrids();
                 initDefaultMapGrid();
                 loadDataFromLocalStorage();
@@ -911,6 +982,118 @@
                 drawCharPreviews();
                 alert('初期リセットが完了しました！');
             }
+        }
+
+        // 📊 Googleスプレッドシート連携: シートをCSVとして読み取り gameEvents に反映する
+        function extractSheetCsvUrl(input) {
+            if (!input) return '';
+            let s = String(input).trim();
+            let m = s.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+            if (m) {
+                let gidMatch = s.match(/[#?&]gid=([0-9]+)/);
+                let gid = gidMatch ? gidMatch[1] : '0';
+                return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${gid}`;
+            }
+            if (/^https?:\/\//.test(s)) return s; // CSVの直リンクなどもそのまま使う
+            if (/^[a-zA-Z0-9-_]{20,}$/.test(s)) return `https://docs.google.com/spreadsheets/d/${s}/export?format=csv&gid=0`;
+            return '';
+        }
+
+        function parseCsvText(text) {
+            let rows = []; let row = []; let field = ''; let inQuotes = false;
+            let t = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            for (let i = 0; i < t.length; i++) {
+                let ch = t[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (t[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+                    } else { field += ch; }
+                } else if (ch === '"') { inQuotes = true; }
+                else if (ch === ',') { row.push(field); field = ''; }
+                else if (ch === '\n') { row.push(field); field = ''; rows.push(row); row = []; }
+                else { field += ch; }
+            }
+            if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+            return rows;
+        }
+
+        function sheetRowsToEvents(rows) {
+            if (!rows || rows.length === 0) return [];
+            let typeMap = { plus: 'plus', 'プラス': 'plus', minus: 'minus', 'マイナス': 'minus', item: 'item', 'アイテム': 'item', white: 'white', '白色': 'white', '通常': 'white' };
+            let header = rows[0].map(h => String(h).trim().toLowerCase());
+            let hasHeader = header.includes('type') && header.includes('title');
+            let idx = { type: 0, title: 1, desc: 2, val: 3, itemName: 4 };
+            if (hasHeader) {
+                let p;
+                p = header.indexOf('type'); if (p !== -1) idx.type = p;
+                p = header.indexOf('title'); if (p !== -1) idx.title = p;
+                p = header.indexOf('desc'); if (p !== -1) idx.desc = p;
+                p = header.indexOf('val'); if (p !== -1) idx.val = p;
+                p = header.indexOf('itemname'); if (p !== -1) idx.itemName = p;
+            }
+            let events = [];
+            for (let r = hasHeader ? 1 : 0; r < rows.length; r++) {
+                let row = rows[r];
+                let rawType = String(row[idx.type] || '').trim();
+                let type = typeMap[rawType.toLowerCase()] || typeMap[rawType];
+                let title = String(row[idx.title] || '').trim();
+                if (!type || !title) continue; // 種類かタイトルが空/不明な行はスキップ
+                events.push({
+                    type: type,
+                    title: title,
+                    desc: String(row[idx.desc] || '').trim(),
+                    val: parseInt(String(row[idx.val] || '0').replace(/[^0-9\-]/g, '')) || 0,
+                    itemName: String(row[idx.itemName] || '').trim()
+                });
+            }
+            return events;
+        }
+
+        function setSheetStatus(msg) {
+            let el = document.getElementById('sheetStatusText');
+            if (el) el.innerText = msg;
+        }
+
+        async function loadEventsFromSheet(manual) {
+            let savedUrl = '';
+            try { savedUrl = localStorage.getItem('utsuro_events_sheet_url') || ''; } catch (e) {}
+            if (!savedUrl) { if (manual) setSheetStatus('未連携です'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let events = sheetRowsToEvents(parseCsvText(text));
+                if (events.length === 0) throw new Error('有効なイベントが0件');
+                gameEvents = events;
+                try { localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents)); } catch (e) {}
+                if (typeof renderDebugEvents === 'function') renderDebugEvents();
+                setSheetStatus(`✅ ${events.length}件のイベントを読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('シート読み込み失敗:', e);
+                setSheetStatus('⚠️ 読み込み失敗（保存済みイベントで継続します）');
+                return false;
+            }
+        }
+
+        function saveSheetUrlAndLoad() {
+            let input = document.getElementById('sheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_events_sheet_url', url); } catch (e) {}
+            loadEventsFromSheet(true);
+        }
+
+        function unlinkSheet() {
+            try { localStorage.removeItem('utsuro_events_sheet_url'); } catch (e) {}
+            let input = document.getElementById('sheetUrlInput');
+            if (input) input.value = '';
+            setSheetStatus('連携を解除しました（現在のイベントはそのまま使えます）');
         }
 
         function loadDataFromLocalStorage() {
@@ -926,6 +1109,15 @@
 
                 let savedMap = localStorage.getItem('utsuro_custom_map');
                 if (savedMap) customMapGrid = JSON.parse(savedMap);
+
+                loadCharImagesFromStorage();
+
+                let savedSheetUrl = localStorage.getItem('utsuro_events_sheet_url');
+                if (savedSheetUrl) {
+                    let sheetInput = document.getElementById('sheetUrlInput');
+                    if (sheetInput) sheetInput.value = savedSheetUrl;
+                    loadEventsFromSheet(false); // 非同期で最新イベントに差し替え（失敗時はキャッシュで継続）
+                }
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -1215,6 +1407,7 @@
                 btnRoll.disabled = false;
                 btnRoll.innerText = '🎲 移動！';
             }
+            playOpening();
         }
 
         function startOnlineGame() {
@@ -1420,6 +1613,7 @@
                             btnRoll.innerText = '🎲 移動！';
                             btnRoll.disabled = (myPlayerIndex !== 0);
                         }
+                        playOpening();
                     } else if (data.type === 'GAME_STATE_UPDATE') {
                         applySyncGameState(data);
                     } else if (data.type === 'ERROR') {
@@ -1602,6 +1796,7 @@
             }
             turnPhase = 'idle';
             startOnlineSupportLoops();
+            playOpening();
         }
 
         // 💓 ホストは2秒ごとに最新状態を送り直し、ゲストは無音が続いたら再同期を要求する
@@ -1897,6 +2092,32 @@
             loadTargetDotGrid(selectedDotTarget);
         }
 
+        // 🗺️ 最初に共有された時点のマップ（復元用に固定保存）
+        const ORIGINAL_MAP_GRID = [
+                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
+                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
+                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
+                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
+                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
+                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
+                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
+                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
+                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
+                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
+                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
+                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
+            ];
+
+        function restoreOriginalMap() {
+            if (!confirm('マップを「最初の状態」に戻しますか？今のマップ編集内容は上書きされます。')) return;
+            customMapGrid = JSON.parse(JSON.stringify(ORIGINAL_MAP_GRID));
+            convertCustomGridToTileCoords();
+            resetAllPlayerPositions();
+            renderMapEditorCanvas();
+            saveDebugSettings();
+            alert('最初のマップに戻しました！');
+        }
+
         function initDefaultMapGrid() {
             customMapGrid = [
                 [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
@@ -2039,7 +2260,181 @@
             context.restore();
         }
 
+        // 🎬 タイトル画面＆オープニング会話
+        // ★オープニングのセリフはこの OPENING_SCRIPT を編集すれば差し替えられます（who は utsuro / gengo / tomoko）
+        const OPENING_SCRIPT = [
+            { who: 'utsuro', text: 'みんな、今日は集まってくれてありがとう。配信すごろくコラボ、はじめるよ。' },
+            { who: 'gengo', text: 'おっ、今日の俺は絶好調！サイコロの神が味方してる気がするね！' },
+            { who: 'tomoko', text: 'わーい！あたし、アイテムいっぱい集めてゴールしちゃうんだから！' },
+            { who: 'utsuro', text: 'ルールは簡単。サイコロを振って進んで、先にゴールした人の勝ち。…ただし、マスのイベントには気をつけてね。' },
+            { who: 'gengo', text: 'マイナスマス？上等だよ、全部跳ね返してやる！' },
+            { who: 'tomoko', text: 'ふふーん、負けないよ！それじゃあ…' },
+            { who: 'utsuro', text: 'それじゃあ、いくよ。ゲームスタート！' }
+        ];
+        const OPENING_CHAR_NAMES = { utsuro: '❄️ 氷室うつろ', gengo: '🟩 繰言かたる', tomoko: '🌸 トモコ' };
+        let openingIndex = 0;
+        let openingActive = false;
+
+        function closeTitleScreen() {
+            let t = document.getElementById('titleScreen');
+            if (t) { t.classList.add('hidden'); t.classList.remove('flex'); }
+            try { playSelectBgm(); } catch (e) {}
+        }
+
+        function drawTitlePreviews() {
+            [['titlePrevUtsuro', 'utsuro'], ['titlePrevGengo', 'gengo'], ['titlePrevTomoko', 'tomoko']].forEach(([id, ch]) => {
+                let el = document.getElementById(id);
+                if (el) {
+                    let cx = el.getContext('2d');
+                    cx.clearRect(0, 0, el.width, el.height);
+                    drawPlayerDotModel(cx, ch, el.width / 2, el.height / 2, el.width - 8);
+                }
+            });
+        }
+
+        function playOpening() {
+            if (!OPENING_SCRIPT || OPENING_SCRIPT.length === 0) return;
+            openingIndex = 0;
+            openingActive = true;
+            let ov = document.getElementById('openingOverlay');
+            if (!ov) return;
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+            renderOpeningLine();
+        }
+
+        function renderOpeningLine() {
+            let line = OPENING_SCRIPT[openingIndex];
+            if (!line) { endOpening(); return; }
+            document.getElementById('openingSpeaker').innerText = line.name || OPENING_CHAR_NAMES[line.who] || '';
+            document.getElementById('openingText').innerText = line.text || '';
+            let cv = document.getElementById('openingFaceCanvas');
+            if (cv) {
+                let cx = cv.getContext('2d');
+                cx.clearRect(0, 0, cv.width, cv.height);
+                if (line.who) drawPlayerDotModel(cx, line.who, cv.width / 2, cv.height / 2, 64);
+            }
+        }
+
+        function advanceOpening() {
+            if (!openingActive) return;
+            openingIndex++;
+            if (openingIndex >= OPENING_SCRIPT.length) endOpening();
+            else renderOpeningLine();
+        }
+
+        function endOpening() {
+            openingActive = false;
+            let ov = document.getElementById('openingOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+        }
+
+        // 🖼️ PNG差し替え: 登録済みPNGがあればそれを描き、なければドット絵にフォールバック
+        let charImageData = {}; // target -> dataURL（localStorage保存用）
+        let charImages = {};    // target -> Image
+
+        function drawCharacterImage(context, img, x, y, size) {
+            let iw = img.naturalWidth || img.width;
+            let ih = img.naturalHeight || img.height;
+            if (!iw || !ih) return false;
+            let scale = Math.min(size / iw, size / ih);
+            let w = iw * scale;
+            let h = ih * scale;
+            context.drawImage(img, x - w / 2, y - h / 2, w, h);
+            return true;
+        }
+
+        function refreshCharImageObjects() {
+            charImages = {};
+            Object.keys(charImageData).forEach(k => {
+                if (charImageData[k]) {
+                    let img = new Image();
+                    img.onload = () => { try { drawCharPreviews(); drawTitlePreviews(); } catch (e) {} };
+                    img.src = charImageData[k];
+                    charImages[k] = img;
+                }
+            });
+            try { drawCharPreviews(); } catch (e) {}
+            refreshCharPngStatus();
+        }
+
+        function loadCharImagesFromStorage() {
+            try {
+                let saved = localStorage.getItem('utsuro_char_images');
+                if (saved) charImageData = JSON.parse(saved) || {};
+            } catch (e) {}
+            refreshCharImageObjects();
+        }
+
+        function persistCharImages() {
+            try {
+                localStorage.setItem('utsuro_char_images', JSON.stringify(charImageData));
+                return true;
+            } catch (e) {
+                alert('画像が大きすぎて保存できませんでした。もう少し小さいPNGで試してください。');
+                return false;
+            }
+        }
+
+        function refreshCharPngStatus() {
+            let el = document.getElementById('charPngStatus');
+            if (!el) return;
+            el.innerText = charImageData[selectedDotTarget] ? '✅ このキャラはPNG表示中' : 'ドット絵表示中';
+        }
+
+        function downscaleImageToDataUrl(img, maxSize) {
+            let iw = img.naturalWidth || img.width;
+            let ih = img.naturalHeight || img.height;
+            if (!iw || !ih || Math.max(iw, ih) <= maxSize) return null;
+            try {
+                let s = maxSize / Math.max(iw, ih);
+                let cv = document.createElement('canvas');
+                cv.width = Math.max(1, Math.round(iw * s));
+                cv.height = Math.max(1, Math.round(ih * s));
+                let cx = cv.getContext('2d');
+                cx.drawImage(img, 0, 0, cv.width, cv.height);
+                return cv.toDataURL('image/png');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function importCharPng(input) {
+            let file = input && input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            let target = selectedDotTarget;
+            let reader = new FileReader();
+            reader.onload = () => {
+                let img = new Image();
+                img.onload = () => {
+                    let dataUrl = downscaleImageToDataUrl(img, 256) || reader.result;
+                    charImageData[target] = dataUrl;
+                    if (persistCharImages()) {
+                        refreshCharImageObjects();
+                        alert('PNGを読み込みました！このキャラはPNGで表示されます。');
+                    } else {
+                        delete charImageData[target];
+                        refreshCharImageObjects();
+                    }
+                };
+                img.onerror = () => { alert('画像を読み込めませんでした。PNG/JPG形式のファイルを選んでください。'); };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCharPng() {
+            if (charImageData[selectedDotTarget]) {
+                delete charImageData[selectedDotTarget];
+                persistCharImages();
+                refreshCharImageObjects();
+            }
+        }
+
         function drawPlayerDotModel(context, charType, x, y, size = 32) {
+            let img = charImages[charType];
+            if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
             if (customDotData[charType]) {
                 renderCustomDotGrid(context, customDotData[charType], x, y, size);
             }
@@ -2047,6 +2442,8 @@
 
         function drawGoshuDotModel(context, charType, x, y, size = 20) {
             let goshuKey = `${charType}_goshu`;
+            let img = charImages[goshuKey];
+            if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
             if (customDotData[goshuKey]) {
                 renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
             }
