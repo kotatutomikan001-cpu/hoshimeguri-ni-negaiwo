@@ -515,6 +515,19 @@
         let isSubRollPending = false;
         let pendingTileType = null;
         let isWaitingForBranchChoice = false;
+        // 🛠 オンライン同期の復旧・排他用フラグ群
+        let isEventResolving = false;        // イベント表示中（次のターン待ち）のロック
+        let turnPhase = 'idle';              // 🔒 ターン進行フェーズ: idle(サイコロ待ち)/rolling/moving/event/branch
+        let pendingBranchInfo = null;        // 遠隔プレイヤーの分岐選択待ち情報
+        let pendingBranchResolver = null;    // 分岐選択の再開コールバック
+        let pendingBranchFallbackTimer = null;
+        let lastBroadcastAt = 0;             // 同期送信の間引き管理
+        let broadcastTimerId = null;
+        let lastProgressAt = Date.now();     // ゲームが最後に前進した時刻（ウォッチドッグ用）
+        let lastSyncReceivedAt = Date.now(); // ゲストが最後に同期を受け取った時刻
+        let heartbeatTimerId = null;
+        let watchdogTimerId = null;
+        let guestBranchShownKey = null;
         let activeBranchCandidates = [];
 
         let tileCoords = [];
@@ -1185,6 +1198,7 @@
             document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
             playGameBgm();
 
+            isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
             resetAllPlayerPositions();
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
@@ -1328,11 +1342,24 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        let senderIndex = (data.playerIndex !== undefined) ? data.playerIndex : (peerConnections.indexOf(conn) + 1);
-                        
-                        if (senderIndex === currentPlayerIndex && !isRolling && !isMoving) {
+                        // 送信者は申告値ではなく接続順で確定する
+                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        if (senderIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice && turnPhase === 'idle') {
                             executeRollForCurrentPlayer();
+                        } else {
+                            broadcastGameState(true); // 受け付けなかった場合も最新状態を返してゲスト側のロックを解除する
                         }
+                    } else if (data.type === 'ACTION_BRANCH') {
+                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        if (pendingBranchResolver && pendingBranchInfo && senderIndex === pendingBranchInfo.playerIndex && pendingBranchInfo.candidateTileIdxs.includes(data.tileIdx)) {
+                            if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
+                            let resolver = pendingBranchResolver;
+                            pendingBranchResolver = null;
+                            pendingBranchInfo = null;
+                            resolver(data.tileIdx);
+                        }
+                    } else if (data.type === 'REQUEST_SYNC') {
+                        broadcastGameState(true);
                     }
                 } else {
                     if (data.type === 'INIT_GUEST') {
@@ -1352,6 +1379,9 @@
                         }
                         updateLobbyCharUI();
                     } else if (data.type === 'START_GAME') {
+                        if (data.mapGrid) { customMapGrid = data.mapGrid; convertCustomGridToTileCoords(); }
+                        isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
+                        startOnlineSupportLoops();
                         document.getElementById('onlineLobbyModal').classList.add('hidden');
                         document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
                         playGameBgm();
@@ -1544,7 +1574,8 @@
 
             let startPayload = {
                 type: 'START_GAME',
-                playerConfigs: playerConfigs
+                playerConfigs: playerConfigs,
+                mapGrid: customMapGrid
             };
             peerConnections.forEach(c => { if (c.open) c.send(startPayload); });
 
@@ -1568,6 +1599,53 @@
             if (btnRoll) {
                 btnRoll.innerText = '🎲 移動！';
                 btnRoll.disabled = (myPlayerIndex !== 0);
+            }
+            turnPhase = 'idle';
+            startOnlineSupportLoops();
+        }
+
+        // 💓 ホストは2秒ごとに最新状態を送り直し、ゲストは無音が続いたら再同期を要求する
+        function startOnlineSupportLoops() {
+            lastProgressAt = Date.now();
+            lastSyncReceivedAt = Date.now();
+            if (heartbeatTimerId) clearInterval(heartbeatTimerId);
+            heartbeatTimerId = setInterval(() => {
+                if (!isOnlineMode) return;
+                if (isHost) {
+                    broadcastGameState(true);
+                } else if (Date.now() - lastSyncReceivedAt > 5000) {
+                    if (peerConnections[0] && peerConnections[0].open) {
+                        peerConnections[0].send({ type: 'REQUEST_SYNC' });
+                    }
+                }
+            }, 2000);
+            if (watchdogTimerId) clearInterval(watchdogTimerId);
+            watchdogTimerId = setInterval(() => { runHostWatchdog(); }, 2000);
+        }
+
+        // 🐶 ホスト側ウォッチドッグ: 止まったら自動復旧する
+        function runHostWatchdog() {
+            if (!isOnlineMode || !isHost) return;
+            if (!players || players.length === 0) return;
+            if (players.every(p => p.finished)) return;
+            let active = players[currentPlayerIndex];
+            if (!active) return;
+            let idleMs = Date.now() - lastProgressAt;
+
+            if ((isMoving || isRolling) && !isWaitingForBranchChoice && idleMs > 15000) {
+                isMoving = false;
+                isRolling = false;
+                turnPhase = 'idle';
+                lastProgressAt = Date.now();
+                broadcastGameState(true);
+                if (!active.isHuman) setTimeout(() => { executeRollForCurrentPlayer(); }, 800);
+                return;
+            }
+            if (!isMoving && !isRolling && !isEventResolving && !isWaitingForBranchChoice && turnPhase === 'idle' && idleMs > 6000) {
+                if (!active.isHuman) {
+                    lastProgressAt = Date.now();
+                    executeRollForCurrentPlayer();
+                }
             }
         }
 
@@ -1593,8 +1671,14 @@
                         players[idx].rank = pSync.rank;
                         
                         if (pSync.renderX !== undefined && pSync.renderY !== undefined) {
-                            players[idx].renderX = pSync.renderX;
-                            players[idx].renderY = pSync.renderY;
+                            if (!isHost && players[idx].renderX !== undefined) {
+                                // ゲスト側は目標座標だけ受け取り、描画ループで滑らかに追従させる
+                                players[idx].targetX = pSync.renderX;
+                                players[idx].targetY = pSync.renderY;
+                            } else {
+                                players[idx].renderX = pSync.renderX;
+                                players[idx].renderY = pSync.renderY;
+                            }
                             players[idx].jumpY = pSync.jumpY || 0;
                         } else if (tileCoords[pSync.pos]) {
                             players[idx].renderX = tileCoords[pSync.pos].x;
@@ -1619,6 +1703,9 @@
 
             if (data.isMoving !== undefined) isMoving = data.isMoving;
             if (data.isRolling !== undefined) isRolling = data.isRolling;
+            if (data.isEventResolving !== undefined) isEventResolving = data.isEventResolving;
+            if (data.turnPhase !== undefined) turnPhase = data.turnPhase;
+            lastSyncReceivedAt = Date.now();
             if (data.isSubRollPending !== undefined) isSubRollPending = data.isSubRollPending;
             if (data.pendingTileType !== undefined) pendingTileType = data.pendingTileType;
 
@@ -1630,7 +1717,7 @@
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
                     let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
-                    let movingOrRolling = (isMoving || isRolling);
+                    let movingOrRolling = (isMoving || isRolling || isEventResolving || turnPhase !== 'idle');
                     btnRoll.disabled = !isMyTurn || movingOrRolling;
                     btnRoll.innerText = isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
                 }
@@ -1640,21 +1727,73 @@
             if (data.eventDesc) document.getElementById('currentEventDesc').innerText = data.eventDesc;
             if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
 
+            handleSyncBranchRequest(data.branchRequest);
             updateItemUI();
         }
 
-        function broadcastGameState() {
+        // 🌿 ホストから届いた分岐選択リクエストをゲスト側で表示する
+        function handleSyncBranchRequest(req) {
+            if (!isOnlineMode || isHost) return;
+            if (!req) {
+                if (guestBranchShownKey !== null) {
+                    hideBranchSelectionUI();
+                    isWaitingForBranchChoice = false;
+                    guestBranchShownKey = null;
+                }
+                return;
+            }
+            if (req.playerIndex !== myPlayerIndex) return;
+            let me = players[myPlayerIndex];
+            let key = `${currentTurnNumber}-${req.playerIndex}-${me ? me.pos : -1}-${req.remainingSteps}`;
+            if (guestBranchShownKey === key) return;
+            guestBranchShownKey = key;
+
+            let candidates = (req.candidateTileIdxs || []).map(idx => ({ tileIdx: idx, tile: tileCoords[idx] })).filter(c => c.tile);
+            if (candidates.length === 0) { guestBranchShownKey = null; return; }
+
+            isWaitingForBranchChoice = true;
+            showBranchSelectionUI(myPlayerIndex, candidates, req.remainingSteps, (chosenTileIdx) => {
+                hideBranchSelectionUI();
+                isWaitingForBranchChoice = false;
+                guestBranchShownKey = null;
+                if (peerConnections[0] && peerConnections[0].open) {
+                    peerConnections[0].send({ type: 'ACTION_BRANCH', playerIndex: myPlayerIndex, tileIdx: chosenTileIdx });
+                }
+            });
+        }
+
+        function broadcastGameState(force) {
             if (!isOnlineMode || !isHost) return;
+
+            // 📉 間引き: アニメーション中の毎フレーム送信を最大10回/秒に制限し、帯域詰まりを防ぐ。
+            //    force=true のときは即時送信する（ターン交代などの節目用）。
+            let now = Date.now();
+            let wait = 100 - (now - lastBroadcastAt);
+            if (!force && wait > 0) {
+                if (!broadcastTimerId) {
+                    broadcastTimerId = setTimeout(() => { broadcastTimerId = null; broadcastGameState(true); }, wait);
+                }
+                return;
+            }
+            if (broadcastTimerId) { clearTimeout(broadcastTimerId); broadcastTimerId = null; }
+            lastBroadcastAt = now;
 
             let syncState = {
                 type: 'GAME_STATE_UPDATE',
                 turnNumber: currentTurnNumber,
                 currentPlayerIndex: currentPlayerIndex,
-                currentDiceVal: currentDiceVal, // 🎲 出目を同期データに追加
+                currentDiceVal: currentDiceVal,
                 isSubRollPending: isSubRollPending,
                 pendingTileType: pendingTileType,
                 isMoving: isMoving,
                 isRolling: isRolling,
+                isEventResolving: isEventResolving,
+                turnPhase: turnPhase,
+                branchRequest: pendingBranchInfo ? {
+                    playerIndex: pendingBranchInfo.playerIndex,
+                    candidateTileIdxs: pendingBranchInfo.candidateTileIdxs,
+                    remainingSteps: pendingBranchInfo.remainingSteps
+                } : null,
                 eventTitle: document.getElementById('currentEventTitle').innerText,
                 eventDesc: document.getElementById('currentEventDesc').innerText,
                 eventEffect: document.getElementById('currentEventEffect').innerText,
@@ -1969,14 +2108,18 @@
 
         function handleRollButtonClick() {
             if (isRolling || isMoving) return;
+            if (isEventResolving || isWaitingForBranchChoice) return;
+            if (turnPhase !== 'idle') return;
 
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll && btnRoll.disabled) return;
 
             if (isOnlineMode && !isHost) {
+                if (myPlayerIndex !== currentPlayerIndex) return;
                 if (peerConnections[0] && peerConnections[0].open) {
                     if (btnRoll) btnRoll.disabled = true;
-                    peerConnections[0].send({ 
+                    isRolling = true; // ホスト承認までの二重送信防止ロック（実状態は次の同期で上書きされる）
+                    peerConnections[0].send({
                         type: 'ACTION_ROLL',
                         playerIndex: myPlayerIndex
                     });
@@ -1989,7 +2132,11 @@
 
         function executeRollForCurrentPlayer() {
             if (isRolling || isMoving) return;
+            if (isEventResolving || isWaitingForBranchChoice) return;
+            if (turnPhase !== 'idle') return; // 🔒 フェーズがサイコロ待ちのときだけ開始できる（二重ロール防止）
+            turnPhase = 'rolling';
             isRolling = true;
+            lastProgressAt = Date.now();
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.disabled = true;
 
@@ -2009,12 +2156,14 @@
                     clearInterval(interval);
                     isRolling = false;
                     playSe('dice_stop');
+                    if (isOnlineMode && isHost) broadcastGameState(true);
 
                     setTimeout(() => {
                         if (isSubRollPending) {
                             isSubRollPending = false;
                             resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
                         } else {
+                            turnPhase = 'moving';
                             movePlayer(currentPlayerIndex, roll);
                         }
                     }, 1200);
@@ -2025,10 +2174,13 @@
         function movePlayer(pIndex, steps) {
             if (isMoving) return;
             isMoving = true;
+            turnPhase = 'moving';
+            lastProgressAt = Date.now();
             let p = players[pIndex];
             let remainingSteps = steps;
 
             let currentTile = tileCoords[p.pos];
+            if (!currentTile) { isMoving = false; if (!isOnlineMode || isHost) setTimeout(() => { nextTurn(); }, 300); return; }
             if (p.renderX === undefined) { p.renderX = currentTile.x; p.renderY = currentTile.y; }
             if (p.goshuX === undefined) { p.goshuX = currentTile.x; p.goshuY = currentTile.y; }
 
@@ -2036,6 +2188,7 @@
 
             function stepNext() {
                 if (remainingSteps > 0) {
+                    if (!tileCoords[p.pos]) { p.jumpY = 0; isMoving = false; if (!isOnlineMode || isHost) setTimeout(() => { nextTurn(); }, 300); return; }
                     if (tileCoords[p.pos].type === 'goal') {
                         p.jumpY = 0;
                         isMoving = false;
@@ -2054,16 +2207,43 @@
                     if (possibleNextTiles.length > 1) {
                         if (p.isHuman && (!isOnlineMode || myPlayerIndex === pIndex)) {
                             isWaitingForBranchChoice = true;
+                            turnPhase = 'branch';
                             showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                 hideBranchSelectionUI();
                                 isWaitingForBranchChoice = false;
+                                turnPhase = 'moving';
                                 executeSingleStep(chosenTileIdx);
                             });
                             return;
+                        } else if (p.isHuman && isOnlineMode && isHost) {
+                            // 🌿 遠隔プレイヤーの分岐は、ホストが勝手に決めず本人に選ばせる
+                            isWaitingForBranchChoice = true;
+                            turnPhase = 'branch';
+                            pendingBranchInfo = { playerIndex: pIndex, candidateTileIdxs: possibleNextTiles.map(c => c.tileIdx), remainingSteps: remainingSteps };
+                            pendingBranchResolver = (chosenTileIdx) => {
+                                isWaitingForBranchChoice = false;
+                                turnPhase = 'moving';
+                                executeSingleStep(chosenTileIdx);
+                            };
+                            if (pendingBranchFallbackTimer) clearTimeout(pendingBranchFallbackTimer);
+                            pendingBranchFallbackTimer = setTimeout(() => {
+                                if (pendingBranchResolver) {
+                                    let r = pendingBranchResolver;
+                                    let info = pendingBranchInfo;
+                                    pendingBranchResolver = null;
+                                    pendingBranchInfo = null;
+                                    pendingBranchFallbackTimer = null;
+                                    r(info.candidateTileIdxs[Math.floor(Math.random() * info.candidateTileIdxs.length)]);
+                                }
+                            }, 20000);
+                            broadcastGameState(true);
+                            return;
                         } else {
                             isWaitingForBranchChoice = true;
+                            turnPhase = 'branch';
                             setTimeout(() => {
                                 isWaitingForBranchChoice = false;
+                                turnPhase = 'moving';
                                 let chosen = possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
                                 executeSingleStep(chosen.tileIdx);
                             }, 800);
@@ -2246,6 +2426,8 @@
         function triggerTileEvent(pIndex) {
             let p = players[pIndex];
             let tile = tileCoords[p.pos];
+            if (!tile) { turnPhase = 'idle'; return; }
+            turnPhase = (tile.type === 'plus' || tile.type === 'minus') ? 'idle' : 'event';
 
             if (tile.type === 'plus' || tile.type === 'minus') {
                 isSubRollPending = true;
@@ -2265,7 +2447,7 @@
                     btnRoll.disabled = !canRoll;
                 }
 
-                broadcastGameState();
+                broadcastGameState(true);
 
                 // 🤖 CPUまたは非人間プレイヤーの場合、ホストが代理でサイコロを進行
                 if (!p.isHuman && (!isOnlineMode || isHost)) {
@@ -2287,9 +2469,10 @@
                     document.getElementById('currentEventEffect').innerText = '変化なし';
                 }
 
-                broadcastGameState();
+                isEventResolving = true;
+                broadcastGameState(true);
                 if (!isOnlineMode || isHost) {
-                    setTimeout(() => { nextTurn(); }, 3000);
+                    setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
                 }
             }
         }
@@ -2303,6 +2486,7 @@
         }
 
         function resolveSubRollEvent(pIndex, type, diceRoll) {
+            turnPhase = 'event';
             let p = players[pIndex];
             let matchingEvents = gameEvents.filter(e => e.type === type);
             if (matchingEvents.length === 0) matchingEvents = gameEvents;
@@ -2320,15 +2504,17 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
 
-            broadcastGameState();
+            isEventResolving = true;
+            broadcastGameState(true);
             if (!isOnlineMode || isHost) {
-                setTimeout(() => { nextTurn(); }, 3000);
+                setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
             }
         }
 
         function handlePlayerGoal(pIndex) {
             let p = players[pIndex];
             if (p.finished) return;
+            turnPhase = 'event';
 
             p.finished = true;
             finishedRankCount++;
@@ -2344,19 +2530,23 @@
             document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
-            broadcastGameState();
+            isEventResolving = true;
+            broadcastGameState(true);
 
             if (players.every(player => player.finished)) {
                 setTimeout(showFinalResultModal, 3500);
             } else {
                 if (!isOnlineMode || isHost) {
-                    setTimeout(nextTurn, 3500);
+                    setTimeout(() => { isEventResolving = false; nextTurn(); }, 3500);
                 }
             }
         }
 
         function nextTurn() {
             isMoving = false;
+            isEventResolving = false;
+            turnPhase = 'idle';
+            lastProgressAt = Date.now();
             let checkCount = 0;
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
@@ -2395,7 +2585,7 @@
                 }
             }
 
-            broadcastGameState();
+            broadcastGameState(true);
         }
 
         function updateItemUI() {
@@ -2603,6 +2793,12 @@
                 players.forEach((p, idx) => {
                     let tile = tileCoords[p.pos];
                     if (tile) {
+                        if (p.targetX !== undefined && p.renderX !== undefined) {
+                            p.renderX += (p.targetX - p.renderX) * 0.3;
+                            p.renderY += (p.targetY - p.renderY) * 0.3;
+                            if (Math.abs(p.targetX - p.renderX) < 0.5) p.renderX = p.targetX;
+                            if (Math.abs(p.targetY - p.renderY) < 0.5) p.renderY = p.targetY;
+                        }
                         let offset = (idx - 1) * 12;
 
                         let drawX = (p.renderX !== undefined ? p.renderX : tile.x) + offset;
