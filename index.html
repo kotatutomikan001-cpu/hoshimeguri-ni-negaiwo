@@ -264,7 +264,7 @@
     </div>
 
     <!-- 🌟 デバッグ用隠し起動ボタン (画面左上の❄️マーク) -->
-    <button type="button" onclick="openDebugMenu()" class="fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="デバッグモード">
+    <button type="button" id="debugEntryBtn" onclick="openDebugMenu()" class="hidden fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="">
         <span class="text-purple-300 text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">❄️</span>
     </button>
 
@@ -298,6 +298,35 @@
     </div>
 
     <div id="startModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden">
+            <!-- ❄️ ダミー装飾（デバッグ入口のカモフラージュ。本物は左上の1つだけ） -->
+            <div class="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
+                <span class="absolute text-white select-none" style="top:3%;left:16%;font-size:15px;opacity:0.37;transform:rotate(-22deg)">❄️</span>
+                <span class="absolute text-cyan-300 select-none" style="top:9%;left:6%;font-size:20px;opacity:0.35;transform:rotate(24deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:2%;left:30%;font-size:12px;opacity:0.53;transform:rotate(-13deg)">❄️</span>
+                <span class="absolute text-white select-none" style="top:15%;left:12%;font-size:26px;opacity:0.36;transform:rotate(-29deg)">❄️</span>
+                <span class="absolute text-cyan-200 select-none" style="top:6%;left:44%;font-size:13px;opacity:0.45;transform:rotate(30deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:13.8%;left:30.8%;font-size:18px;opacity:0.78;transform:rotate(-40deg)">❄️</span>
+                <span class="absolute text-cyan-200 select-none" style="top:23.5%;left:73.9%;font-size:42px;opacity:0.25;transform:rotate(24deg)">❄️</span>
+                <span class="absolute text-cyan-300 select-none" style="top:78.6%;left:46.7%;font-size:43px;opacity:0.65;transform:rotate(-31deg)">❄️</span>
+                <span class="absolute text-purple-300 select-none" style="top:82.7%;left:68.7%;font-size:44px;opacity:0.68;transform:rotate(-20deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:73.8%;left:40.5%;font-size:46px;opacity:0.7;transform:rotate(10deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:93.9%;left:21.4%;font-size:24px;opacity:0.69;transform:rotate(-13deg)">❄️</span>
+                <span class="absolute text-white select-none" style="top:4.0%;left:67.7%;font-size:13px;opacity:0.29;transform:rotate(6deg)">❄️</span>
+                <span class="absolute text-cyan-300 select-none" style="top:59.4%;left:12.1%;font-size:28px;opacity:0.55;transform:rotate(11deg)">❄️</span>
+                <span class="absolute text-cyan-300 select-none" style="top:5.1%;left:36.9%;font-size:11px;opacity:0.24;transform:rotate(20deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:20.0%;left:3.3%;font-size:42px;opacity:0.68;transform:rotate(33deg)">❄️</span>
+                <span class="absolute text-cyan-200 select-none" style="top:34.3%;left:94.9%;font-size:44px;opacity:0.73;transform:rotate(11deg)">❄️</span>
+                <span class="absolute text-indigo-200 select-none" style="top:42.4%;left:91.8%;font-size:42px;opacity:0.37;transform:rotate(-4deg)">❄️</span>
+                <span class="absolute text-white select-none" style="top:81.5%;left:73.3%;font-size:32px;opacity:0.51;transform:rotate(6deg)">❄️</span>
+                <span class="absolute text-indigo-200 select-none" style="top:3.6%;left:51.1%;font-size:34px;opacity:0.44;transform:rotate(7deg)">❄️</span>
+                <span class="absolute text-sky-200 select-none" style="top:23.2%;left:9.0%;font-size:33px;opacity:0.5;transform:rotate(19deg)">❄️</span>
+                <span class="absolute text-white select-none" style="top:65.8%;left:46.6%;font-size:38px;opacity:0.46;transform:rotate(-22deg)">❄️</span>
+                <span class="absolute text-purple-300 select-none" style="top:23.0%;left:20.9%;font-size:46px;opacity:0.68;transform:rotate(30deg)">❄️</span>
+                <span class="absolute text-indigo-200 select-none" style="top:30.5%;left:74.9%;font-size:30px;opacity:0.63;transform:rotate(-21deg)">❄️</span>
+                <span class="absolute text-cyan-300 select-none" style="top:72.4%;left:10.4%;font-size:26px;opacity:0.71;transform:rotate(-11deg)">❄️</span>
+                <span class="absolute text-white select-none" style="top:88.3%;left:65.8%;font-size:10px;opacity:0.74;transform:rotate(28deg)">❄️</span>
+                <span class="absolute text-cyan-200 select-none" style="top:69.5%;left:49.2%;font-size:20px;opacity:0.23;transform:rotate(-38deg)">❄️</span>
+            </div>
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
             <h2 class="text-lg sm:text-xl font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
                 <span>❄️ 氷室うつろ すごろく</span>
@@ -437,7 +466,7 @@
 
                     <div class="bg-emerald-950/90 p-2 rounded-lg border border-emerald-600 flex flex-col gap-1.5">
                         <span class="text-xs text-emerald-300 font-bold">📊 Googleスプレッドシート連携（イベント）</span>
-                        <span class="text-[11px] text-gray-300 leading-snug">シートを「リンクを知っている全員が閲覧可」にしてURLを貼ると、起動時にイベントを読み込みます。列は type / title / desc / val / itemName（1行目はヘッダー）。typeは plus・minus・item・white（プラス等の日本語でもOK）。</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">このゲームには公式イベントシートが組み込まれていて、全員の端末が起動時に自動で読み込みます。ここに別のURLを貼ると、この端末ではそちらが優先されます（テスト用）。列は type / title / desc / val / itemName（1行目はヘッダー）。typeは plus・minus・item・white（プラス等の日本語でもOK）。</span>
                         <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <button onclick="saveSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
@@ -507,8 +536,9 @@
                 <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
                     <div class="flex items-center gap-1 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
                         <span class="text-xs text-yellow-300 font-bold">マス種類:</span>
+                        <span id="currentMapToolLabel" class="text-xs text-white font-black bg-purple-900 px-1.5 py-0.5 rounded border border-yellow-300">選択中: 🔵 プラス</span>
                         <button onclick="setMapTool('start')" id="mapTool_start" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🏁 スタート</button>
-                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-1.5 py-0.5 text-xs bg-purple-700 text-white font-bold rounded border border-purple-300">🔵 プラス</button>
+                        <button onclick="setMapTool('plus')" id="mapTool_plus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
                         <button onclick="setMapTool('minus')" id="mapTool_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
                         <button onclick="setMapTool('item')" id="mapTool_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
                         <button onclick="setMapTool('white')" id="mapTool_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
@@ -678,6 +708,7 @@
 
         function openDebugMenu() {
             document.getElementById('debugModal').classList.remove('hidden');
+            setMapTool(selectedMapTool);
             renderDebugEvents();
             renderDotCanvas();
             renderMapEditorCanvas();
@@ -915,7 +946,26 @@
             loadTargetDotGrid(selectedDotTarget);
         }
 
-        function setMapTool(tool) { selectedMapTool = tool; }
+        const MAP_TOOL_LABELS = { start: '🏁 スタート', plus: '🔵 プラス', minus: '🔴 マイナス', item: '🎁 アイテム', white: '⚪ 白色', goal: '👑 ゴール', erase: '🧹 消去' };
+        const MAP_TOOL_BASE_CLASSES = ['bg-slate-800', 'text-gray-300', 'border-gray-600'];
+        const MAP_TOOL_ACTIVE_CLASSES = ['bg-purple-700', 'text-white', 'font-bold', 'border-yellow-300', 'ring-2', 'ring-yellow-300', 'scale-110'];
+
+        function setMapTool(tool) {
+            selectedMapTool = tool;
+            ['start', 'plus', 'minus', 'item', 'white', 'goal', 'erase'].forEach(t => {
+                let btn = document.getElementById('mapTool_' + t);
+                if (!btn) return;
+                if (t === tool) {
+                    btn.classList.remove(...MAP_TOOL_BASE_CLASSES);
+                    btn.classList.add(...MAP_TOOL_ACTIVE_CLASSES);
+                } else {
+                    btn.classList.remove(...MAP_TOOL_ACTIVE_CLASSES);
+                    btn.classList.add(...MAP_TOOL_BASE_CLASSES);
+                }
+            });
+            let label = document.getElementById('currentMapToolLabel');
+            if (label) label.innerText = '選択中: ' + (MAP_TOOL_LABELS[tool] || tool);
+        }
 
         function clearCustomMap() {
             customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
@@ -1054,9 +1104,20 @@
             if (el) el.innerText = msg;
         }
 
+        // 公式イベントシート（全プレイヤー共通）。端末に個別の連携URLが保存されていなければ、起動時にこれを自動で読み込む
+        const OFFICIAL_EVENTS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1QDS18ddgj7qol_qR1dsyxs-5Ux7Vsl1o-wWN1o6a17U/edit?gid=45813142#gid=45813142';
+
+        function getPersonalSheetUrl() {
+            try { return localStorage.getItem('utsuro_events_sheet_url') || ''; } catch (e) { return ''; }
+        }
+
+        function getEffectiveSheetUrl() {
+            return getPersonalSheetUrl() || OFFICIAL_EVENTS_SHEET_URL;
+        }
+
         async function loadEventsFromSheet(manual) {
-            let savedUrl = '';
-            try { savedUrl = localStorage.getItem('utsuro_events_sheet_url') || ''; } catch (e) {}
+            let personalUrl = getPersonalSheetUrl();
+            let savedUrl = personalUrl || OFFICIAL_EVENTS_SHEET_URL;
             if (!savedUrl) { if (manual) setSheetStatus('未連携です'); return false; }
             let csvUrl = extractSheetCsvUrl(savedUrl);
             if (!csvUrl) { setSheetStatus('⚠️ URLを認識できませんでした'); return false; }
@@ -1071,7 +1132,7 @@
                 gameEvents = events;
                 try { localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents)); } catch (e) {}
                 if (typeof renderDebugEvents === 'function') renderDebugEvents();
-                setSheetStatus(`✅ ${events.length}件のイベントを読み込みました`);
+                setSheetStatus(personalUrl ? `✅ ${events.length}件のイベントを読み込みました` : `✅ 公式シートから${events.length}件のイベントを読み込みました`);
                 return true;
             } catch (e) {
                 console.warn('シート読み込み失敗:', e);
@@ -1092,8 +1153,9 @@
         function unlinkSheet() {
             try { localStorage.removeItem('utsuro_events_sheet_url'); } catch (e) {}
             let input = document.getElementById('sheetUrlInput');
-            if (input) input.value = '';
-            setSheetStatus('連携を解除しました（現在のイベントはそのまま使えます）');
+            if (input) input.value = OFFICIAL_EVENTS_SHEET_URL;
+            setSheetStatus('個別連携を解除しました（公式シートに戻ります）');
+            loadEventsFromSheet(false);
         }
 
         function loadDataFromLocalStorage() {
@@ -1112,12 +1174,10 @@
 
                 loadCharImagesFromStorage();
 
-                let savedSheetUrl = localStorage.getItem('utsuro_events_sheet_url');
-                if (savedSheetUrl) {
-                    let sheetInput = document.getElementById('sheetUrlInput');
-                    if (sheetInput) sheetInput.value = savedSheetUrl;
-                    loadEventsFromSheet(false); // 非同期で最新イベントに差し替え（失敗時はキャッシュで継続）
-                }
+                let personalSheetUrl = localStorage.getItem('utsuro_events_sheet_url');
+                let sheetInput = document.getElementById('sheetUrlInput');
+                if (sheetInput) sheetInput.value = personalSheetUrl || OFFICIAL_EVENTS_SHEET_URL;
+                loadEventsFromSheet(false); // 個別連携があればそれを、なければ公式シートを自動読み込み（失敗時はキャッシュ/内蔵デフォルトで継続）
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -2278,6 +2338,8 @@
         function closeTitleScreen() {
             let t = document.getElementById('titleScreen');
             if (t) { t.classList.add('hidden'); t.classList.remove('flex'); }
+            let dbgBtn = document.getElementById('debugEntryBtn');
+            if (dbgBtn) dbgBtn.classList.remove('hidden');
             try { playSelectBgm(); } catch (e) {}
         }
 
