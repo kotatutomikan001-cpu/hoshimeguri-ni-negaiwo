@@ -441,6 +441,9 @@
                 <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
                     🗺️ マップ作成
                 </button>
+                <button id="tabBtnLines" onclick="switchDebugTab('lines')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
+                    💬 セリフ編集
+                </button>
             </div>
 
             <!-- タブコンテンツエリア -->
@@ -550,6 +553,18 @@
                     </div>
                     <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
                         <canvas id="mapEditorCanvas" width="384" height="384" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
+                    </div>
+                </div>
+                <div id="debugTabLines" class="hidden space-y-3">
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-yellow-300 font-bold">💬 オープニング会話のセリフ</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">対戦開始時に流れる会話を編集できます。話すキャラとセリフを1行ずつ設定してね。編集すると自動でこの端末に保存され、次回からそのセリフで再生されます。</span>
+                        <div id="openingLinesList" class="flex flex-col gap-1.5"></div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="addOpeningLine()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">＋ 行を追加</button>
+                            <button onclick="previewOpeningFromEditor()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">▶ 試し再生</button>
+                            <button onclick="resetOpeningScript()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">デフォルトに戻す</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -710,6 +725,7 @@
             document.getElementById('debugModal').classList.remove('hidden');
             setMapTool(selectedMapTool);
             renderDebugEvents();
+            renderOpeningEditor();
             renderDotCanvas();
             renderMapEditorCanvas();
         }
@@ -723,10 +739,13 @@
             document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
             document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
             document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
+            document.getElementById('debugTabLines').classList.toggle('hidden', tab !== 'lines');
 
             document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            document.getElementById('tabBtnLines').className = tab === 'lines' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
+            if (tab === 'lines') renderOpeningEditor();
         }
 
         function filterDebugEvents(type) {
@@ -1018,6 +1037,8 @@
                 localStorage.removeItem('utsuro_custom_map');
                 localStorage.removeItem('utsuro_events_sheet_url');
                 localStorage.removeItem('utsuro_char_images');
+                localStorage.removeItem('utsuro_opening_script');
+                activeOpeningScript = null;
                 charImageData = {};
                 refreshCharImageObjects();
                 initDefaultDotGrids();
@@ -1173,6 +1194,11 @@
                 if (savedMap) customMapGrid = JSON.parse(savedMap);
 
                 loadCharImagesFromStorage();
+
+                let savedOpening = localStorage.getItem('utsuro_opening_script');
+                if (savedOpening) {
+                    try { activeOpeningScript = sanitizeOpeningLines(JSON.parse(savedOpening)); } catch (e) { activeOpeningScript = null; }
+                }
 
                 let personalSheetUrl = localStorage.getItem('utsuro_events_sheet_url');
                 let sheetInput = document.getElementById('sheetUrlInput');
@@ -2332,6 +2358,124 @@
             { who: 'utsuro', text: 'それじゃあ、いくよ。ゲームスタート！' }
         ];
         const OPENING_CHAR_NAMES = { utsuro: '❄️ 氷室うつろ', gengo: '🟩 繰言かたる', tomoko: '🌸 トモコ' };
+
+        // 💬 セリフ編集: デバッグ画面で編集したセリフはこの端末に保存され、デフォルトより優先される
+        let activeOpeningScript = null; // null = デフォルト(OPENING_SCRIPT)を使用
+
+        function currentOpeningScript() {
+            return (activeOpeningScript && activeOpeningScript.length) ? activeOpeningScript : OPENING_SCRIPT;
+        }
+
+        function sanitizeOpeningLines(lines) {
+            if (!Array.isArray(lines)) return null;
+            let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
+                who: ['utsuro', 'gengo', 'tomoko'].includes(l.who) ? l.who : 'utsuro',
+                text: String(l.text)
+            }));
+            return cleaned.length ? cleaned : null;
+        }
+
+        function ensureEditableOpening() {
+            if (!activeOpeningScript) activeOpeningScript = JSON.parse(JSON.stringify(OPENING_SCRIPT));
+            return activeOpeningScript;
+        }
+
+        function saveOpeningScript() {
+            try {
+                if (activeOpeningScript) localStorage.setItem('utsuro_opening_script', JSON.stringify(activeOpeningScript));
+                else localStorage.removeItem('utsuro_opening_script');
+            } catch (e) {}
+        }
+
+        function renderOpeningEditor() {
+            let container = document.getElementById('openingLinesList');
+            if (!container) return;
+            container.innerHTML = '';
+            currentOpeningScript().forEach((line, idx) => {
+                let row = document.createElement('div');
+                row.className = 'p-1.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1';
+
+                let head = document.createElement('div');
+                head.className = 'flex items-center gap-1';
+                let num = document.createElement('span');
+                num.className = 'text-[11px] text-gray-400 font-bold w-5 text-center';
+                num.innerText = String(idx + 1);
+                let sel = document.createElement('select');
+                sel.className = 'bg-slate-900 border border-purple-500 rounded px-1 py-0.5 text-xs text-white font-bold';
+                ['utsuro', 'gengo', 'tomoko'].forEach(k => {
+                    let opt = document.createElement('option');
+                    opt.value = k;
+                    opt.innerText = OPENING_CHAR_NAMES[k];
+                    sel.appendChild(opt);
+                });
+                sel.value = line.who || 'utsuro';
+                sel.onchange = () => updateOpeningLine(idx, 'who', sel.value);
+                let upBtn = document.createElement('button');
+                upBtn.className = 'px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+                upBtn.innerText = '↑';
+                upBtn.onclick = () => moveOpeningLine(idx, -1);
+                let downBtn = document.createElement('button');
+                downBtn.className = 'px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+                downBtn.innerText = '↓';
+                downBtn.onclick = () => moveOpeningLine(idx, 1);
+                let delBtn = document.createElement('button');
+                delBtn.className = 'px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded border border-red-700 ml-auto';
+                delBtn.innerText = '✕ 削除';
+                delBtn.onclick = () => removeOpeningLine(idx);
+                head.append(num, sel, upBtn, downBtn, delBtn);
+
+                let ta = document.createElement('textarea');
+                ta.className = 'w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-xs text-white';
+                ta.rows = 2;
+                ta.value = line.text || '';
+                ta.onchange = () => updateOpeningLine(idx, 'text', ta.value);
+
+                row.append(head, ta);
+                container.appendChild(row);
+            });
+        }
+
+        function updateOpeningLine(idx, field, value) {
+            let lines = ensureEditableOpening();
+            if (!lines[idx]) return;
+            lines[idx][field] = value;
+            saveOpeningScript();
+        }
+
+        function addOpeningLine() {
+            let lines = ensureEditableOpening();
+            lines.push({ who: 'utsuro', text: '' });
+            saveOpeningScript();
+            renderOpeningEditor();
+        }
+
+        function removeOpeningLine(idx) {
+            let lines = ensureEditableOpening();
+            lines.splice(idx, 1);
+            saveOpeningScript();
+            renderOpeningEditor();
+        }
+
+        function moveOpeningLine(idx, dir) {
+            let lines = ensureEditableOpening();
+            let to = idx + dir;
+            if (to < 0 || to >= lines.length) return;
+            [lines[idx], lines[to]] = [lines[to], lines[idx]];
+            saveOpeningScript();
+            renderOpeningEditor();
+        }
+
+        function resetOpeningScript() {
+            if (!confirm('セリフをデフォルトに戻しますか？')) return;
+            activeOpeningScript = null;
+            saveOpeningScript();
+            renderOpeningEditor();
+        }
+
+        function previewOpeningFromEditor() {
+            closeDebugMenu();
+            playOpening();
+        }
         let openingIndex = 0;
         let openingActive = false;
 
@@ -2355,7 +2499,7 @@
         }
 
         function playOpening() {
-            if (!OPENING_SCRIPT || OPENING_SCRIPT.length === 0) return;
+            if (currentOpeningScript().length === 0) return;
             openingIndex = 0;
             openingActive = true;
             let ov = document.getElementById('openingOverlay');
@@ -2366,7 +2510,7 @@
         }
 
         function renderOpeningLine() {
-            let line = OPENING_SCRIPT[openingIndex];
+            let line = currentOpeningScript()[openingIndex];
             if (!line) { endOpening(); return; }
             document.getElementById('openingSpeaker').innerText = line.name || OPENING_CHAR_NAMES[line.who] || '';
             document.getElementById('openingText').innerText = line.text || '';
@@ -2381,7 +2525,7 @@
         function advanceOpening() {
             if (!openingActive) return;
             openingIndex++;
-            if (openingIndex >= OPENING_SCRIPT.length) endOpening();
+            if (openingIndex >= currentOpeningScript().length) endOpening();
             else renderOpeningLine();
         }
 
