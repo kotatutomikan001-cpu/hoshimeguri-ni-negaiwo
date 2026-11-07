@@ -112,25 +112,25 @@
             <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
                 <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
                     <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
-                    <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
+                    <span id="p1Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">氷室<br>うつろ</span>
                     <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                     <span id="p1Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
                     <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
-                    <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
+                    <span id="p2Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">繰言<br>かたる</span>
                     <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                     <span id="p2Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
                     <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
-                    <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
+                    <span id="p3Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">トモコ</span>
                     <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                     <span id="p3Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div id="p4Box" class="flex items-center gap-0.5 sm:gap-1 bg-orange-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-400">
                     <span id="p4Badge" class="text-orange-300 text-[9px] sm:text-[10px] font-black">4P</span>
-                    <span id="p4Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">依夢りつ</span>
+                    <span id="p4Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">依夢<br>りつ</span>
                     <span id="p4Listeners" class="text-orange-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                     <span id="p4Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
@@ -1589,7 +1589,7 @@
                     '<img src="' + charIconUrl(id) + '" alt="" class="absolute inset-0 w-full h-full object-cover' + (isTaken ? ' grayscale opacity-50' : '') + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
                     '<span class="absolute inset-0 items-center justify-center text-xl font-black" style="display:none; color:' + def.color + ';">' + def.name.charAt(0) + '</span>' +
                     '</span>' +
-                    '<span class="text-[8px] sm:text-[10px] font-black text-white leading-[1.1] break-all w-full text-center">' + def.name + '</span>' +
+                    '<span class="text-[8px] sm:text-[10px] font-black text-white leading-[1.1] break-all w-full text-center">' + splitSurnameHtml(def.name) + '</span>' +
                     ((def.hidden && id !== 'tomoko') ? '<span class="absolute top-0 left-0 bg-purple-600 text-white text-[8px] font-black px-1 rounded-br z-10">隠し</span>' : '') +
                     (isTaken ? '<span class="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black px-1 rounded-bl z-10">' + (taken[id] + 1) + 'P使用中</span>' : '');
                 btn.onmouseenter = () => csHover(id);
@@ -1707,10 +1707,7 @@
                 players[i].name = charName(csCpuPicks[i]);
                 players[i].color = charColor(csCpuPicks[i]);
             }
-            document.getElementById('p1Name').innerText = players[0].name;
-            document.getElementById('p2Name').innerText = players[1].name;
-            document.getElementById('p3Name').innerText = players[2].name;
-            document.getElementById('p4Name').innerText = players[3].name;
+            applyHudNames();
             document.getElementById('charSelectModal').classList.add('hidden');
             startCpuGame();
         }
@@ -2034,10 +2031,7 @@
                                 players[idx].isHuman = cfg.isHuman;
                             });
 
-                            document.getElementById('p1Name').innerText = players[0].name;
-                            document.getElementById('p2Name').innerText = players[1].name;
-                            document.getElementById('p3Name').innerText = players[2].name;
-                            document.getElementById('p4Name').innerText = players[3].name;
+                            applyHudNames();
                         }
 
                         currentPlayerIndex = 0;
@@ -2194,10 +2188,7 @@
                 players[idx].isHuman = cfg.isHuman;
             });
 
-            document.getElementById('p1Name').innerText = players[0].name;
-            document.getElementById('p2Name').innerText = players[1].name;
-            document.getElementById('p3Name').innerText = players[2].name;
-            document.getElementById('p4Name').innerText = players[3].name;
+            applyHudNames();
 
             initStarGame();
             let startPayload = {
@@ -2654,7 +2645,8 @@
         }
 
         function generateCityObjects() {
-            cityObjects = [];
+            cityObjects = []; // 🌌 宇宙背景化に伴い、家・木などのオブジェクトは生成しない
+            return;
             if (tileCoords.length === 0) return;
 
             const roofs = ['#f43f5e', '#fb923c', '#a855f7', '#06b6d4', '#eab308'];
@@ -3438,6 +3430,19 @@
             };
         }
 
+        function splitSurnameHtml(name) {
+            let m = String(name).match(/^[\u4E00-\u9FAF\u3005]+/);
+            if (m && m[0].length < String(name).length) return m[0] + '<br>' + String(name).slice(m[0].length);
+            return String(name);
+        }
+
+        function applyHudNames() {
+            for (let i = 0; i < 4; i++) {
+                let el = document.getElementById('p' + (i + 1) + 'Name');
+                if (el && players[i]) el.innerHTML = splitSurnameHtml(players[i].name);
+            }
+        }
+
         function updateFragmentUI() {
             players.forEach((p, idx) => {
                 let el = document.getElementById(`p${idx + 1}Fragments`);
@@ -3793,12 +3798,95 @@
             context.restore();
         }
 
+        let spaceStars = null;
+        function drawSpaceBackground(ctx, w, h) {
+            ctx.fillStyle = '#070818';
+            ctx.fillRect(0, 0, w, h);
+            // nebula: soft layered translucent blobs
+            const blobs = [
+                [0.22, 0.28, 0.55, '88, 60, 180'],
+                [0.82, 0.18, 0.45, '30, 90, 160'],
+                [0.68, 0.85, 0.60, '150, 40, 120'],
+                [0.12, 0.82, 0.40, '20, 120, 140']
+            ];
+            blobs.forEach(([fx, fy, fr, rgb]) => {
+                let R = Math.max(w, h) * fr;
+                for (let i = 5; i >= 1; i--) {
+                    ctx.beginPath();
+                    ctx.fillStyle = 'rgba(' + rgb + ', ' + (0.016 * i) + ')';
+                    ctx.arc(w * fx, h * fy, R * i / 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            // star field (generated once, twinkling)
+            if (!spaceStars) {
+                spaceStars = [];
+                let sd = 1234567;
+                const rnd = () => { sd = (sd * 1103515245 + 12345) & 0x7fffffff; return sd / 0x7fffffff; };
+                for (let i = 0; i < 170; i++) {
+                    spaceStars.push({ fx: rnd(), fy: rnd(), r: 0.6 + rnd() * 1.5, ph: rnd() * Math.PI * 2, sp: 400 + rnd() * 900, tint: rnd() });
+                }
+            }
+            let now = Date.now();
+            spaceStars.forEach(st => {
+                let tw = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(now / st.sp + st.ph));
+                ctx.beginPath();
+                ctx.fillStyle = st.tint > 0.85 ? 'rgba(165, 243, 252, ' + tw + ')' : (st.tint > 0.7 ? 'rgba(251, 207, 232, ' + tw + ')' : 'rgba(255, 255, 255, ' + tw + ')');
+                ctx.arc(st.fx * w, st.fy * h, st.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawStarAltar(ctx) {
+            if (!tileCoords || tileCoords.length === 0) return;
+            let minX = Math.min(...tileCoords.map(t => t.x));
+            let maxX = Math.max(...tileCoords.map(t => t.x));
+            let minY = Math.min(...tileCoords.map(t => t.y));
+            let maxY = Math.max(...tileCoords.map(t => t.y));
+            let cx = (minX + maxX) / 2;
+            let cy = (minY + maxY) / 2;
+            let now = Date.now();
+            ctx.save();
+            [[150, 0.05], [130, 0.07], [120, 0.09]].forEach(([r, a]) => {
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(253, 224, 71, ' + a + ')';
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            const ring = (r, fill, stroke, lw) => {
+                ctx.beginPath();
+                ctx.fillStyle = fill;
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = lw;
+                ctx.strokeStyle = stroke;
+                ctx.stroke();
+            };
+            ring(118, '#312e81', '#fbbf24', 4);
+            ring(92, '#3730a3', '#fde68a', 2);
+            ring(62, '#1e1b4b', '#fbbf24', 3);
+            ctx.fillStyle = '#fde68a';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i < 8; i++) {
+                let ang = now / 6000 + i * Math.PI / 4;
+                ctx.fillText('✦', cx + Math.cos(ang) * 79, cy + Math.sin(ang) * 79);
+            }
+            ring(34, '#4c1d95', '#fbbf24', 3);
+            ctx.font = '60px sans-serif';
+            ctx.fillText('⭐', cx, cy - 2 + Math.sin(now / 500) * 4);
+            ctx.font = '700 19px "Zen Maru Gothic", sans-serif';
+            ctx.fillStyle = '#fde68a';
+            ctx.fillText('星の祭壇', cx, cy + 50);
+            ctx.restore();
+        }
+
         function gameLoop() {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                ctx.fillStyle = '#6ee7b7';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                drawSpaceBackground(ctx, canvas.width, canvas.height);
 
                 ctx.save();
 
@@ -3823,9 +3911,11 @@
                     ctx.translate(-currTile.x, -currTile.y);
                 }
 
+                drawStarAltar(ctx);
+
                 if (window.roadConnections && window.roadConnections.length > 0) {
                     ctx.beginPath();
-                    ctx.strokeStyle = '#0f172a';
+                    ctx.strokeStyle = '#64748b';
                     ctx.lineWidth = 28;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -3836,7 +3926,7 @@
                     ctx.stroke();
 
                     ctx.beginPath();
-                    ctx.strokeStyle = '#334155';
+                    ctx.strokeStyle = '#1e293b';
                     ctx.lineWidth = 22;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -3847,7 +3937,6 @@
                     ctx.stroke();
                 }
 
-                cityObjects.forEach(obj => drawCityObject(ctx, obj));
 
                 let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
                 let markSymbols = { start: 'S', plus: '📈', minus: '📉', item: '🎁', white: '・', goal: '👑' };
