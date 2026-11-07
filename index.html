@@ -203,7 +203,10 @@
     <div id="openingOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3 z-[100003]" onclick="advanceOpening()">
         <button onclick="event.stopPropagation(); endOpening();" class="absolute top-3 right-3 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
         <div class="pixel-box relative max-w-lg w-full bg-slate-900 border-2 border-purple-400 rounded-xl p-3 sm:p-4 flex gap-3 items-center shadow-2xl mb-4 sm:mb-0">
-            <canvas id="openingFaceCanvas" width="72" height="72" class="flex-none bg-slate-950 rounded-lg border border-purple-700"></canvas>
+            <div id="openingFaceWrap" class="relative flex-none w-[92px] h-[118px] bg-slate-950 rounded-lg border border-purple-700 overflow-hidden">
+                <span id="openingFacePh" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/80"></span>
+                <img id="openingFaceImg" alt="" class="absolute inset-0 w-full h-full object-cover object-top" draggable="false">
+            </div>
             <div class="flex-1 min-w-0">
                 <div id="openingSpeaker" class="text-sm font-black text-yellow-300 mb-0.5"></div>
                 <p id="openingText" class="text-sm text-white font-bold leading-relaxed min-h-[3.2em]"></p>
@@ -359,6 +362,8 @@
         .cs-cursor { animation: csCursorBlink 0.6s steps(2) infinite; z-index: 2; }
         @keyframes csFlipAnim { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(90deg) scale(1.06); } 100% { transform: rotateY(0deg); } }
         .cs-flipping { animation: csFlipAnim 0.52s ease; }
+        @keyframes openingShake { 0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-9px, 3px) rotate(-0.4deg); } 20% { transform: translate(8px, -4px); } 30% { transform: translate(-7px, -2px) rotate(0.4deg); } 40% { transform: translate(6px, 3px); } 50% { transform: translate(-5px, 1px); } 60% { transform: translate(4px, -2px); } 70% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } 90% { transform: translate(-1px, 1px); } }
+        .opening-shake { animation: openingShake 1s ease-in-out; }
     </style>
     <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
         <div class="h-full flex flex-col max-w-3xl mx-auto p-2 sm:p-3">
@@ -591,7 +596,7 @@
                     </div>
                     <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-purple-300 font-bold">📊 Googleスプレッドシート連携（セリフ）</span>
-                        <span class="text-[11px] text-gray-300 leading-snug">シートでも会話を編集できます。列は speaker / text（1行目はヘッダー）。speaker は全キャラのID・名前（例: utsuro・氷室うつろ・うつろ）と narration（ナレーション）が使えます。連携シートが最優先で、無い場合は上のエディタ→内蔵デフォルトの順で再生されます。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">シートでも会話を編集できます。列は speaker / text（1行目はヘッダー）。3列目に fx 列を作って shake と書くと、その行で画面が揺れる演出が付きます。speaker は全キャラのID・名前（例: utsuro・氷室うつろ・うつろ）と narration（ナレーション）が使えます。連携シートが最優先で、無い場合は上のエディタ→内蔵デフォルトの順で再生されます。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
                         <input type="text" id="storySheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <button onclick="saveStorySheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
@@ -1328,11 +1333,13 @@
             let header = rows[0].map(h => String(h).trim().toLowerCase());
             let spkNames = ['speaker', 'who', '話者', 'キャラ'];
             let txtNames = ['text', 'セリフ', '本文'];
+            let fxNames = ['fx', '演出'];
             let hasHeader = header.some(h => spkNames.includes(h)) && header.some(h => txtNames.includes(h));
-            let si = 0, ti = 1;
+            let si = 0, ti = 1, fi = -1;
             if (hasHeader) {
                 let p = header.findIndex(h => spkNames.includes(h)); if (p !== -1) si = p;
                 p = header.findIndex(h => txtNames.includes(h)); if (p !== -1) ti = p;
+                fi = header.findIndex(h => fxNames.includes(h));
             }
             let lines = [];
             for (let r = hasHeader ? 1 : 0; r < rows.length; r++) {
@@ -1340,7 +1347,10 @@
                 let who = storySpeakerKey(row[si]);
                 let text = String(row[ti] || '').trim();
                 if (!who || !text) continue; // 話者不明・空行はスキップ
-                lines.push({ who: who, text: text });
+                let fxRaw = fi >= 0 ? String(row[fi] || '').trim().toLowerCase() : '';
+                let line = { who: who, text: text };
+                if (['shake', '揺れ', '地震'].includes(fxRaw)) line.fx = 'shake';
+                lines.push(line);
             }
             return lines;
         }
@@ -2909,6 +2919,13 @@
         // 🎬 タイトル画面＆オープニング会話
         // ★ストーリー会話のセリフはこの OPENING_SCRIPT を編集すれば差し替えられます（who は utsuro / gengo / tomoko / narration）。シート連携時はシートが最優先
         const OPENING_SCRIPT = [
+            { who: 'narration', text: 'ここは日本のどこかにある星めぐり学園、今日は学園長をはじめ所属のライバーたちが集まってパーティが開催されていた。' },
+            { who: 'hikari', text: 'わぁ、すごいごちそう！学園長、今日は太っ腹だね！' },
+            { who: 'mirine', text: 'ふふ、パーティーなんて久しぶり。みんなで集まれるの、やっぱり楽しいね♪' },
+            { who: 'utsuro', text: 'うん、たまにはこういう穏やかな日もいいよね。このまま平和に終わりますように…' },
+            { who: 'narration', fx: 'shake', text: 'その時だった。――ゴゴゴゴッ…！ 突然の大きな地震が学園を襲い、シャンデリアが激しく揺れ、食器の割れる音が響いた。' },
+            { who: 'utsuro', text: 'きゃあっ…！ みんな、頭を守って…！' },
+            { who: 'narration', text: '揺れが収まる頃、彼女たちの意識は深い闇の中へと落ちていった――。' },
             { who: 'narration', text: '――ここは、星明かりだけが頼りの未知の空間。目覚めた彼女たちは、帰り道を見失っていた。' },
             { who: 'utsuro', text: 'みんな、落ち着いて。ここは…知らない場所みたい。さっきまで配信の準備をしてたはずなのに…' },
             { who: 'hikari', text: 'うぅ、真っ暗でこわいよ…。あたしたち、どうやって帰ればいいの？' },
@@ -2945,7 +2962,7 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: normalizeSpeakerWho(l.who),
+                who: normalizeSpeakerWho(l.who), fx: l.fx === 'shake' ? 'shake' : undefined,
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -3091,18 +3108,34 @@
             let line = currentOpeningScript()[openingIndex];
             if (!line) { endOpening(); return; }
             let isNarr = line.who === 'narration';
+            let ovEl = document.getElementById('openingOverlay');
+            if (ovEl) {
+                ovEl.classList.remove('opening-shake');
+                if (line.fx === 'shake') { void ovEl.offsetWidth; ovEl.classList.add('opening-shake'); }
+            }
             document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
             let txEl = document.getElementById('openingText');
             txEl.innerText = line.text || '';
             txEl.classList.toggle('italic', isNarr);
             txEl.classList.toggle('text-purple-100', isNarr);
-            let cv = document.getElementById('openingFaceCanvas');
-            if (cv) {
-                cv.style.display = isNarr ? 'none' : '';
-                if (!isNarr) {
-                    let cx = cv.getContext('2d');
-                    cx.clearRect(0, 0, cv.width, cv.height);
-                    if (line.who) drawPlayerDotModel(cx, line.who, cv.width / 2, cv.height / 2, 64);
+            let fWrap = document.getElementById('openingFaceWrap');
+            let fImg = document.getElementById('openingFaceImg');
+            let fPh = document.getElementById('openingFacePh');
+            if (fWrap && fImg && fPh) {
+                if (isNarr) {
+                    fWrap.style.display = 'none';
+                } else {
+                    fWrap.style.display = '';
+                    let cid = normalizeSpeakerWho(line.who);
+                    fPh.innerText = charName(cid).charAt(0);
+                    fPh.style.color = charColor(cid);
+                    retryUpperExt(fImg, () => { fImg.style.display = 'none'; });
+                    if (fImg.dataset.charId !== cid) {
+                        fImg.dataset.charId = cid;
+                        delete fImg.dataset.upperFor;
+                        fImg.style.display = '';
+                        fImg.src = charStandUrl(cid);
+                    }
                 }
             }
         }
