@@ -147,8 +147,7 @@
             <!-- ターン表示＆カメラ切替オーバーレイ -->
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
-                    <span class="text-purple-300 font-bold">TURN</span>
-                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1</span>
+                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1ヶ月</span>
                 </div>
                 <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
@@ -692,6 +691,17 @@
         const STAR_TILE_COUNT = 4;      // マップ上に同時に出る星マスの数
         const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
+        // 📅 ターン経過は「月」で数える（12ヶ月＝1年）。6ヶ月ごとにマスの上昇・下降量が倍増していく
+        function formatElapsedDate(turnNo) {
+            let y = Math.floor(turnNo / 12);
+            let m = turnNo % 12;
+            if (y === 0) return turnNo + 'ヶ月';
+            if (m === 0) return y + '年';
+            return y + '年' + m + 'ヶ月';
+        }
+        function tileAmountMultiplier() {
+            return 1 + Math.floor((currentTurnNumber - 1) / 6);
+        }
 
         let currentPlayerIndex = 0;
         let currentTurnNumber = 1;
@@ -1837,7 +1847,7 @@
             currentTurnNumber = 1;
             currentDiceVal = 1;
             drawDice(1);
-            document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
@@ -2038,7 +2048,7 @@
                         currentTurnNumber = 1;
                         currentDiceVal = 1;
                         drawDice(1);
-                        document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+                        document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
 
                         let activePlayer = players[0];
                         document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
@@ -2210,7 +2220,7 @@
             currentTurnNumber = 1;
             currentDiceVal = 1;
             drawDice(1);
-            document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
 
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
@@ -2324,7 +2334,7 @@
 
             if (data.turnNumber !== undefined) {
                 currentTurnNumber = data.turnNumber;
-                document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+                document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
             }
 
             if (data.isMoving !== undefined) isMoving = data.isMoving;
@@ -3590,7 +3600,7 @@
             if (matchingEvents.length === 0) matchingEvents = gameEvents;
             let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
 
-            let val = type === 'plus' ? diceRoll * 100 : -( (7 - diceRoll) * 100 );
+            let val = (type === 'plus' ? diceRoll * 100 : -( (7 - diceRoll) * 100 )) * tileAmountMultiplier();
 
             p.listeners = Math.max(0, p.listeners + val);
             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
@@ -3656,7 +3666,7 @@
                 checkCount++;
                 if (currentPlayerIndex === 0) {
                     currentTurnNumber++;
-                    document.getElementById('turnCounter').innerText = `${currentTurnNumber}`;
+                    document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
                 }
             } while (players[currentPlayerIndex].finished && checkCount <= players.length);
 
@@ -3698,10 +3708,11 @@
 
             let p = players[currentPlayerIndex];
 
-            if (p.id !== myPlayerIndex && isOnlineMode) {
+            let isMine = isOnlineMode ? (p.id === myPlayerIndex) : p.isHuman;
+            if (!isMine) {
                 let badge = document.createElement('span');
                 badge.className = 'text-xs text-gray-400 italic';
-                badge.innerText = '🔒 対戦相手のアイテム（非公開）';
+                badge.innerText = isOnlineMode ? '🔒 対戦相手のアイテム（非公開）' : '🔒 CPUのアイテム（非公開）';
                 container.appendChild(badge);
                 return;
             }
@@ -3994,6 +4005,9 @@
                     });
                 }
 
+                let tileGroups = {};
+                players.forEach(p => { (tileGroups[p.pos] = tileGroups[p.pos] || []).push(p); });
+
                 players.forEach((p, idx) => {
                     let tile = tileCoords[p.pos];
                     if (tile) {
@@ -4003,7 +4017,13 @@
                             if (Math.abs(p.targetX - p.renderX) < 0.5) p.renderX = p.targetX;
                             if (Math.abs(p.targetY - p.renderY) < 0.5) p.renderY = p.targetY;
                         }
-                        let offset = (idx - 1) * 12;
+                        let group = tileGroups[p.pos] || [p];
+                        let gi = group.indexOf(p);
+                        let targetOffsetX = group.length > 1 ? (gi - (group.length - 1) / 2) * 14 : 0;
+                        if (p.offsetX === undefined) p.offsetX = targetOffsetX;
+                        p.offsetX += (targetOffsetX - p.offsetX) * 0.25;
+                        if (Math.abs(targetOffsetX - p.offsetX) < 0.3) p.offsetX = targetOffsetX;
+                        let offset = p.offsetX;
 
                         let drawX = (p.renderX !== undefined ? p.renderX : tile.x) + offset;
                         let drawY = (p.renderY !== undefined ? p.renderY : tile.y) - 6 + (p.jumpY || 0);
