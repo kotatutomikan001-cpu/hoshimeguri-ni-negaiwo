@@ -587,12 +587,12 @@
                     <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-yellow-300 font-bold">💬 オープニング会話のセリフ</span>
                         <span class="text-[11px] text-gray-300 leading-snug">タイトル画面の後に流れる会話シーンを編集できます。話すキャラとセリフを1行ずつ設定してね。編集すると自動でこの端末に保存され、次回からそのセリフで再生されます。</span>
-                        <div id="openingLinesList" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <button onclick="addOpeningLine()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">＋ 行を追加</button>
                             <button onclick="previewOpeningFromEditor()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">▶ 試し再生</button>
                             <button onclick="resetOpeningScript()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">デフォルトに戻す</button>
                         </div>
+                        <div id="openingLinesList" class="flex flex-col gap-1.5"></div>
                     </div>
                     <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-purple-300 font-bold">📊 Googleスプレッドシート連携（セリフ）</span>
@@ -3011,11 +3011,16 @@
                 downBtn.className = 'px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
                 downBtn.innerText = '↓';
                 downBtn.onclick = () => moveOpeningLine(idx, 1);
+                let insBtn = document.createElement('button');
+                insBtn.className = 'px-1.5 py-0.5 text-xs bg-emerald-800 hover:bg-emerald-600 text-white rounded border border-emerald-600';
+                insBtn.innerText = '＋';
+                insBtn.title = 'この行の下に新しい行を追加';
+                insBtn.onclick = () => addOpeningLine(idx);
                 let delBtn = document.createElement('button');
                 delBtn.className = 'px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded border border-red-700 ml-auto';
                 delBtn.innerText = '✕ 削除';
                 delBtn.onclick = () => removeOpeningLine(idx);
-                head.append(num, sel, upBtn, downBtn, delBtn);
+                head.append(num, sel, upBtn, downBtn, insBtn, delBtn);
 
                 let ta = document.createElement('textarea');
                 ta.className = 'w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-xs text-white';
@@ -3026,6 +3031,11 @@
                 row.append(head, ta);
                 container.appendChild(row);
             });
+            let addBtn = document.createElement('button');
+            addBtn.className = 'w-full py-2 text-sm bg-emerald-800/50 hover:bg-emerald-700 text-emerald-100 rounded-lg font-bold border border-dashed border-emerald-500';
+            addBtn.innerText = '＋ 行を追加（末尾）';
+            addBtn.onclick = () => addOpeningLine();
+            container.appendChild(addBtn);
         }
 
         function updateOpeningLine(idx, field, value) {
@@ -3035,11 +3045,24 @@
             saveOpeningScript();
         }
 
-        function addOpeningLine() {
+        function addOpeningLine(afterIdx) {
             let lines = ensureEditableOpening();
-            lines.push({ who: 'utsuro', text: '' });
+            let newIdx;
+            if (typeof afterIdx === 'number' && afterIdx >= 0 && afterIdx < lines.length) {
+                lines.splice(afterIdx + 1, 0, { who: 'utsuro', text: '' });
+                newIdx = afterIdx + 1;
+            } else {
+                lines.push({ who: 'utsuro', text: '' });
+                newIdx = lines.length - 1;
+            }
             saveOpeningScript();
             renderOpeningEditor();
+            let cont = document.getElementById('openingLinesList');
+            let rowEl = cont && cont.children[newIdx];
+            if (rowEl) {
+                let ta = rowEl.querySelector('textarea');
+                if (ta) { try { rowEl.scrollIntoView({ block: 'nearest' }); ta.focus(); } catch (e) {} }
+            }
         }
 
         function removeOpeningLine(idx) {
