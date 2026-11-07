@@ -1314,6 +1314,8 @@
                 p.finished = false;
                 p.rank = 0;
                 p.fragments = 0;
+                p.diceBonus = 0;
+                p.shield = 0;
                 p.lastVisitedTileIndex = tileCoords.length - 1;
                 p.renderX = startTile.x;
                 p.renderY = startTile.y;
@@ -1528,11 +1530,18 @@
 
         function csVisibleIds() { return CHARACTERS.filter(c => c.secret ? csMorphKataru : (csUnlocked || !c.hidden)).map(c => c.id); }
 
+        // うつろ⇔かたる は表裏一体：どちらかが参戦したら、もう一方は選べない
+        function csPairOf(id) { return id === 'utsuro' ? 'kataru' : (id === 'kataru' ? 'utsuro' : null); }
+
         function csTakenByOthers() {
             let taken = {};
             if (csMode === 'lobby') {
                 Object.keys(onlineMemberChars).forEach(k => {
-                    if (parseInt(k) !== myPlayerIndex && onlineMemberChars[k]) taken[onlineMemberChars[k]] = parseInt(k);
+                    if (parseInt(k) !== myPlayerIndex && onlineMemberChars[k]) {
+                        taken[onlineMemberChars[k]] = parseInt(k);
+                        let pr = csPairOf(onlineMemberChars[k]);
+                        if (pr) taken[pr] = parseInt(k);
+                    }
                 });
             }
             return taken;
@@ -1700,6 +1709,11 @@
         function csConfirm() {
             if (csCursor === '?') { setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）'); return; }
             let taken = csTakenByOthers();
+            let pairId = csPairOf(csCursor);
+            if (pairId && csMode === 'lobby' && Object.keys(onlineMemberChars).some(k => parseInt(k) !== myPlayerIndex && onlineMemberChars[k] === pairId)) {
+                setCsStatus('⚠️ ' + charName(csCursor) + ' と ' + charName(pairId) + ' は表裏一体なので、同じ対戦には出られません');
+                return;
+            }
             if (taken[csCursor] !== undefined) {
                 setCsStatus('⚠️ ' + charName(csCursor) + ' は ' + (taken[csCursor] + 1) + 'P が使用中です');
                 return;
@@ -1708,13 +1722,15 @@
                 if (csCpuPicks[0] === csCursor) { refreshCsSlots(); return; }
                 myChar = csCursor;
                 csCpuPicks[0] = csCursor;
-                let pool = csVisibleIds().filter(id => id !== csCursor);
+                let pool = csVisibleIds().filter(id => id !== csCursor && id !== csPairOf(csCursor));
                 for (let i = pool.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-                csCpuPicks[1] = pool[0];
-                csCpuPicks[2] = pool[1];
-                csCpuPicks[3] = pool[2];
+                for (let i = 1; i <= 3; i++) {
+                    csCpuPicks[i] = pool.shift();
+                    let pr = csPairOf(csCpuPicks[i]);
+                    if (pr) pool = pool.filter(id => id !== pr);
+                }
                 refreshCsSlots();
-                setCsStatus('2P: ' + charName(pool[0]) + ' ／ 3P: ' + charName(pool[1]) + ' ／ 4P: ' + charName(pool[2]) + ' が参戦！');
+                setCsStatus('2P: ' + charName(csCpuPicks[1]) + ' ／ 3P: ' + charName(csCpuPicks[2]) + ' ／ 4P: ' + charName(csCpuPicks[3]) + ' が参戦！');
                 updateCsButtons();
             } else {
                 setLobbyChar(csCursor);
@@ -1993,7 +2009,9 @@
                         let connIdx = peerConnections.indexOf(conn);
                         if (connIdx !== -1) {
                             let pIdx = connIdx + 1;
-                            onlineMemberChars[pIdx] = data.char;
+                            let pairId = csPairOf(data.char);
+                            let conflict = pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== pIdx && onlineMemberChars[k] === pairId);
+                            if (!conflict) onlineMemberChars[pIdx] = data.char;
                             updateLobbyCharUI();
                             broadcastLobbyState();
                         }
@@ -2004,6 +2022,13 @@
                             executeRollForCurrentPlayer();
                         } else {
                             broadcastGameState(true); // 受け付けなかった場合も最新状態を返してゲスト側のロックを解除する
+                        }
+                    } else if (data.type === 'ACTION_USE_ITEM') {
+                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        if (senderIndex === currentPlayerIndex) {
+                            applyUseItem(senderIndex, data.itemIndex, data.itemName);
+                        } else {
+                            broadcastGameState(true);
                         }
                     } else if (data.type === 'ACTION_BRANCH') {
                         let senderIndex = peerConnections.indexOf(conn) + 1;
@@ -2185,6 +2210,11 @@
                 alert('キャラクターが重複しています。参加者全員が異なるキャラクターを選択してください！');
                 return;
             }
+            let chosenOnly = selectedChars.filter(Boolean);
+            if (chosenOnly.includes('utsuro') && chosenOnly.includes('kataru')) {
+                alert('うつろとかたるは表裏一体なので、同じ対戦には出られません！');
+                return;
+            }
 
             let usedChars = [];
             let playerConfigs = [0, 1, 2, 3].map(idx => {
@@ -2192,8 +2222,8 @@
                 let isHuman = idx <= peerConnections.length;
 
                 if (!chosenChar || usedChars.includes(chosenChar)) {
-                    let available = normalCharIds().filter(c => !usedChars.includes(c));
-                    chosenChar = available[0] || 'utsuro';
+                    let available = normalCharIds().filter(c => !usedChars.includes(c) && !usedChars.includes(csPairOf(c)));
+                    chosenChar = available[0] || 'mikado';
                 }
                 usedChars.push(chosenChar);
 
@@ -2311,6 +2341,9 @@
                 data.players.forEach((pSync, idx) => {
                     if (players[idx]) {
                         players[idx].pos = pSync.pos;
+                        if (pSync.items) players[idx].items = pSync.items;
+                        players[idx].diceBonus = pSync.diceBonus || 0;
+                        players[idx].shield = pSync.shield || 0;
                         players[idx].fragments = pSync.fragments || 0;
                         players[idx].listeners = pSync.listeners;
                         players[idx].finished = pSync.finished;
@@ -2447,6 +2480,9 @@
                 eventEffect: document.getElementById('currentEventEffect').innerText,
                 starTiles: starTileIdxs,
                 players: players.map(p => ({
+                    items: p.items || [],
+                    diceBonus: p.diceBonus || 0,
+                    shield: p.shield || 0,
                     fragments: p.fragments || 0,
                     pos: p.pos,
                     renderX: p.renderX,
@@ -3142,6 +3178,7 @@
             if (turnPhase !== 'idle') return; // 🔒 フェーズがサイコロ待ちのときだけ開始できる（二重ロール防止）
             turnPhase = 'rolling';
             isRolling = true;
+            updateItemUI();
             lastProgressAt = Date.now();
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.disabled = true;
@@ -3170,7 +3207,15 @@
                             resolveSubRollEvent(currentPlayerIndex, pendingTileType, roll);
                         } else {
                             turnPhase = 'moving';
-                            movePlayer(currentPlayerIndex, roll);
+                            let p = players[currentPlayerIndex];
+                            let bonus = p.diceBonus || 0;
+                            if (bonus > 0) {
+                                p.diceBonus = 0;
+                                let dr = document.getElementById('diceResultText');
+                                if (dr) dr.innerText = `${roll} ＋ アイテム効果で +${bonus}マス！`;
+                                updateItemUI();
+                            }
+                            movePlayer(currentPlayerIndex, roll + bonus);
                         }
                     }, 1200);
                 }
@@ -3614,12 +3659,19 @@
 
             let val = (type === 'plus' ? diceRoll * 100 : -( (7 - diceRoll) * 100 )) * tileAmountMultiplier();
 
-            p.listeners = Math.max(0, p.listeners + val);
-            document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+            let shielded = false;
+            if (type === 'minus' && (p.shield || 0) > 0) {
+                p.shield--;
+                shielded = true;
+            }
+            if (!shielded) {
+                p.listeners = Math.max(0, p.listeners + val);
+                document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+            }
 
             document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
             document.getElementById('currentEventDesc').innerText = event.desc;
-            document.getElementById('currentEventEffect').innerText = `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
+            document.getElementById('currentEventEffect').innerText = shielded ? '🛡️ シールドでマイナスを無効化した！' : `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`;
             
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
@@ -3713,6 +3765,85 @@
             broadcastGameState(true);
         }
 
+        // 🎒 アイテム効果（名前から判定。シートで増えた名前にもキーワードで対応）
+        function itemEffectInfo(itemName) {
+            const n = String(itemName || '');
+            if (n.includes('スパチャ') || n.includes('ブースター')) return { kind: 'listeners', val: 500, label: 'リスナー +500人' };
+            if (n.includes('マイク') || n.includes('ASMR')) return { kind: 'dice', val: 2, label: '次のサイコロ +2マス' };
+            if (n.includes('カケラ') || n.includes('星')) return { kind: 'fragment', val: 1, label: '星のカケラ +1個' };
+            if (n.includes('サイコロ') || n.includes('ダイス')) return { kind: 'dice', val: 3, label: '次のサイコロ +3マス' };
+            if (n.includes('シールド') || n.includes('ガード') || n.includes('守')) return { kind: 'shield', val: 1, label: '次のマイナスを1回無効' };
+            if (n.includes('奪') || n.includes('横取り')) return { kind: 'steal', val: 300, label: '一番多い相手からリスナー300人を奪う' };
+            return { kind: 'listeners', val: 200, label: 'リスナー +200人' };
+        }
+
+        // ターン消費なし：自分の番で、サイコロを振る前だけ使える
+        function canUseItemNow() {
+            if (turnPhase !== 'idle' || isRolling || isMoving || isEventResolving || isWaitingForBranchChoice) return false;
+            if (isSubRollPending) return false;
+            let p = players[currentPlayerIndex];
+            if (!p || p.finished) return false;
+            return isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : !!p.isHuman;
+        }
+
+        function useItem(itemIndex) {
+            if (!canUseItemNow()) return;
+            let p = players[currentPlayerIndex];
+            if (!p || !p.items || !p.items[itemIndex]) return;
+            if (isOnlineMode && !isHost) {
+                if (peerConnections[0] && peerConnections[0].open) {
+                    peerConnections[0].send({ type: 'ACTION_USE_ITEM', playerIndex: myPlayerIndex, itemIndex: itemIndex, itemName: p.items[itemIndex] });
+                }
+                return;
+            }
+            applyUseItem(currentPlayerIndex, itemIndex);
+        }
+
+        function applyUseItem(pIndex, itemIndex, expectedName) {
+            let p = players[pIndex];
+            if (!p || !p.items || pIndex !== currentPlayerIndex) return;
+            if (turnPhase !== 'idle' || isSubRollPending || isEventResolving || isRolling || isMoving) return;
+            if (expectedName && p.items[itemIndex] !== expectedName) itemIndex = p.items.indexOf(expectedName);
+            if (itemIndex < 0 || !p.items[itemIndex]) return;
+            let itemName = p.items[itemIndex];
+            let info = itemEffectInfo(itemName);
+            p.items.splice(itemIndex, 1);
+            let effectText = '';
+            if (info.kind === 'listeners') {
+                p.listeners += info.val;
+                effectText = `リスナー +${info.val.toLocaleString()}人`;
+            } else if (info.kind === 'dice') {
+                p.diceBonus = (p.diceBonus || 0) + info.val;
+                effectText = `次のサイコロ +${info.val}マス（合計 +${p.diceBonus}マス）`;
+            } else if (info.kind === 'fragment') {
+                p.fragments = (p.fragments || 0) + 1;
+                effectText = `星のカケラ +1個（現在 ${p.fragments}個）`;
+                updateFragmentUI();
+            } else if (info.kind === 'shield') {
+                p.shield = (p.shield || 0) + 1;
+                effectText = '次のマイナスを1回無効化するシールドを張った';
+            } else if (info.kind === 'steal') {
+                let target = players.filter(q => q !== p && !q.finished).sort((x, y) => y.listeners - x.listeners)[0];
+                if (target && target.listeners > 0) {
+                    let take = Math.min(info.val, target.listeners);
+                    target.listeners -= take;
+                    p.listeners += take;
+                    effectText = `${target.name}さんからリスナー ${take.toLocaleString()}人を奪った`;
+                    let tEl = document.getElementById(`p${players.indexOf(target) + 1}Listeners`);
+                    if (tEl) tEl.innerText = `${target.listeners.toLocaleString()}人`;
+                } else {
+                    effectText = '奪える相手がいなかった…';
+                }
+            }
+            let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
+            if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
+            document.getElementById('currentEventTitle').innerText = `【🎒 アイテム使用: ${itemName}】`;
+            document.getElementById('currentEventDesc').innerText = `${p.name}さんが「${itemName}」を使った！（ターン消費なし）`;
+            document.getElementById('currentEventEffect').innerText = effectText;
+            updateItemUI();
+            if (isOnlineMode && isHost) broadcastGameState(true);
+        }
+
         function updateItemUI() {
             let container = document.getElementById('itemListContainer');
             if (!container) return;
@@ -3729,18 +3860,43 @@
                 return;
             }
 
+            let usable = canUseItemNow();
             if (p && p.items && p.items.length > 0) {
-                p.items.forEach(item => {
-                    let badge = document.createElement('span');
-                    badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
-                    badge.innerText = item;
-                    container.appendChild(badge);
+                p.items.forEach((item, idx) => {
+                    let info = itemEffectInfo(item);
+                    if (usable) {
+                        let btn = document.createElement('button');
+                        btn.className = 'px-2 py-0.5 text-xs bg-yellow-600/90 hover:bg-yellow-500 border border-yellow-300 text-white rounded font-bold flex-none shadow cursor-pointer animate-pulse';
+                        btn.innerText = `${item} ▶使う`;
+                        btn.title = `効果: ${info.label}（サイコロを振る前に使用・ターン消費なし）`;
+                        btn.onclick = () => useItem(idx);
+                        container.appendChild(btn);
+                    } else {
+                        let badge = document.createElement('span');
+                        badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
+                        badge.innerText = item;
+                        badge.title = `効果: ${info.label}`;
+                        container.appendChild(badge);
+                    }
                 });
             } else {
                 let badge = document.createElement('span');
                 badge.className = 'text-xs text-gray-300 font-normal';
                 badge.innerText = 'なし（黄色のマスで獲得）';
                 container.appendChild(badge);
+            }
+
+            if (p && (p.diceBonus || 0) > 0) {
+                let b = document.createElement('span');
+                b.className = 'px-2 py-0.5 text-xs bg-sky-900/80 border border-sky-400 text-sky-200 rounded font-bold flex-none shadow';
+                b.innerText = `🎲 次のサイコロ +${p.diceBonus}マス`;
+                container.appendChild(b);
+            }
+            if (p && (p.shield || 0) > 0) {
+                let b = document.createElement('span');
+                b.className = 'px-2 py-0.5 text-xs bg-emerald-900/80 border border-emerald-400 text-emerald-200 rounded font-bold flex-none shadow';
+                b.innerText = `🛡️ マイナス無効 ×${p.shield}`;
+                container.appendChild(b);
             }
         }
 
