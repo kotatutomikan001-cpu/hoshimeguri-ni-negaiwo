@@ -147,7 +147,7 @@
             <!-- ターン表示＆カメラ切替オーバーレイ -->
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
-                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1ヶ月</span>
+                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1ヶ月目</span>
                 </div>
                 <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
@@ -643,15 +643,27 @@
         const WORLD_MAP_URL = CHAR_ASSET_BASE + '/worldmap.png';
         function charIconUrl(id) { return CHAR_ASSET_BASE + '/icons/' + id + '.png'; }
         function charStandUrl(id) { return CHAR_ASSET_BASE + '/stand/' + id + '.png'; }
+        // GitHub Pages 等は大文字小文字を区別するため、.png が無ければ .PNG も試す
+        function retryUpperExt(img, onFail) {
+            img.onerror = () => {
+                let cur = img.src || '';
+                if (cur.endsWith('.png') && img.dataset.upperFor !== cur) {
+                    img.dataset.upperFor = cur;
+                    img.src = cur.slice(0, -4) + '.PNG';
+                } else if (onFail) onFail();
+            };
+        }
         let charFileIcons = {};
         CHARACTERS.forEach(c => {
             let img = new Image();
+            retryUpperExt(img);
             img.src = charIconUrl(c.id);
             charFileIcons[c.id] = img;
         });
         let charFileStands = {};
         CHARACTERS.forEach(c => {
             let img = new Image();
+            retryUpperExt(img);
             img.src = charStandUrl(c.id);
             charFileStands[c.id] = img;
         });
@@ -695,9 +707,9 @@
         function formatElapsedDate(turnNo) {
             let y = Math.floor(turnNo / 12);
             let m = turnNo % 12;
-            if (y === 0) return turnNo + 'ヶ月';
-            if (m === 0) return y + '年';
-            return y + '年' + m + 'ヶ月';
+            if (y === 0) return turnNo + 'ヶ月目';
+            if (m === 0) return y + '年目';
+            return y + '年' + m + 'ヶ月目';
         }
         function tileAmountMultiplier() {
             return 1 + Math.floor((currentTurnNumber - 1) / 6);
@@ -1540,7 +1552,7 @@
             }
             let mapImg = document.getElementById('csWorldMap');
             let mapFb = document.getElementById('csMapFallback');
-            mapImg.onerror = () => { mapImg.classList.add('hidden'); mapFb.classList.remove('hidden'); mapFb.classList.add('flex'); };
+            retryUpperExt(mapImg, () => { mapImg.classList.add('hidden'); mapFb.classList.remove('hidden'); mapFb.classList.add('flex'); });
             mapImg.onload = () => { mapImg.classList.remove('hidden'); mapFb.classList.add('hidden'); mapFb.classList.remove('flex'); };
             mapImg.src = WORLD_MAP_URL;
             document.getElementById('charSelectModal').classList.remove('hidden');
@@ -1596,7 +1608,7 @@
                 btn.style.borderColor = def.color;
                 btn.innerHTML =
                     '<span class="relative block w-full" style="aspect-ratio:1/1;">' +
-                    '<img src="' + charIconUrl(id) + '" alt="" class="absolute inset-0 w-full h-full object-cover' + (isTaken ? ' grayscale opacity-50' : '') + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
+                    '<img src="' + charIconUrl(id) + '" alt="" class="absolute inset-0 w-full h-full object-cover' + (isTaken ? ' grayscale opacity-50' : '') + '" onerror="if(this.src.endsWith(\'.png\')&&this.dataset.upperFor!==this.src){this.dataset.upperFor=this.src;this.src=this.src.slice(0,-4)+\'.PNG\';}else{this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';}">' +
                     '<span class="absolute inset-0 items-center justify-center text-xl font-black" style="display:none; color:' + def.color + ';">' + def.name.charAt(0) + '</span>' +
                     '</span>' +
                     '<span class="text-[8px] sm:text-[10px] font-black text-white leading-[1.1] break-all w-full text-center">' + splitSurnameHtml(def.name) + '</span>' +
@@ -1636,7 +1648,7 @@
         function refreshCsSlots() {
             let assignments;
             if (csMode === 'cpu') {
-                assignments = [(csCursor === '?' ? csCpuPicks[0] : csCursor), csCpuPicks[1], csCpuPicks[2], csCpuPicks[3]];
+                assignments = [(csCursor === '?' ? null : csCursor), csCpuPicks[1], csCpuPicks[2], csCpuPicks[3]];
             } else {
                 assignments = [0, 1, 2, 3].map(i => i === myPlayerIndex ? (csCursor === '?' ? null : csCursor) : (onlineMemberChars[i] || null));
             }
@@ -1651,7 +1663,7 @@
                 if (id) {
                     img.style.transform = 'scale(' + charStandScale(id) + ')';
                     nm.innerText = charName(id);
-                    img.onerror = () => { img.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(id).charAt(0); ph.style.color = charColor(id); };
+                    retryUpperExt(img, () => { img.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(id).charAt(0); ph.style.color = charColor(id); });
                     if (img.dataset.charId !== id) {
                         img.dataset.charId = id;
                         ph.style.display = 'none';
@@ -2091,7 +2103,7 @@
             let nm = document.getElementById('lobbyMyCharName');
             if (nm) nm.innerText = charName(myChar);
             if (icon && ph) {
-                icon.onerror = () => { icon.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(myChar).charAt(0); ph.style.color = charColor(myChar); };
+                retryUpperExt(icon, () => { icon.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(myChar).charAt(0); ph.style.color = charColor(myChar); });
                 if (icon.dataset.charId !== myChar) {
                     icon.dataset.charId = myChar;
                     ph.style.display = 'none';
