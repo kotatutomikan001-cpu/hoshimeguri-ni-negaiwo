@@ -114,21 +114,25 @@
                     <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
                     <span id="p1Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">氷室うつろ</span>
                     <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                    <span id="p1Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
                     <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
                     <span id="p2Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">繰言かたる</span>
                     <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                    <span id="p2Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
                     <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
                     <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
                     <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                    <span id="p3Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
                 <div id="p4Box" class="flex items-center gap-0.5 sm:gap-1 bg-orange-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-400">
                     <span id="p4Badge" class="text-orange-300 text-[9px] sm:text-[10px] font-black">4P</span>
                     <span id="p4Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">依夢りつ</span>
                     <span id="p4Listeners" class="text-orange-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                    <span id="p4Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
                 </div>
             </div>
         </header>
@@ -676,13 +680,18 @@
         let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
 
         let players = [
-            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
-            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [], isHuman: false },
-            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false },
-            { id: 3, name: '依夢りつ', char: 'ritsu', pos: 0, goshuPos: 0, listeners: 1000, color: '#a21caf', finished: false, rank: 0, items: [], isHuman: false }
+            { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
+            { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#10b981', finished: false, rank: 0, items: [], isHuman: false },
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false },
+            { id: 3, name: '依夢りつ', char: 'ritsu', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#a21caf', finished: false, rank: 0, items: [], isHuman: false }
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
+        // ⭐ 星のカケラ＆星の祭壇ルール
+        const FRAGMENTS_REQUIRED = 5;   // ゴールに必要な星のカケラの数
+        const STAR_TILE_COUNT = 4;      // マップ上に同時に出る星マスの数
+        const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
+        let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
 
         let currentPlayerIndex = 0;
         let currentTurnNumber = 1;
@@ -1282,11 +1291,14 @@
                 p.pos = 0;
                 p.finished = false;
                 p.rank = 0;
+                p.fragments = 0;
+                p.lastVisitedTileIndex = tileCoords.length - 1;
                 p.renderX = startTile.x;
                 p.renderY = startTile.y;
                 p.goshuX = startTile.x;
                 p.goshuY = startTile.y;
             });
+            updateFragmentUI();
         }
 
         function toggleCameraView() {
@@ -1822,6 +1834,8 @@
 
             isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
             resetAllPlayerPositions();
+            initStarGame();
+            broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
             currentDiceVal = 1;
@@ -2010,6 +2024,7 @@
                         playGameBgm();
 
                         resetAllPlayerPositions();
+                        if (data.starTiles) { starTileIdxs = data.starTiles; updateFragmentUI(); }
 
                         if (data.playerConfigs) {
                             data.playerConfigs.forEach((cfg, idx) => {
@@ -2184,10 +2199,12 @@
             document.getElementById('p3Name').innerText = players[2].name;
             document.getElementById('p4Name').innerText = players[3].name;
 
+            initStarGame();
             let startPayload = {
                 type: 'START_GAME',
                 playerConfigs: playerConfigs,
-                mapGrid: customMapGrid
+                mapGrid: customMapGrid,
+                starTiles: starTileIdxs
             };
             peerConnections.forEach(c => { if (c.open) c.send(startPayload); });
 
@@ -2196,6 +2213,8 @@
             playGameBgm();
 
             resetAllPlayerPositions();
+            initStarGame();
+            broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
             currentDiceVal = 1;
@@ -2279,6 +2298,7 @@
                 data.players.forEach((pSync, idx) => {
                     if (players[idx]) {
                         players[idx].pos = pSync.pos;
+                        players[idx].fragments = pSync.fragments || 0;
                         players[idx].listeners = pSync.listeners;
                         players[idx].finished = pSync.finished;
                         players[idx].rank = pSync.rank;
@@ -2303,6 +2323,8 @@
                     }
                 });
             }
+
+            if (data.starTiles) { starTileIdxs = data.starTiles; updateFragmentUI(); }
 
             if (data.currentDiceVal !== undefined) {
                 currentDiceVal = data.currentDiceVal;
@@ -2410,7 +2432,9 @@
                 eventTitle: document.getElementById('currentEventTitle').innerText,
                 eventDesc: document.getElementById('currentEventDesc').innerText,
                 eventEffect: document.getElementById('currentEventEffect').innerText,
+                starTiles: starTileIdxs,
                 players: players.map(p => ({
+                    fragments: p.fragments || 0,
                     pos: p.pos,
                     renderX: p.renderX,
                     renderY: p.renderY,
@@ -2512,18 +2536,18 @@
 
         // 🗺️ 最初に共有された時点のマップ（復元用に固定保存）
         const ORIGINAL_MAP_GRID = [
-                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
-                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
-                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
-                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
-                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
-                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
-                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
-                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
-                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
-                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
-                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
-                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
+                [null,null,null,null,null,null,null,null,null,null,null,null],
+                [null,"item","minus","white","plus","start","white","plus","minus","white","item",null],
+                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
+                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
+                [null,"item",null,null,null,null,null,null,null,null,"item",null],
+                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus","white","plus","item","white","minus","plus","white","white","plus",null],
+                [null,null,null,null,null,null,null,null,null,null,null,null]
             ];
 
         function restoreOriginalMap() {
@@ -2538,18 +2562,18 @@
 
         function initDefaultMapGrid() {
             customMapGrid = [
-                [null,"start",null,"item","white","white","minus","plus",null,"plus","minus","goal"],
-                [null,"minus",null,"minus",null,"plus",null,"white",null,"white",null,"minus"],
-                [null,"white",null,"minus",null,"plus",null,"item",null,"item",null,"plus"],
-                ["plus","white",null,"plus",null,"minus",null,"minus",null,"minus",null,"white"],
-                ["plus",null,null,"plus","white","item",null,"plus",null,"minus","plus","minus"],
-                ["item",null,null,null,"white",null,null,"plus",null,"plus",null,null],
-                ["minus","white","white",null,"plus",null,null,"plus",null,"white","item",null],
-                [null,null,"plus",null,"minus",null,null,"minus","white",null,"minus",null],
-                ["item","plus","minus",null,"minus","white","item",null,"plus",null,"minus","plus"],
-                ["minus",null,null,null,null,null,"plus",null,"minus",null,null,"item"],
-                ["plus",null,"plus","white","plus",null,"plus",null,"item",null,null,"white"],
-                ["plus","item","minus",null,"white","minus","white",null,"white","plus","minus","white"]
+                [null,null,null,null,null,null,null,null,null,null,null,null],
+                [null,"item","minus","white","plus","start","white","plus","minus","white","item",null],
+                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
+                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
+                [null,"item",null,null,null,null,null,null,null,null,"item",null],
+                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus","white","plus","item","white","minus","plus","white","white","plus",null],
+                [null,null,null,null,null,null,null,null,null,null,null,null]
             ];
         }
 
@@ -3155,6 +3179,13 @@
             p.lastVisitedTileIndex = p.lastVisitedTileIndex !== undefined ? p.lastVisitedTileIndex : -1;
 
             function stepNext() {
+                if (p.altarGoalPending) {
+                    p.altarGoalPending = false;
+                    p.jumpY = 0;
+                    isMoving = false;
+                    handlePlayerGoal(pIndex, true);
+                    return;
+                }
                 if (remainingSteps > 0) {
                     if (!tileCoords[p.pos]) { p.jumpY = 0; isMoving = false; if (!isOnlineMode || isHost) setTimeout(() => { nextTurn(); }, 300); return; }
                     if (tileCoords[p.pos].type === 'goal') {
@@ -3237,6 +3268,22 @@
                 p.pos = toTileIdx;
                 let toTile = tileCoords[p.pos];
                 remainingSteps--;
+
+                // ⛩️ 星の祭壇（スタートマス）に到達
+                if (toTileIdx === 0 && !p.finished) {
+                    if ((p.fragments || 0) >= FRAGMENTS_REQUIRED) {
+                        p.altarGoalPending = true;
+                        remainingSteps = 0;
+                    } else {
+                        p.listeners += LAP_BONUS_LISTENERS;
+                        let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
+                        if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
+                        document.getElementById('currentEventTitle').innerText = '【⛩️ 星の祭壇を通過】';
+                        document.getElementById('currentEventDesc').innerText = `${p.name}さん周回ボーナス！星のカケラはあと${FRAGMENTS_REQUIRED - (p.fragments || 0)}個`;
+                        document.getElementById('currentEventEffect').innerText = `リスナー +${LAP_BONUS_LISTENERS}人`;
+                        if (isOnlineMode && isHost) broadcastGameState(true);
+                    }
+                }
 
                 playSe('jump');
 
@@ -3391,10 +3438,88 @@
             };
         }
 
+        function updateFragmentUI() {
+            players.forEach((p, idx) => {
+                let el = document.getElementById(`p${idx + 1}Fragments`);
+                if (el) el.innerText = `⭐×${p.fragments || 0}`;
+            });
+        }
+
+        function pickStarTileIdx() {
+            let eligible = [];
+            tileCoords.forEach((t, idx) => {
+                if (idx !== 0 && t.type !== 'goal' && !starTileIdxs.includes(idx)) eligible.push(idx);
+            });
+            if (eligible.length === 0) return -1;
+            return eligible[Math.floor(Math.random() * eligible.length)];
+        }
+
+        function initStarGame() {
+            players.forEach(p => { p.fragments = 0; });
+            starTileIdxs = [];
+            for (let i = 0; i < STAR_TILE_COUNT; i++) {
+                let idx = pickStarTileIdx();
+                if (idx >= 0) starTileIdxs.push(idx);
+            }
+            updateFragmentUI();
+        }
+
+        function resolveSpecialLanding(pIndex, title, desc, effect) {
+            turnPhase = 'event';
+            document.getElementById('currentEventTitle').innerText = title;
+            document.getElementById('currentEventDesc').innerText = desc;
+            document.getElementById('currentEventEffect').innerText = effect;
+            isEventResolving = true;
+            broadcastGameState(true);
+            if (!isOnlineMode || isHost) {
+                setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
+            }
+        }
+
         function triggerTileEvent(pIndex) {
             let p = players[pIndex];
             let tile = tileCoords[p.pos];
             if (!tile) { turnPhase = 'idle'; return; }
+
+            // ⭐ 星マス: 星のカケラを入手（取ると別の場所に再出現）
+            if (starTileIdxs.includes(p.pos)) {
+                starTileIdxs = starTileIdxs.filter(i => i !== p.pos);
+                p.fragments = (p.fragments || 0) + 1;
+                let nIdx = pickStarTileIdx();
+                if (nIdx >= 0) starTileIdxs.push(nIdx);
+                updateFragmentUI();
+                let need = FRAGMENTS_REQUIRED - p.fragments;
+                resolveSpecialLanding(pIndex,
+                    '【⭐ 星のカケラを手に入れた！】',
+                    need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の祭壇を目指そう！`,
+                    `⭐ 星のカケラ ${p.fragments} / ${FRAGMENTS_REQUIRED}`);
+                return;
+            }
+
+            // ⛩️ 星の祭壇にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
+            if (tile.type === 'start') {
+                let need = FRAGMENTS_REQUIRED - (p.fragments || 0);
+                resolveSpecialLanding(pIndex,
+                    '【⛩️ 星の祭壇】',
+                    need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！祭壇でゴール！`,
+                    `⭐ 星のカケラ ${p.fragments || 0} / ${FRAGMENTS_REQUIRED}`);
+                return;
+            }
+
+            // ⭐ 奪い合い: 同じマスにいる相手からカケラを1個奪う
+            let victim = players.filter(q => q !== p && !q.finished && q.pos === p.pos && (q.fragments || 0) > 0)
+                                .sort((a, b) => (b.fragments || 0) - (a.fragments || 0))[0];
+            if (victim) {
+                victim.fragments--;
+                p.fragments = (p.fragments || 0) + 1;
+                updateFragmentUI();
+                resolveSpecialLanding(pIndex,
+                    '【⭐ カケラの奪い合い！】',
+                    `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`,
+                    `⭐ ${p.name} ${p.fragments}個 / ${victim.name} ${victim.fragments}個`);
+                return;
+            }
+
             turnPhase = (tile.type === 'plus' || tile.type === 'minus') ? 'idle' : 'event';
 
             if (tile.type === 'plus' || tile.type === 'minus') {
@@ -3479,7 +3604,7 @@
             }
         }
 
-        function handlePlayerGoal(pIndex) {
+        function handlePlayerGoal(pIndex, viaAltar) {
             let p = players[pIndex];
             if (p.finished) return;
             turnPhase = 'event';
@@ -3494,8 +3619,13 @@
             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
             playSe('dice_stop');
 
-            document.getElementById('currentEventTitle').innerText = `【👑 ${p.name} ゴール！】`;
-            document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
+            if (viaAltar) {
+                document.getElementById('currentEventTitle').innerText = `【⭐ ${p.name} 願いが叶った！】`;
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが星のカケラを集めて星の祭壇に到達！ ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
+            } else {
+                document.getElementById('currentEventTitle').innerText = `【👑 ${p.name} ゴール！】`;
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
+            }
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
             isEventResolving = true;
@@ -3736,6 +3866,23 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
+                });
+
+                starTileIdxs.forEach(sIdx => {
+                    let st = tileCoords[sIdx];
+                    if (!st) return;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(st.x, st.y, 21, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#fde047';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 4]);
+                    ctx.stroke();
+                    ctx.font = '18px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⭐', st.x, st.y - 20 + Math.sin(Date.now() / 300) * 2);
+                    ctx.restore();
                 });
 
                 if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
