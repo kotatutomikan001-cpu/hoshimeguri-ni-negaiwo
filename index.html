@@ -591,6 +591,7 @@
                             <button onclick="addOpeningLine()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">＋ 行を追加</button>
                             <button onclick="previewOpeningFromEditor()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">▶ 試し再生</button>
                             <button onclick="resetOpeningScript()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">デフォルトに戻す</button>
+                            <button onclick="exportOpeningCsv()" class="px-2 py-1 text-xs bg-sky-700 hover:bg-sky-600 text-white rounded font-bold shadow">📋 CSVで書き出し</button>
                         </div>
                         <div id="openingLinesList" class="flex flex-col gap-1.5"></div>
                     </div>
@@ -1354,13 +1355,20 @@
             }
             return lines;
         }
+        const OFFICIAL_STORY_SHEET_URL = '';
+        function getPersonalStorySheetUrl() {
+            try { return localStorage.getItem('utsuro_story_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveStorySheetUrl() {
+            return getPersonalStorySheetUrl() || OFFICIAL_STORY_SHEET_URL;
+        }
         function setStorySheetStatus(msg) {
             let el = document.getElementById('storySheetStatusText');
             if (el) el.innerText = msg;
         }
         async function loadStoryFromSheet(manual) {
-            let savedUrl = '';
-            try { savedUrl = localStorage.getItem('utsuro_story_sheet_url') || ''; } catch (e) {}
+            let savedUrl = getEffectiveStorySheetUrl();
+            let isOfficialStory = !!OFFICIAL_STORY_SHEET_URL && savedUrl === OFFICIAL_STORY_SHEET_URL;
             if (!savedUrl) { if (manual) setStorySheetStatus('未連携です'); return false; }
             let csvUrl = extractSheetCsvUrl(savedUrl);
             if (!csvUrl) { setStorySheetStatus('⚠️ URLを認識できませんでした'); return false; }
@@ -1374,7 +1382,7 @@
                 if (lines.length === 0) throw new Error('有効なセリフが0行');
                 sheetStoryScript = lines;
                 try { localStorage.setItem('utsuro_story_sheet_cache', JSON.stringify(lines)); } catch (e) {}
-                setStorySheetStatus(`✅ ${lines.length}行のセリフを読み込みました`);
+                setStorySheetStatus(isOfficialStory ? `✅ 公式シートから${lines.length}行のセリフを読み込みました` : `✅ ${lines.length}行のセリフを読み込みました`);
                 return true;
             } catch (e) {
                 console.warn('セリフシート読み込み失敗:', e);
@@ -1394,8 +1402,14 @@
             try { localStorage.removeItem('utsuro_story_sheet_url'); localStorage.removeItem('utsuro_story_sheet_cache'); } catch (e) {}
             sheetStoryScript = null;
             let input = document.getElementById('storySheetUrlInput');
-            if (input) input.value = '';
-            setStorySheetStatus('連携を解除しました（エディタ／内蔵デフォルトに戻ります）');
+            if (OFFICIAL_STORY_SHEET_URL) {
+                if (input) input.value = OFFICIAL_STORY_SHEET_URL;
+                loadStoryFromSheet(false);
+                setStorySheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setStorySheetStatus('連携を解除しました（エディタ／内蔵デフォルトに戻ります）');
+            }
         }
 
         function loadDataFromLocalStorage() {
@@ -1426,10 +1440,10 @@
 
                 let storyInput = document.getElementById('storySheetUrlInput');
                 let personalStoryUrl = localStorage.getItem('utsuro_story_sheet_url');
-                if (storyInput) storyInput.value = personalStoryUrl || '';
+                if (storyInput) storyInput.value = personalStoryUrl || OFFICIAL_STORY_SHEET_URL;
                 let cachedStory = localStorage.getItem('utsuro_story_sheet_cache');
                 if (cachedStory) { try { sheetStoryScript = sanitizeOpeningLines(JSON.parse(cachedStory)); } catch (e) { sheetStoryScript = null; } }
-                if (personalStoryUrl) loadStoryFromSheet(false); // セリフシート連携があれば起動時に自動読み込み（失敗時はキャッシュで継続）
+                if (personalStoryUrl || OFFICIAL_STORY_SHEET_URL) loadStoryFromSheet(false); // セリフシート（個人／公式）があれば起動時に自動読み込み（失敗時はキャッシュで継続）
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3086,6 +3100,27 @@
             activeOpeningScript = null;
             saveOpeningScript();
             renderOpeningEditor();
+        }
+
+        function openingScriptToCsv(lines) {
+            let esc = (s) => { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+            return 'speaker,text,fx\n' + lines.map(l => [l.who, l.text || '', l.fx === 'shake' ? 'shake' : ''].map(esc).join(',')).join('\n') + '\n';
+        }
+
+        function exportOpeningCsv() {
+            let csv = openingScriptToCsv(currentOpeningScript());
+            try {
+                let blob = new Blob([csv], { type: 'text/csv' });
+                let a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'story_edited.csv';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 4000);
+            } catch (e) {
+                try { navigator.clipboard.writeText(csv); } catch (e2) {}
+            }
         }
 
         function previewOpeningFromEditor() {
