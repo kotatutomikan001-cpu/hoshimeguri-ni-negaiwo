@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>氷室うつろ Vstreamerすごろく</title>
+    <title>星めぐりに願いを</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS for Multi-device Online Matching -->
@@ -96,7 +96,7 @@
                         ❄️
                     </div>
                     <div>
-                        <h1 class="text-xs sm:text-base font-black text-purple-200 tracking-wider text-outline">氷室うつろ Vstreamerすごろく</h1>
+                        <h1 class="text-xs sm:text-base font-black text-purple-200 tracking-wider text-outline">星めぐりに願いを</h1>
                         <p id="gameStatusText" class="text-[10px] sm:text-xs text-yellow-300 font-bold truncate max-w-[180px] sm:max-w-none text-outline">準備中... モードを選択してください</p>
                     </div>
                 </div>
@@ -124,6 +124,11 @@
                     <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
                     <span id="p3Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">トモコ</span>
                     <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
+                </div>
+                <div id="p4Box" class="flex items-center gap-0.5 sm:gap-1 bg-orange-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-400">
+                    <span id="p4Badge" class="text-orange-300 text-[9px] sm:text-[10px] font-black">4P</span>
+                    <span id="p4Name" class="text-white text-[11px] sm:text-xs max-w-[45px] sm:max-w-[90px] truncate text-outline">依夢りつ</span>
+                    <span id="p4Listeners" class="text-orange-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
                 </div>
             </div>
         </header>
@@ -228,28 +233,23 @@
                 <p id="lobbyStatusText" class="text-xs text-cyan-300 font-bold animate-pulse mb-2">対戦相手を待っています...</p>
                 <div class="flex items-center justify-center gap-2 text-xs font-bold text-white mb-2">
                     <span>接続人数:</span>
-                    <span id="lobbyMemberCount" class="text-yellow-400 font-mono text-sm">1 / 3</span>
+                    <span id="lobbyMemberCount" class="text-yellow-400 font-mono text-sm">1 / 4</span>
                 </div>
 
                 <!-- キャラクター選択枠 -->
-                <div class="text-xs font-bold text-purple-200 mb-1.5 text-left border-t border-purple-900 pt-2">🎨 あなたのキャラクター選択:</div>
-                <div class="grid grid-cols-3 gap-1.5 mb-2">
-                    <button id="btnLobbyUtsuro" onclick="setLobbyChar('utsuro')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-purple-400 bg-purple-950/80 cursor-pointer">
-                        <canvas id="prevLobbyUtsuro" width="24" height="24"></canvas>
-                        <span class="text-[10px] font-bold text-white mt-0.5">氷室うつろ</span>
-                        <span id="lobbyStatusUtsuro" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
-                    </button>
-                    <button id="btnLobbyGengo" onclick="setLobbyChar('gengo')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-emerald-500/50 bg-emerald-950/40 cursor-pointer">
-                        <canvas id="prevLobbyGengo" width="24" height="24"></canvas>
-                        <span class="text-[10px] font-bold text-gray-200 mt-0.5">繰言かたる</span>
-                        <span id="lobbyStatusGengo" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
-                    </button>
-                    <button id="btnLobbyTomoko" onclick="setLobbyChar('tomoko')" class="pixel-btn p-1.5 rounded flex flex-col items-center justify-center border border-pink-500/50 bg-pink-950/40 cursor-pointer">
-                        <canvas id="prevLobbyTomoko" width="24" height="24"></canvas>
-                        <span class="text-[10px] font-bold text-gray-200 mt-0.5">トモコ</span>
-                        <span id="lobbyStatusTomoko" class="text-[9px] font-bold text-yellow-300 truncate w-full text-center"></span>
-                    </button>
+                <div class="text-xs font-bold text-purple-200 mb-1.5 text-left border-t border-purple-900 pt-2">🎨 あなたのキャラクター:</div>
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="relative w-11 h-11 rounded overflow-hidden bg-indigo-950 border border-purple-500 flex-none">
+                        <img id="lobbyMyCharIcon" class="absolute inset-0 w-full h-full object-cover hidden" alt="">
+                        <div id="lobbyMyCharPh" class="absolute inset-0 flex items-center justify-center text-lg font-black text-white/80">？</div>
+                    </div>
+                    <div class="text-left flex-1 min-w-0">
+                        <div id="lobbyMyCharName" class="text-sm font-black text-white truncate">氷室うつろ</div>
+                        <div class="text-[10px] font-bold text-purple-300">全16キャラから選べます</div>
+                    </div>
+                    <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">🎮 キャラを選ぶ</button>
                 </div>
+                <div id="lobbyPickedList" class="text-[10px] font-bold text-purple-200 text-left truncate"></div>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -370,45 +370,84 @@
     </div>
 
     <!-- 🌟 CPU対戦キャラ選択モーダル -->
-    <div id="cpuCharSelectModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden hidden">
-        <div class="relative z-20 pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
-            <h2 class="text-base sm:text-lg font-black text-purple-300 mb-1">🎮 キャラクター選択</h2>
-            <p class="text-xs text-purple-200 mb-3 font-bold">使用するキャラクターを選んでください</p>
-
-            <div class="grid grid-cols-3 gap-2 mb-3">
-                <button id="btnSelectUtsuro" onclick="selectCpuChar('utsuro')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-purple-400 bg-purple-950/80 cursor-pointer ring-4 ring-yellow-400 scale-105">
-                    <span id="badgeUtsuro" class="absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
-                    <div class="flex items-center justify-center gap-1 mb-1">
-                        <canvas id="prevUtsuro" width="28" height="28"></canvas>
-                        <canvas id="prevUtsuroGoshu" width="20" height="20"></canvas>
-                    </div>
-                    <span class="text-[11px] sm:text-xs font-bold text-white">氷室うつろ</span>
-                </button>
-                <button id="btnSelectGengo" onclick="selectCpuChar('gengo')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-emerald-500/50 bg-emerald-950/40 cursor-pointer">
-                    <span id="badgeGengo" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
-                    <div class="flex items-center justify-center gap-1 mb-1">
-                        <canvas id="prevGengo" width="28" height="28"></canvas>
-                        <canvas id="prevGengoGoshu" width="20" height="20"></canvas>
-                    </div>
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-200">繰言かたる</span>
-                </button>
-                <button id="btnSelectTomoko" onclick="selectCpuChar('tomoko')" class="relative pixel-btn p-2 rounded-lg flex flex-col items-center justify-center border-2 border-pink-500/50 bg-pink-950/40 cursor-pointer">
-                    <span id="badgeTomoko" class="hidden absolute -top-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full border border-black shadow">選択中</span>
-                    <div class="flex items-center justify-center gap-1 mb-1">
-                        <canvas id="prevTomoko" width="28" height="28"></canvas>
-                        <canvas id="prevTomokoGoshu" width="20" height="20"></canvas>
-                    </div>
-                    <span class="text-[11px] sm:text-xs font-bold text-gray-200">トモコ</span>
-                </button>
+    <!-- 🎮 スト2風キャラクター選択画面 -->
+    <style>
+        @keyframes csCursorBlink { 0%, 100% { box-shadow: 0 0 0 3px #facc15, 0 0 16px #facc15; } 50% { box-shadow: 0 0 0 3px #ffffff, 0 0 4px #ffffff; } }
+        .cs-cursor { animation: csCursorBlink 0.6s steps(2) infinite; z-index: 2; }
+        @keyframes csFlipAnim { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(90deg) scale(1.06); } 100% { transform: rotateY(0deg); } }
+        .cs-flipping { animation: csFlipAnim 0.52s ease; }
+    </style>
+    <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
+        <div class="h-full flex flex-col max-w-3xl mx-auto p-2 sm:p-3">
+            <div class="flex items-end justify-between mb-1 px-1">
+                <div class="text-yellow-300 font-black tracking-widest text-xl sm:text-3xl" style="text-shadow: 2px 2px 0 #b91c1c;">PLAYER SELECT</div>
+                <div id="csModeLabel" class="text-[11px] sm:text-xs font-black text-cyan-200"></div>
             </div>
-
-            <div class="flex flex-col gap-2 mt-3">
-                <button onclick="startCpuGame()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow-md cursor-pointer">
-                    🚀 ゲームスタート！
-                </button>
-                <button onclick="closeCpuCharSelectModal()" class="text-xs text-gray-400 hover:text-white">
-                    ← モード選択へ戻る
-                </button>
+            <div id="csMapWrap" onclick="onCsMapClick(event)" class="relative w-full rounded-lg overflow-hidden border-2 border-indigo-300/60 bg-[#2a2f9e] cursor-pointer select-none flex-none">
+                <img id="csWorldMap" class="w-full h-24 sm:h-36 object-cover block" alt="">
+                <div id="csMapFallback" class="absolute inset-0 hidden items-center justify-center text-4xl sm:text-5xl tracking-widest">🗺️🌏⭐</div>
+                <div class="absolute bottom-1 right-2 text-[9px] text-white/80 font-bold tracking-widest">WORLD MAP</div>
+            </div>
+            <div id="csStatus" class="text-center text-[11px] sm:text-xs font-black text-yellow-200 mt-1.5 min-h-[1.2em] flex-none"></div>
+            <div id="csSeqCounter" class="text-center text-[10px] sm:text-[11px] font-mono font-bold mt-0.5 flex-none"></div>
+            <div class="flex gap-2 mt-1 flex-1 min-h-0">
+                <div class="flex flex-col gap-1.5 w-[24%] max-w-[150px] flex-none min-h-0">
+                    <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between px-0.5">
+                            <span class="text-[11px] font-black text-yellow-300">1P</span>
+                            <span class="text-[9px] font-black text-cyan-200" id="csSlotTag0"></span>
+                        </div>
+                        <div class="relative w-full overflow-hidden rounded flex-1 min-h-0" style="background:#1e2150;">
+                            <img id="csSlotImg0" class="absolute inset-0 w-full h-full object-contain hidden" alt="">
+                            <div id="csSlotPh0" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/60">？</div>
+                        </div>
+                        <div id="csSlotName0" class="text-[10px] font-black text-white text-center truncate mt-0.5">---</div>
+                    </div>
+                    <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between px-0.5">
+                            <span class="text-[11px] font-black text-yellow-300">2P</span>
+                            <span class="text-[9px] font-black text-cyan-200" id="csSlotTag1"></span>
+                        </div>
+                        <div class="relative w-full overflow-hidden rounded flex-1 min-h-0" style="background:#1e2150;">
+                            <img id="csSlotImg1" class="absolute inset-0 w-full h-full object-contain hidden" alt="">
+                            <div id="csSlotPh1" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/60">？</div>
+                        </div>
+                        <div id="csSlotName1" class="text-[10px] font-black text-white text-center truncate mt-0.5">---</div>
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto">
+                    <div id="csIconGrid" class="grid grid-cols-5 gap-1.5 content-start"></div>
+                    <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
+                    <div class="flex gap-2 mt-auto pt-2">
+                        <button id="csConfirmBtn" onclick="csConfirm()" class="pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer">✔ このキャラに決定</button>
+                        <button id="csStartBtn" onclick="csStartCpu()" class="hidden pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-pink-600 shadow cursor-pointer">🚀 ゲームスタート！</button>
+                        <button onclick="closeCharSelect()" class="pixel-btn py-2 px-3 font-bold text-xs text-gray-200 rounded-lg bg-slate-700/80 hover:bg-slate-600 cursor-pointer">← もどる</button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1.5 w-[24%] max-w-[150px] flex-none min-h-0">
+                    <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between px-0.5">
+                            <span class="text-[11px] font-black text-yellow-300">3P</span>
+                            <span class="text-[9px] font-black text-cyan-200" id="csSlotTag2"></span>
+                        </div>
+                        <div class="relative w-full overflow-hidden rounded flex-1 min-h-0" style="background:#1e2150;">
+                            <img id="csSlotImg2" class="absolute inset-0 w-full h-full object-contain hidden" alt="">
+                            <div id="csSlotPh2" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/60">？</div>
+                        </div>
+                        <div id="csSlotName2" class="text-[10px] font-black text-white text-center truncate mt-0.5">---</div>
+                    </div>
+                    <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between px-0.5">
+                            <span class="text-[11px] font-black text-yellow-300">4P</span>
+                            <span class="text-[9px] font-black text-cyan-200" id="csSlotTag3"></span>
+                        </div>
+                        <div class="relative w-full overflow-hidden rounded flex-1 min-h-0" style="background:#1e2150;">
+                            <img id="csSlotImg3" class="absolute inset-0 w-full h-full object-contain hidden" alt="">
+                            <div id="csSlotPh3" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/60">？</div>
+                        </div>
+                        <div id="csSlotName3" class="text-[10px] font-black text-white text-center truncate mt-0.5">---</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -588,6 +627,52 @@
         let mapEditorCanvas, mapEditorCtx;
 
         let myChar = 'utsuro';
+
+        // 🗂️ キャラクター一覧（通常14人＋隠し2人）
+        const CHARACTERS = [
+            { id: 'mikado', name: '帝', color: '#eab308' },
+            { id: 'hikari', name: '神乃ひかり', color: '#38bdf8' },
+            { id: 'sakura', name: '餅々さくら', color: '#fb7185' },
+            { id: 'nemea', name: '伊織ねめあ', color: '#b45309' },
+            { id: 'rui', name: '魔昏るい', color: '#8b5cf6' },
+            { id: 'tefu', name: '馬鹿蝶', color: '#d946ef' },
+            { id: 'heru', name: '碧衣ヘル', color: '#14b8a6' },
+            { id: 'shakuna', name: '勝気シャクナ', color: '#f43f5e' },
+            { id: 'mirine', name: '満咲ミリネ', color: '#fda4af' },
+            { id: 'yuni', name: '切熊ゆに', color: '#dc2626' },
+            { id: 'eru', name: '百目鬼える', color: '#6366f1' },
+            { id: 'utsuro', name: '氷室うつろ', color: '#a855f7' },
+            { id: 'shano', name: '幽麗シャノ', color: '#64748b' },
+            { id: 'ritsu', name: '依夢りつ', color: '#a21caf' },
+            { id: 'kataru', name: '繰言かたる', color: '#10b981', hidden: true, secret: true },
+            { id: 'tomoko', name: 'トモコ', color: '#ec4899', hidden: true }
+        ];
+        const CHAR_DEF = {};
+        CHARACTERS.forEach(c => { CHAR_DEF[c.id] = c; });
+        CHAR_DEF['gengo'] = CHAR_DEF['kataru']; // 旧ID互換（ドット絵・PNG差し替え・オープニング等の保存データは gengo のまま）
+        function legacyCharId(id) { return id === 'kataru' ? 'gengo' : id; }
+        function charName(id) { return (CHAR_DEF[id] && CHAR_DEF[id].name) || '氷室うつろ'; }
+        function charColor(id) { return (CHAR_DEF[id] && CHAR_DEF[id].color) || '#a855f7'; }
+        function normalCharIds() { return CHARACTERS.filter(c => !c.hidden).map(c => c.id); }
+
+        // 🖼️ キャラ画像フォルダ（index.html と同じ場所に char_assets フォルダを置く）
+        const CHAR_ASSET_BASE = 'char_assets';
+        const WORLD_MAP_URL = CHAR_ASSET_BASE + '/worldmap.png';
+        function charIconUrl(id) { return CHAR_ASSET_BASE + '/icons/' + id + '.png'; }
+        function charStandUrl(id) { return CHAR_ASSET_BASE + '/stand/' + id + '.png'; }
+        let charFileIcons = {};
+        CHARACTERS.forEach(c => {
+            let img = new Image();
+            img.src = charIconUrl(c.id);
+            charFileIcons[c.id] = img;
+        });
+        let charFileStands = {};
+        CHARACTERS.forEach(c => {
+            let img = new Image();
+            img.src = charStandUrl(c.id);
+            charFileStands[c.id] = img;
+        });
+        const GOSHU_ENABLED = false; // ごしゅ(お供)システムは凍結中。true にすると復活する
         let isFullMapView = false;
         let activeTab = 'events';
 
@@ -612,7 +697,8 @@
         let players = [
             { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
             { id: 1, name: '繰言かたる', char: 'gengo', pos: 0, goshuPos: 0, listeners: 1000, color: '#10b981', finished: false, rank: 0, items: [], isHuman: false },
-            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false }
+            { id: 2, name: 'トモコ', char: 'tomoko', pos: 0, goshuPos: 0, listeners: 1000, color: '#ec4899', finished: false, rank: 0, items: [], isHuman: false },
+            { id: 3, name: '依夢りつ', char: 'ritsu', pos: 0, goshuPos: 0, listeners: 1000, color: '#a21caf', finished: false, rank: 0, items: [], isHuman: false }
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
@@ -1404,16 +1490,9 @@
             }
         }
 
-        function openCpuCharSelectModal() {
-            document.getElementById('startModal').classList.add('hidden');
-            document.getElementById('cpuCharSelectModal').classList.remove('hidden');
-            drawCharPreviews();
-        }
+        function openCpuCharSelectModal() { openCharSelect('cpu'); }
 
-        function closeCpuCharSelectModal() {
-            document.getElementById('cpuCharSelectModal').classList.add('hidden');
-            document.getElementById('startModal').classList.remove('hidden');
-        }
+        function closeCpuCharSelectModal() { closeCharSelect(); }
 
         function openRoomCodeModal() {
             document.getElementById('startModal').classList.add('hidden');
@@ -1425,35 +1504,318 @@
             document.getElementById('startModal').classList.remove('hidden');
         }
 
-        function selectCpuChar(char) {
-            myChar = char;
-            let names = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-            players[0].char = char;
-            players[0].name = names[char];
+        // 🎮 スト2風キャラクター選択画面のロジック
+        let csMode = 'cpu';
+        let csCursor = 'utsuro';
+        let csCpuPicks = [null, null, null, null];
+        let csUnlocked = false;
+        let csMapTapLog = [];
 
-            let rest = ['utsuro', 'gengo', 'tomoko'].filter(c => c !== char);
-            players[1].char = rest[0];
-            players[1].name = names[rest[0]];
-            players[2].char = rest[1];
-            players[2].name = names[rest[1]];
+        function csVisibleIds() { return CHARACTERS.filter(c => c.secret ? csMorphKataru : (csUnlocked || !c.hidden)).map(c => c.id); }
 
+        function csTakenByOthers() {
+            let taken = {};
+            if (csMode === 'lobby') {
+                Object.keys(onlineMemberChars).forEach(k => {
+                    if (parseInt(k) !== myPlayerIndex && onlineMemberChars[k]) taken[onlineMemberChars[k]] = parseInt(k);
+                });
+            }
+            return taken;
+        }
+
+        function openCharSelect(mode) {
+            csMode = mode;
+            csCursor = (myChar && csVisibleIds().includes(myChar)) ? myChar : 'utsuro';
+            if (mode === 'cpu') {
+                csCpuPicks = [null, null, null, null];
+                document.getElementById('startModal').classList.add('hidden');
+                document.getElementById('csModeLabel').innerText = 'VS CPU';
+                setCsStatus('1Pのキャラを選んでください');
+            } else {
+                document.getElementById('csModeLabel').innerText = 'オンライン対戦';
+                setCsStatus('あなたのキャラを選んでください');
+            }
+            let mapImg = document.getElementById('csWorldMap');
+            let mapFb = document.getElementById('csMapFallback');
+            mapImg.onerror = () => { mapImg.classList.add('hidden'); mapFb.classList.remove('hidden'); mapFb.classList.add('flex'); };
+            mapImg.onload = () => { mapImg.classList.remove('hidden'); mapFb.classList.add('hidden'); mapFb.classList.remove('flex'); };
+            mapImg.src = WORLD_MAP_URL;
+            document.getElementById('charSelectModal').classList.remove('hidden');
+            updateCsSeqCounter();
+            buildCsGrid();
+            refreshCsSlots();
+            updateCsButtons();
+        }
+
+        function setCsStatus(t) { let el = document.getElementById('csStatus'); if (el) el.innerText = t; }
+
+        function closeCharSelect() {
+            document.getElementById('charSelectModal').classList.add('hidden');
+            if (csMode === 'cpu') document.getElementById('startModal').classList.remove('hidden');
+        }
+
+        function csGridCells() {
+            let ids = normalCharIds();
+            let cells = ids.slice(0, 12);
+            cells.push(csUnlocked ? 'tomoko' : '?');
+            cells.push(ids[12]);
+            cells.push(ids[13]);
+            if (csMorphKataru) cells = cells.map(id => id === 'utsuro' ? 'kataru' : id);
+            return cells;
+        }
+
+        function buildCsGrid() {
+            let grid = document.getElementById('csIconGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            let taken = csTakenByOthers();
+            csGridCells().forEach(id => {
+                if (id === '?') {
+                    let mbtn = document.createElement('button');
+                    mbtn.id = 'csIcon_mystery';
+                    mbtn.className = 'relative rounded-md overflow-hidden border-2 border-dashed border-white/40 cursor-pointer bg-[#191c5e] flex flex-col items-center p-0.5';
+                    mbtn.innerHTML =
+                        '<span class="relative block w-full" style="aspect-ratio:1/1;">' +
+                        '<span class="absolute inset-0 flex items-center justify-center text-2xl font-black text-white/70">？</span>' +
+                        '</span>' +
+                        '<span class="text-[9px] font-black text-white/70 leading-tight truncate w-full text-center">？？？</span>';
+                    mbtn.onmouseenter = () => csHoverMystery();
+                    mbtn.addEventListener('click', () => csRegisterCellClick('mystery'));
+                    mbtn.onclick = () => setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）');
+                    grid.appendChild(mbtn);
+                    return;
+                }
+                let def = CHAR_DEF[id];
+                let isTaken = taken[id] !== undefined;
+                let btn = document.createElement('button');
+                btn.id = 'csIcon_' + id;
+                btn.className = 'relative rounded-md overflow-hidden border-2 cursor-pointer bg-[#23266e] flex flex-col items-center p-0.5';
+                btn.style.borderColor = def.color;
+                btn.innerHTML =
+                    '<span class="relative block w-full" style="aspect-ratio:1/1;">' +
+                    '<img src="' + charIconUrl(id) + '" alt="" class="absolute inset-0 w-full h-full object-cover' + (isTaken ? ' grayscale opacity-50' : '') + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
+                    '<span class="absolute inset-0 items-center justify-center text-xl font-black" style="display:none; color:' + def.color + ';">' + def.name.charAt(0) + '</span>' +
+                    '</span>' +
+                    '<span class="text-[9px] font-black text-white leading-tight truncate w-full text-center">' + def.name + '</span>' +
+                    ((def.hidden && id !== 'tomoko') ? '<span class="absolute top-0 left-0 bg-purple-600 text-white text-[8px] font-black px-1 rounded-br z-10">隠し</span>' : '') +
+                    (isTaken ? '<span class="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black px-1 rounded-bl z-10">' + (taken[id] + 1) + 'P使用中</span>' : '');
+                btn.onmouseenter = () => csHover(id);
+                btn.onclick = () => { csRegisterCellClick(id); csHover(id); if (csMode === 'cpu') csConfirm(); };
+                grid.appendChild(btn);
+            });
+            markCsCursor();
+        }
+
+        function csHoverMystery() {
+            csCursor = '?';
+            markCsCursor();
+            refreshCsSlots();
+        }
+
+        function markCsCursor() {
+            csVisibleIds().forEach(id => {
+                let btn = document.getElementById('csIcon_' + id);
+                if (btn) btn.classList.toggle('cs-cursor', id === csCursor);
+            });
+            let mb = document.getElementById('csIcon_mystery');
+            if (mb) mb.classList.toggle('cs-cursor', csCursor === '?');
+        }
+
+        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.9; return 1.4; }
+
+        function csHover(id) {
+            if (!csVisibleIds().includes(id)) return;
+            csCursor = id;
+            markCsCursor();
+            refreshCsSlots();
+        }
+
+        function refreshCsSlots() {
+            let assignments;
+            if (csMode === 'cpu') {
+                assignments = [(csCursor === '?' ? csCpuPicks[0] : csCursor), csCpuPicks[1], csCpuPicks[2], csCpuPicks[3]];
+            } else {
+                assignments = [0, 1, 2, 3].map(i => i === myPlayerIndex ? (csCursor === '?' ? null : csCursor) : (onlineMemberChars[i] || null));
+            }
+            for (let i = 0; i < 4; i++) {
+                let id = assignments[i];
+                let img = document.getElementById('csSlotImg' + i);
+                let ph = document.getElementById('csSlotPh' + i);
+                let nm = document.getElementById('csSlotName' + i);
+                let tag = document.getElementById('csSlotTag' + i);
+                if (!img || !ph || !nm) continue;
+                if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (i <= peerConnections.length ? 'PLAYER' : 'CPU'));
+                if (id) {
+                    img.style.transform = 'scale(' + charStandScale(id) + ')';
+                    nm.innerText = charName(id);
+                    img.onerror = () => { img.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(id).charAt(0); ph.style.color = charColor(id); };
+                    if (img.dataset.charId !== id) {
+                        img.dataset.charId = id;
+                        ph.style.display = 'none';
+                        img.classList.remove('hidden');
+                        img.src = charStandUrl(id);
+                    }
+                } else {
+                    img.style.transform = '';
+                    img.classList.add('hidden');
+                    delete img.dataset.charId;
+                    img.removeAttribute('src');
+                    ph.style.display = 'flex';
+                    ph.innerText = '？';
+                    ph.style.color = 'rgba(255,255,255,0.6)';
+                    nm.innerText = '---';
+                }
+            }
+        }
+
+        function updateCsButtons() {
+            let startBtn = document.getElementById('csStartBtn');
+            let confBtn = document.getElementById('csConfirmBtn');
+            if (csMode === 'cpu') {
+                confBtn.classList.add('hidden');
+                if (csCpuPicks[0]) startBtn.classList.remove('hidden');
+                else startBtn.classList.add('hidden');
+            } else {
+                confBtn.classList.remove('hidden');
+                confBtn.innerText = '✔ このキャラに決定';
+                startBtn.classList.add('hidden');
+            }
+        }
+
+        function csConfirm() {
+            if (csCursor === '?') { setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）'); return; }
+            let taken = csTakenByOthers();
+            if (taken[csCursor] !== undefined) {
+                setCsStatus('⚠️ ' + charName(csCursor) + ' は ' + (taken[csCursor] + 1) + 'P が使用中です');
+                return;
+            }
+            if (csMode === 'cpu') {
+                if (csCpuPicks[0] === csCursor) { refreshCsSlots(); return; }
+                myChar = csCursor;
+                csCpuPicks[0] = csCursor;
+                let pool = csVisibleIds().filter(id => id !== csCursor);
+                for (let i = pool.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+                csCpuPicks[1] = pool[0];
+                csCpuPicks[2] = pool[1];
+                csCpuPicks[3] = pool[2];
+                refreshCsSlots();
+                setCsStatus('2P: ' + charName(pool[0]) + ' ／ 3P: ' + charName(pool[1]) + ' ／ 4P: ' + charName(pool[2]) + ' が参戦！');
+                updateCsButtons();
+            } else {
+                setLobbyChar(csCursor);
+                closeCharSelect();
+            }
+        }
+
+        function csStartCpu() {
+            if (!csCpuPicks[0]) return;
+            for (let i = 0; i < 4; i++) {
+                players[i].char = csCpuPicks[i];
+                players[i].name = charName(csCpuPicks[i]);
+                players[i].color = charColor(csCpuPicks[i]);
+            }
             document.getElementById('p1Name').innerText = players[0].name;
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
+            document.getElementById('p4Name').innerText = players[3].name;
+            document.getElementById('charSelectModal').classList.add('hidden');
+            startCpuGame();
+        }
 
-            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let btn = document.getElementById(`btnSelect${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                let badge = document.getElementById(`badge${c.charAt(0).toUpperCase() + c.slice(1)}`);
-                if (btn && badge) {
-                    if (c === char) {
-                        btn.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
-                        badge.classList.remove('hidden');
-                    } else {
-                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
-                        badge.classList.add('hidden');
-                    }
-                }
+        // かたる出現コマンド: うつろ×5 → ？(トモコ出現後はトモコ)×1 → うつろ×2 → ？×1 → うつろ×6
+        let csMorphUnlocked = false; // コマンド成立済みか（以降は2回クリックで往復）
+        let csMorphKataru = false;   // うつろ枠が今かたるになっているか
+        let csSeqProgress = 0;
+        const CS_SEQ = ['U','U','U','U','U','S','U','U','S','U','U','U','U','U','U'];
+        let csMorphPairId = null;
+        let csMorphPairCount = 0;
+
+        function updateCsSeqCounter() {
+            let el = document.getElementById('csSeqCounter');
+            if (!el) return;
+            let segs = [5, 1, 2, 1, 6];
+            let special = csUnlocked ? 'トモコ' : '？';
+            let labels = ['うつろ', special, 'うつろ', special, 'うつろ'];
+            if (csMorphUnlocked) {
+                el.innerHTML = '<span class="text-green-400">✔ コマンド成立（現在: ' + (csMorphKataru ? 'かたる' : 'うつろ') + '／2回連続クリックで往復）</span>';
+                return;
+            }
+            let rest = csSeqProgress;
+            let html = '<span class="text-white/50">SEQ </span>';
+            segs.forEach((n, i) => {
+                let got = Math.max(0, Math.min(n, rest));
+                rest -= got;
+                let cls = got >= n ? 'text-green-400' : (got > 0 ? 'text-yellow-300' : 'text-white/40');
+                html += '<span class="' + cls + '">' + labels[i] + ' ' + got + '/' + n + '</span>';
+                if (i < segs.length - 1) html += '<span class="text-white/30"> → </span>';
             });
+            el.innerHTML = html;
+        }
+
+        function csRegisterCellClick(id) {
+            let morphCellId = csMorphKataru ? 'kataru' : 'utsuro';
+            if (csMorphUnlocked) {
+                if (id === morphCellId) {
+                    if (csMorphPairId === id) csMorphPairCount++;
+                    else { csMorphPairId = id; csMorphPairCount = 1; }
+                    if (csMorphPairCount >= 2) { csMorphPairId = null; csMorphPairCount = 0; csFlipMorphCell(); }
+                } else { csMorphPairId = null; csMorphPairCount = 0; }
+                updateCsSeqCounter();
+                return;
+            }
+            let sym = null;
+            if (id === 'mystery' || id === 'tomoko') sym = 'S';
+            else if (id === 'utsuro') sym = 'U';
+            if (!sym) { csSeqProgress = 0; updateCsSeqCounter(); return; }
+            if (sym === CS_SEQ[csSeqProgress]) csSeqProgress++;
+            else csSeqProgress = (sym === CS_SEQ[0]) ? 1 : 0;
+            if (csSeqProgress >= CS_SEQ.length) {
+                csSeqProgress = 0;
+                csMorphUnlocked = true;
+                csFlipMorphCell();
+            }
+            updateCsSeqCounter();
+        }
+
+        function csFlipMorphCell() {
+            let curId = csMorphKataru ? 'kataru' : 'utsuro';
+            let btn = document.getElementById('csIcon_' + curId);
+            let apply = () => {
+                csMorphKataru = !csMorphKataru;
+                let newId = csMorphKataru ? 'kataru' : 'utsuro';
+                if (csCursor === curId || csCursor === newId) csCursor = newId;
+                buildCsGrid();
+                refreshCsSlots();
+                updateCsSeqCounter();
+            };
+            if (btn) {
+                btn.classList.add('cs-flipping');
+                setTimeout(apply, 260);
+            } else apply();
+        }
+
+        const CS_JAPAN_ZONE = { x1: 0.40, x2: 0.50, y1: 0.40, y2: 0.75 };
+
+        function onCsMapClick(e) {
+            let wrap = document.getElementById('csMapWrap');
+            if (!wrap || !e) return;
+            let rect = wrap.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            onCsMapTapAt((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+        }
+
+        function onCsMapTapAt(fx, fy) {
+            if (csUnlocked) return;
+            if (fx < CS_JAPAN_ZONE.x1 || fx > CS_JAPAN_ZONE.x2 || fy < CS_JAPAN_ZONE.y1 || fy > CS_JAPAN_ZONE.y2) return;
+            let now = Date.now();
+            csMapTapLog = csMapTapLog.filter(t => now - t < 1600);
+            csMapTapLog.push(now);
+            if (csMapTapLog.length >= 3) {
+                csUnlocked = true;
+                csMapTapLog = [];
+                buildCsGrid();
+                refreshCsSlots();
+            }
         }
 
         function startCpuGame() {
@@ -1471,9 +1833,10 @@
             players[0].isHuman = true;
             players[1].isHuman = false;
             players[2].isHuman = false;
+            players[3].isHuman = false;
 
-            document.getElementById('cpuCharSelectModal').classList.add('hidden');
-            document.getElementById('gameStatusText').innerText = 'VS CPU (3人対戦中)';
+            document.getElementById('charSelectModal').classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
             playGameBgm();
 
             isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
@@ -1533,14 +1896,14 @@
                     myPlayerIndex = 0;
                     onlineMemberChars[0] = myChar;
                     updateLobbyCharUI();
-                    document.getElementById('lobbyMemberCount').innerText = `1 / 3`;
+                    document.getElementById('lobbyMemberCount').innerText = `1 / 4`;
                     document.getElementById('lobbyStatusText').innerText = '部屋を作成しました。対戦相手を待っています...';
                 });
 
                 peer.on('connection', (conn) => {
                     if (!isHost) return;
                     
-                    if (peerConnections.length >= 2) {
+                    if (peerConnections.length >= 3) {
                         conn.send({ type: 'ERROR', message: '部屋が満員です' });
                         setTimeout(() => conn.close(), 500);
                         return;
@@ -1557,7 +1920,7 @@
                             onlineMemberChars: onlineMemberChars
                         });
                         
-                        document.getElementById('lobbyMemberCount').innerText = `${peerConnections.length + 1} / 3`;
+                        document.getElementById('lobbyMemberCount').innerText = `${peerConnections.length + 1} / 4`;
                     });
 
                     setupConnectionDataHandler(conn);
@@ -1654,7 +2017,7 @@
                             onlineMemberChars[myPlayerIndex] = myChar;
                         }
                         if (data.memberCount) {
-                            document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 3`;
+                            document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 4`;
                         }
                         updateLobbyCharUI();
                     } else if (data.type === 'START_GAME') {
@@ -1668,19 +2031,17 @@
                         resetAllPlayerPositions();
 
                         if (data.playerConfigs) {
-                            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-                            let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
-                            
                             data.playerConfigs.forEach((cfg, idx) => {
                                 players[idx].char = cfg.char;
-                                players[idx].name = charNames[cfg.char];
-                                players[idx].color = charColors[cfg.char];
+                                players[idx].name = charName(cfg.char);
+                                players[idx].color = charColor(cfg.char);
                                 players[idx].isHuman = cfg.isHuman;
                             });
 
                             document.getElementById('p1Name').innerText = players[0].name;
                             document.getElementById('p2Name').innerText = players[1].name;
                             document.getElementById('p3Name').innerText = players[2].name;
+                            document.getElementById('p4Name').innerText = players[3].name;
                         }
 
                         currentPlayerIndex = 0;
@@ -1722,16 +2083,27 @@
             });
         }
 
-        function drawLobbyCharPreviews() {
-            ['Utsuro', 'Gengo', 'Tomoko'].forEach(c => {
-                let charKey = c.toLowerCase();
-                let canvasEl = document.getElementById(`prevLobby${c}`);
-                if (canvasEl) {
-                    let lCtx = canvasEl.getContext('2d');
-                    lCtx.clearRect(0, 0, 24, 24);
-                    drawPlayerDotModel(lCtx, charKey, 12, 12, 20);
+        function drawLobbyCharPreviews() { updateLobbyPickDisplay(); }
+
+        function updateLobbyPickDisplay() {
+            let icon = document.getElementById('lobbyMyCharIcon');
+            let ph = document.getElementById('lobbyMyCharPh');
+            let nm = document.getElementById('lobbyMyCharName');
+            if (nm) nm.innerText = charName(myChar);
+            if (icon && ph) {
+                icon.onerror = () => { icon.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(myChar).charAt(0); ph.style.color = charColor(myChar); };
+                if (icon.dataset.charId !== myChar) {
+                    icon.dataset.charId = myChar;
+                    ph.style.display = 'none';
+                    icon.classList.remove('hidden');
+                    icon.src = charIconUrl(myChar);
                 }
-            });
+            }
+            let list = document.getElementById('lobbyPickedList');
+            if (list) {
+                let parts = [0, 1, 2, 3].map(i => (i + 1) + 'P: ' + (onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (i <= peerConnections.length ? '選択中…' : 'CPU')));
+                list.innerText = parts.join(' ／ ');
+            }
         }
 
         function setLobbyChar(char) {
@@ -1750,35 +2122,16 @@
         }
 
         function updateLobbyCharUI() {
-            let selectedChars = Object.values(onlineMemberChars);
+            updateLobbyPickDisplay();
+
+            let csModal = document.getElementById('charSelectModal');
+            if (csModal && !csModal.classList.contains('hidden') && csMode === 'lobby') {
+                buildCsGrid();
+                refreshCsSlots();
+            }
+
+            let selectedChars = Object.values(onlineMemberChars).filter(Boolean);
             let hasDuplicate = new Set(selectedChars).size !== selectedChars.length;
-
-            ['utsuro', 'gengo', 'tomoko'].forEach(c => {
-                let cCap = c.charAt(0).toUpperCase() + c.slice(1);
-                let btn = document.getElementById(`btnLobby${cCap}`);
-                let statusSpan = document.getElementById(`lobbyStatus${cCap}`);
-
-                if (statusSpan) statusSpan.innerText = '';
-                if (btn) {
-                    if (myChar === c) {
-                        btn.classList.add('ring-2', 'ring-yellow-400');
-                    } else {
-                        btn.classList.remove('ring-2', 'ring-yellow-400');
-                    }
-                }
-            });
-
-            Object.keys(onlineMemberChars).forEach(pIdx => {
-                let c = onlineMemberChars[pIdx];
-                if (c) {
-                    let cCap = c.charAt(0).toUpperCase() + c.slice(1);
-                    let statusSpan = document.getElementById(`lobbyStatus${cCap}`);
-                    if (statusSpan) {
-                        let label = parseInt(pIdx) === myPlayerIndex ? 'あなた' : `${parseInt(pIdx) + 1}P`;
-                        statusSpan.innerText = statusSpan.innerText ? `${statusSpan.innerText}, ${label}` : label;
-                    }
-                }
-            });
 
             let startBtn = document.getElementById('btnStartLobbyGame');
             let statusText = document.getElementById('lobbyStatusText');
@@ -1821,16 +2174,13 @@
                 return;
             }
 
-            let charNames = { utsuro: '氷室うつろ', gengo: '繰言かたる', tomoko: 'トモコ' };
-            let charColors = { utsuro: '#a855f7', gengo: '#10b981', tomoko: '#ec4899' };
-
             let usedChars = [];
-            let playerConfigs = [0, 1, 2].map(idx => {
+            let playerConfigs = [0, 1, 2, 3].map(idx => {
                 let chosenChar = onlineMemberChars[idx];
                 let isHuman = idx <= peerConnections.length;
 
-                if (!chosenChar) {
-                    let available = ['utsuro', 'gengo', 'tomoko'].filter(c => !usedChars.includes(c));
+                if (!chosenChar || usedChars.includes(chosenChar)) {
+                    let available = normalCharIds().filter(c => !usedChars.includes(c));
                     chosenChar = available[0] || 'utsuro';
                 }
                 usedChars.push(chosenChar);
@@ -1843,14 +2193,15 @@
 
             playerConfigs.forEach((cfg, idx) => {
                 players[idx].char = cfg.char;
-                players[idx].name = charNames[cfg.char];
-                players[idx].color = charColors[cfg.char];
+                players[idx].name = charName(cfg.char);
+                players[idx].color = charColor(cfg.char);
                 players[idx].isHuman = cfg.isHuman;
             });
 
             document.getElementById('p1Name').innerText = players[0].name;
             document.getElementById('p2Name').innerText = players[1].name;
             document.getElementById('p3Name').innerText = players[2].name;
+            document.getElementById('p4Name').innerText = players[3].name;
 
             let startPayload = {
                 type: 'START_GAME',
@@ -2639,20 +2990,52 @@
         }
 
         function drawPlayerDotModel(context, charType, x, y, size = 32) {
-            let img = charImages[charType];
+            let img = charImages[charType] || charImages[legacyCharId(charType)];
             if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
-            if (customDotData[charType]) {
-                renderCustomDotGrid(context, customDotData[charType], x, y, size);
+            let fimg = charFileStands[charType];
+            if (fimg && fimg.complete && fimg.naturalWidth && drawCharacterImage(context, fimg, x, y, size)) return;
+            let dot = customDotData[charType] || customDotData[legacyCharId(charType)];
+            if (dot) {
+                renderCustomDotGrid(context, dot, x, y, size);
+                return;
             }
+            drawCharPlaceholder(context, charType, x, y, size, false);
         }
 
         function drawGoshuDotModel(context, charType, x, y, size = 20) {
             let goshuKey = `${charType}_goshu`;
-            let img = charImages[goshuKey];
+            let legacyGoshuKey = `${legacyCharId(charType)}_goshu`;
+            let img = charImages[goshuKey] || charImages[legacyGoshuKey];
             if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
-            if (customDotData[goshuKey]) {
-                renderCustomDotGrid(context, customDotData[goshuKey], x, y, size);
+            let dot = customDotData[goshuKey] || customDotData[legacyGoshuKey];
+            if (dot) {
+                renderCustomDotGrid(context, dot, x, y, size);
+                return;
             }
+            let fimg = charFileIcons[charType];
+            if (fimg && fimg.complete && fimg.naturalWidth && drawCharacterImage(context, fimg, x, y, size)) return;
+            drawCharPlaceholder(context, charType, x, y, size, true);
+        }
+
+        // 🪙 画像もドット絵も無いキャラ用の仮コマ（キャラ色の丸＋頭文字）
+        function drawCharPlaceholder(context, charType, x, y, size, isGoshu) {
+            let def = CHAR_DEF[charType];
+            let color = def ? def.color : '#a855f7';
+            let label = isGoshu ? 'ご' : (def ? def.name.charAt(0) : '？');
+            context.save();
+            context.beginPath();
+            context.arc(x, y, size / 2, 0, Math.PI * 2);
+            context.fillStyle = color;
+            context.fill();
+            context.lineWidth = Math.max(1, size / 12);
+            context.strokeStyle = 'rgba(255,255,255,0.9)';
+            context.stroke();
+            context.fillStyle = '#ffffff';
+            context.font = '900 ' + Math.round(size * 0.52) + 'px sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(label, x, y + 1);
+            context.restore();
         }
 
         function drawCharPreviews() {
@@ -3407,23 +3790,26 @@
                         let drawX = (p.renderX !== undefined ? p.renderX : tile.x) + offset;
                         let drawY = (p.renderY !== undefined ? p.renderY : tile.y) - 6 + (p.jumpY || 0);
 
-                        if (p.goshuX === undefined) p.goshuX = tile.x;
-                        if (p.goshuY === undefined) p.goshuY = tile.y;
+                        drawPlayerDotModel(ctx, p.char, drawX, drawY, 40);
 
-                        let targetGoshuX = (p.renderX !== undefined ? p.renderX : tile.x) + offset + 12;
-                        let targetGoshuY = (p.renderY !== undefined ? p.renderY : tile.y) + 4;
+                        if (GOSHU_ENABLED) {
+                            if (p.goshuX === undefined) p.goshuX = tile.x;
+                            if (p.goshuY === undefined) p.goshuY = tile.y;
 
-                        let dx = targetGoshuX - p.goshuX;
-                        let dy = targetGoshuY - p.goshuY;
-                        let dist = Math.hypot(dx, dy);
+                            let targetGoshuX = (p.renderX !== undefined ? p.renderX : tile.x) + offset + 12;
+                            let targetGoshuY = (p.renderY !== undefined ? p.renderY : tile.y) + 4;
 
-                        p.goshuX += dx * 0.04;
-                        p.goshuY += dy * 0.04;
+                            let dx = targetGoshuX - p.goshuX;
+                            let dy = targetGoshuY - p.goshuY;
+                            let dist = Math.hypot(dx, dy);
 
-                        let goshuJumpY = (dist > 1.0) ? -Math.abs(Math.sin(Date.now() / 100)) * 8 : 0;
+                            p.goshuX += dx * 0.04;
+                            p.goshuY += dy * 0.04;
 
-                        drawPlayerDotModel(ctx, p.char, drawX, drawY, 30);
-                        drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJumpY, 18);
+                            let goshuJumpY = (dist > 1.0) ? -Math.abs(Math.sin(Date.now() / 100)) * 8 : 0;
+
+                            drawGoshuDotModel(ctx, p.char, p.goshuX, p.goshuY + goshuJumpY, 18);
+                        }
                     }
                 });
 
