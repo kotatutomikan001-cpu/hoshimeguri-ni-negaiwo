@@ -224,7 +224,7 @@
     </div>
 
     <!-- 🌟 オンライン待合ロビーモーダル -->
-    <div id="onlineLobbyModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100002] hidden">
+    <div id="onlineLobbyModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-[100002] hidden">
         <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-400 shadow-2xl text-center flex flex-col gap-3">
             <h2 class="text-base sm:text-lg font-black text-purple-300">🌐 オンライン対戦ロビー</h2>
             <div class="bg-indigo-950/80 p-2 rounded border border-purple-600 flex items-center justify-center gap-2">
@@ -335,7 +335,7 @@
     </div>
 
     <!-- 🌟 オンライン部屋コード入力モーダル -->
-    <div id="roomCodeModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50 overflow-hidden hidden">
+    <div id="roomCodeModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-50 overflow-hidden hidden">
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-cyan-500 shadow-2xl text-center">
             <h2 class="text-base sm:text-lg font-black text-cyan-300 mb-1">🌐 オンライン対戦</h2>
             <p class="text-xs text-gray-300 mb-4 font-bold">合言葉（部屋コード）を入力して作成・参加します</p>
@@ -581,12 +581,23 @@
                 <div id="debugTabLines" class="hidden space-y-3">
                     <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
                         <span class="text-xs text-yellow-300 font-bold">💬 オープニング会話のセリフ</span>
-                        <span class="text-[11px] text-gray-300 leading-snug">対戦開始時に流れる会話を編集できます。話すキャラとセリフを1行ずつ設定してね。編集すると自動でこの端末に保存され、次回からそのセリフで再生されます。</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">タイトル画面の後に流れる会話シーンを編集できます。話すキャラとセリフを1行ずつ設定してね。編集すると自動でこの端末に保存され、次回からそのセリフで再生されます。</span>
                         <div id="openingLinesList" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <button onclick="addOpeningLine()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">＋ 行を追加</button>
                             <button onclick="previewOpeningFromEditor()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">▶ 試し再生</button>
                             <button onclick="resetOpeningScript()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">デフォルトに戻す</button>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-purple-300 font-bold">📊 Googleスプレッドシート連携（セリフ）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">シートでも会話を編集できます。列は speaker / text（1行目はヘッダー）。speaker は全キャラのID・名前（例: utsuro・氷室うつろ・うつろ）と narration（ナレーション）が使えます。連携シートが最優先で、無い場合は上のエディタ→内蔵デフォルトの順で再生されます。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="storySheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveStorySheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadStoryFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkStorySheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="storySheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
                 </div>
@@ -1282,6 +1293,101 @@
             loadEventsFromSheet(false);
         }
 
+        // 📖 会話（ストーリー）シート連携: セリフを Google スプレッドシートで自由に編集できる。連携シートが最優先
+        let sheetStoryScript = null; // シートから読み込んだセリフ
+        function storySpeakerKey(raw) {
+            let s = String(raw || '').trim();
+            if (!s) return null;
+            let lower = s.toLowerCase();
+            if (['narration', 'ナレーション', '地の文'].includes(lower)) return 'narration';
+            if (lower === 'gengo') return 'kataru';
+            let byId = CHARACTERS.find(c => c.id === lower);
+            if (byId) return byId.id;
+            let flat = s.replace(/\s/g, '');
+            let byName = CHARACTERS.find(c => c.name.replace(/\s/g, '') === flat);
+            if (byName) return byName.id;
+            // 苗字だけ・名前だけでも引けるように（重複する場合は使わない）
+            let surnameCount = {}, givenCount = {};
+            CHARACTERS.forEach(c => {
+                let m = c.name.match(/^[\u4E00-\u9FAF\u3005]+/);
+                let sur = m ? m[0] : '';
+                let giv = sur ? c.name.slice(sur.length) : c.name;
+                if (sur && sur !== c.name) surnameCount[sur] = (surnameCount[sur] || 0) + 1;
+                if (giv) givenCount[giv] = (givenCount[giv] || 0) + 1;
+            });
+            let byPart = CHARACTERS.find(c => {
+                let m = c.name.match(/^[\u4E00-\u9FAF\u3005]+/);
+                let sur = m ? m[0] : '';
+                let giv = sur ? c.name.slice(sur.length) : c.name;
+                return (sur && sur !== c.name && surnameCount[sur] === 1 && sur === flat) || (giv && givenCount[giv] === 1 && giv === flat);
+            });
+            return byPart ? byPart.id : null;
+        }
+        function sheetRowsToStory(rows) {
+            if (!rows || rows.length === 0) return [];
+            let header = rows[0].map(h => String(h).trim().toLowerCase());
+            let spkNames = ['speaker', 'who', '話者', 'キャラ'];
+            let txtNames = ['text', 'セリフ', '本文'];
+            let hasHeader = header.some(h => spkNames.includes(h)) && header.some(h => txtNames.includes(h));
+            let si = 0, ti = 1;
+            if (hasHeader) {
+                let p = header.findIndex(h => spkNames.includes(h)); if (p !== -1) si = p;
+                p = header.findIndex(h => txtNames.includes(h)); if (p !== -1) ti = p;
+            }
+            let lines = [];
+            for (let r = hasHeader ? 1 : 0; r < rows.length; r++) {
+                let row = rows[r];
+                let who = storySpeakerKey(row[si]);
+                let text = String(row[ti] || '').trim();
+                if (!who || !text) continue; // 話者不明・空行はスキップ
+                lines.push({ who: who, text: text });
+            }
+            return lines;
+        }
+        function setStorySheetStatus(msg) {
+            let el = document.getElementById('storySheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadStoryFromSheet(manual) {
+            let savedUrl = '';
+            try { savedUrl = localStorage.getItem('utsuro_story_sheet_url') || ''; } catch (e) {}
+            if (!savedUrl) { if (manual) setStorySheetStatus('未連携です'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setStorySheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setStorySheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetStoryScript = lines;
+                try { localStorage.setItem('utsuro_story_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setStorySheetStatus(`✅ ${lines.length}行のセリフを読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('セリフシート読み込み失敗:', e);
+                setStorySheetStatus('⚠️ 読み込み失敗（現在のセリフで継続します）');
+                return false;
+            }
+        }
+        function saveStorySheetUrlAndLoad() {
+            let input = document.getElementById('storySheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setStorySheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setStorySheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_story_sheet_url', url); } catch (e) {}
+            loadStoryFromSheet(true);
+        }
+        function unlinkStorySheet() {
+            try { localStorage.removeItem('utsuro_story_sheet_url'); localStorage.removeItem('utsuro_story_sheet_cache'); } catch (e) {}
+            sheetStoryScript = null;
+            let input = document.getElementById('storySheetUrlInput');
+            if (input) input.value = '';
+            setStorySheetStatus('連携を解除しました（エディタ／内蔵デフォルトに戻ります）');
+        }
+
         function loadDataFromLocalStorage() {
             try {
                 let savedEvents = localStorage.getItem('utsuro_custom_events');
@@ -1307,6 +1413,13 @@
                 let sheetInput = document.getElementById('sheetUrlInput');
                 if (sheetInput) sheetInput.value = personalSheetUrl || OFFICIAL_EVENTS_SHEET_URL;
                 loadEventsFromSheet(false); // 個別連携があればそれを、なければ公式シートを自動読み込み（失敗時はキャッシュ/内蔵デフォルトで継続）
+
+                let storyInput = document.getElementById('storySheetUrlInput');
+                let personalStoryUrl = localStorage.getItem('utsuro_story_sheet_url');
+                if (storyInput) storyInput.value = personalStoryUrl || '';
+                let cachedStory = localStorage.getItem('utsuro_story_sheet_cache');
+                if (cachedStory) { try { sheetStoryScript = sanitizeOpeningLines(JSON.parse(cachedStory)); } catch (e) { sheetStoryScript = null; } }
+                if (personalStoryUrl) loadStoryFromSheet(false); // セリフシート連携があれば起動時に自動読み込み（失敗時はキャッシュで継続）
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -2794,29 +2907,45 @@
         }
 
         // 🎬 タイトル画面＆オープニング会話
-        // ★オープニングのセリフはこの OPENING_SCRIPT を編集すれば差し替えられます（who は utsuro / gengo / tomoko）
+        // ★ストーリー会話のセリフはこの OPENING_SCRIPT を編集すれば差し替えられます（who は utsuro / gengo / tomoko / narration）。シート連携時はシートが最優先
         const OPENING_SCRIPT = [
-            { who: 'utsuro', text: 'みんな、今日は集まってくれてありがとう。配信すごろくコラボ、はじめるよ。' },
-            { who: 'gengo', text: '今日のわたくしは絶好調ですわ！サイコロの神様が味方してる気がしますわ！' },
-            { who: 'tomoko', text: 'わーい！あたし、アイテムいっぱい集めてゴールしちゃうんだから！' },
-            { who: 'utsuro', text: 'ルールは簡単。サイコロを振って進んで、先にゴールした人の勝ち。…ただし、マスのイベントには気をつけてね。' },
-            { who: 'gengo', text: 'マイナスマスですか？上等ですわ、全部跳ね返してさしあげます！' },
-            { who: 'tomoko', text: 'ふふーん、負けないよ！それじゃあ…' },
-            { who: 'utsuro', text: 'それじゃあ、いくよ。ゲームスタート！' }
+            { who: 'narration', text: '――ここは、星明かりだけが頼りの未知の空間。目覚めた彼女たちは、帰り道を見失っていた。' },
+            { who: 'utsuro', text: 'みんな、落ち着いて。ここは…知らない場所みたい。さっきまで配信の準備をしてたはずなのに…' },
+            { who: 'hikari', text: 'うぅ、真っ暗でこわいよ…。あたしたち、どうやって帰ればいいの？' },
+            { who: 'shano', text: '…見て。あの丘の上に、祭壇がある。あれは「星の祭壇」…星のカケラを捧げれば、願いが叶うという言い伝えの…' },
+            { who: 'utsuro', text: 'そうだね。星のカケラを5個集めて祭壇まで持って行けば、願いが叶って元の世界に帰れるはずだよ。' },
+            { who: 'narration', text: 'ルールは単純。盤面に散らばる「星のカケラ」を5個集め、星の祭壇まで持って帰ること。それが、この空間からの脱出条件。' },
+            { who: 'hikari', text: 'カケラは星のマスに止まると拾えるんだね！でも数が少ないから、みんなで取り合いだぁ…' },
+            { who: 'utsuro', text: 'それと、誰かと同じマスに止まると、その人からカケラを1個奪えるよ。逆に奪われないように気をつけてね。' },
+            { who: 'utsuro', text: '道中には、リスナーが増えるプラスマス、減っちゃうマイナスマス、アイテムが拾えるマスがあるよ。' },
+            { who: 'hikari', text: 'よーし、がんばる！あたしが一番にカケラを集めて、みんなで帰ろう！' },
+            { who: 'utsuro', text: 'うん、行こう。――星めぐりの旅、スタート！' }
         ];
-        const OPENING_CHAR_NAMES = { utsuro: '❄️ 氷室うつろ', gengo: '🟩 繰言かたる', tomoko: '🌸 トモコ' };
+        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), 'narration'];
+        const OPENING_CHAR_NAMES = {};
+        CHARACTERS.forEach(c => { OPENING_CHAR_NAMES[c.id] = c.name; });
+        OPENING_CHAR_NAMES.utsuro = '❄️ 氷室うつろ';
+        OPENING_CHAR_NAMES.kataru = '🟩 繰言かたる';
+        OPENING_CHAR_NAMES.tomoko = '🌸 トモコ';
+        OPENING_CHAR_NAMES.narration = '📖 ナレーション';
+        OPENING_CHAR_NAMES.gengo = OPENING_CHAR_NAMES.kataru; // 旧キー互換（表示用）
+        function normalizeSpeakerWho(who) {
+            if (who === 'gengo') return 'kataru';
+            return OPENING_SPEAKER_IDS.includes(who) ? who : 'utsuro';
+        }
 
         // 💬 セリフ編集: デバッグ画面で編集したセリフはこの端末に保存され、デフォルトより優先される
         let activeOpeningScript = null; // null = デフォルト(OPENING_SCRIPT)を使用
 
         function currentOpeningScript() {
+            if (typeof sheetStoryScript !== 'undefined' && sheetStoryScript && sheetStoryScript.length) return sheetStoryScript;
             return (activeOpeningScript && activeOpeningScript.length) ? activeOpeningScript : OPENING_SCRIPT;
         }
 
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: ['utsuro', 'gengo', 'tomoko'].includes(l.who) ? l.who : 'utsuro',
+                who: normalizeSpeakerWho(l.who),
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -2849,7 +2978,7 @@
                 num.innerText = String(idx + 1);
                 let sel = document.createElement('select');
                 sel.className = 'bg-slate-900 border border-purple-500 rounded px-1 py-0.5 text-xs text-white font-bold';
-                ['utsuro', 'gengo', 'tomoko'].forEach(k => {
+                OPENING_SPEAKER_IDS.forEach(k => {
                     let opt = document.createElement('option');
                     opt.value = k;
                     opt.innerText = OPENING_CHAR_NAMES[k];
@@ -2921,7 +3050,7 @@
 
         function previewOpeningFromEditor() {
             closeDebugMenu();
-            playOpening();
+            playOpening(true);
         }
         let openingIndex = 0;
         let openingActive = false;
@@ -2932,6 +3061,7 @@
             let dbgBtn = document.getElementById('debugEntryBtn');
             if (dbgBtn) dbgBtn.classList.remove('hidden');
             try { playSelectBgm(); } catch (e) {}
+            try { playOpening(true); } catch (e) {}
         }
 
         function drawTitlePreviews() {
@@ -2945,8 +3075,8 @@
             });
         }
 
-        function playOpening() {
-            if (!OPENING_ENABLED) return;
+        function playOpening(force) {
+            if (!force && !OPENING_ENABLED) return;
             if (currentOpeningScript().length === 0) return;
             openingIndex = 0;
             openingActive = true;
@@ -2960,13 +3090,20 @@
         function renderOpeningLine() {
             let line = currentOpeningScript()[openingIndex];
             if (!line) { endOpening(); return; }
-            document.getElementById('openingSpeaker').innerText = line.name || OPENING_CHAR_NAMES[line.who] || '';
-            document.getElementById('openingText').innerText = line.text || '';
+            let isNarr = line.who === 'narration';
+            document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
+            let txEl = document.getElementById('openingText');
+            txEl.innerText = line.text || '';
+            txEl.classList.toggle('italic', isNarr);
+            txEl.classList.toggle('text-purple-100', isNarr);
             let cv = document.getElementById('openingFaceCanvas');
             if (cv) {
-                let cx = cv.getContext('2d');
-                cx.clearRect(0, 0, cv.width, cv.height);
-                if (line.who) drawPlayerDotModel(cx, line.who, cv.width / 2, cv.height / 2, 64);
+                cv.style.display = isNarr ? 'none' : '';
+                if (!isNarr) {
+                    let cx = cv.getContext('2d');
+                    cx.clearRect(0, 0, cv.width, cv.height);
+                    if (line.who) drawPlayerDotModel(cx, line.who, cv.width / 2, cv.height / 2, 64);
+                }
             }
         }
 
