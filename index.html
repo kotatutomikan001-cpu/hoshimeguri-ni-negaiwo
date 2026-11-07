@@ -254,7 +254,7 @@
 
             <div class="flex flex-col gap-2">
                 <button id="btnStartLobbyGame" onclick="forceStartOnlineLobby()" class="pixel-btn py-2 px-4 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-indigo-600 shadow cursor-pointer">
-                    🚀 ゲームを開始する (残りをCPUで補う)
+                    ゲームを開始する (残りをCPUで補う)
                 </button>
                 <button onclick="leaveOnlineLobby()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-gray-300 rounded bg-slate-800 hover:bg-slate-700 border border-gray-600 cursor-pointer">
                     🚪 部屋を退出する
@@ -272,28 +272,10 @@
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-black flex items-center justify-center p-3 z-[100004] overflow-hidden">
         <div class="text-center max-w-md w-full">
-            <div class="text-[11px] tracking-[0.35em] text-cyan-300 font-black mb-1">VSTREAMER SUGOROKU</div>
-            <h1 class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 mb-1">氷室うつろ</h1>
-            <div class="text-2xl sm:text-3xl font-black text-white mb-4">❄️ すごろく ❄️</div>
-            <div class="flex items-end justify-center gap-4 mb-3">
-                <div class="flex flex-col items-center gap-1">
-                    <canvas id="titlePrevUtsuro" width="72" height="72"></canvas>
-                    <span class="text-[11px] font-bold text-purple-200">氷室うつろ</span>
-                </div>
-                <div class="flex flex-col items-center gap-1">
-                    <canvas id="titlePrevGengo" width="72" height="72"></canvas>
-                    <span class="text-[11px] font-bold text-emerald-200">繰言かたる</span>
-                </div>
-                <div class="flex flex-col items-center gap-1">
-                    <canvas id="titlePrevTomoko" width="72" height="72"></canvas>
-                    <span class="text-[11px] font-bold text-pink-200">トモコ</span>
-                </div>
-            </div>
-            <p class="text-xs text-purple-200 font-bold mb-5">〜 配信コラボすごろく！サイコロを振ってゴールを目指せ 〜</p>
+            <h1 class="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 mb-4">星めぐりに願いを</h1>
             <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
                 ▶ タップしてスタート
             </button>
-            <p class="text-[10px] text-gray-400 mt-3 font-bold">VS CPU / オンライン対戦対応</p>
         </div>
     </div>
 
@@ -328,18 +310,15 @@
                 <span class="absolute text-cyan-200 select-none" style="top:69.5%;left:49.2%;font-size:20px;opacity:0.23;transform:rotate(-38deg)">❄️</span>
             </div>
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
-            <h2 class="text-lg sm:text-xl font-black text-purple-300 mb-1 flex items-center justify-center gap-1.5">
-                <span>❄️ 氷室うつろ すごろく</span>
-            </h2>
             <p class="text-xs text-purple-200 mb-4 font-bold">プレイモードを選択してください</p>
 
             <div class="flex flex-col gap-3">
                 <button id="btnSelectCpuMode" onclick="openCpuCharSelectModal()" class="pixel-btn py-3 px-4 font-black text-white rounded-lg text-sm bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md cursor-pointer flex items-center justify-center gap-2">
-                    <span>🤖 VS CPU対戦 (1人用)</span>
+                    <span>VS CPU対戦 (1人用)</span>
                 </button>
 
                 <button id="btnSelectOnlineMode" onclick="openRoomCodeModal()" class="pixel-btn py-3 px-4 font-black text-white rounded-lg text-sm bg-gradient-to-r from-cyan-600 to-blue-600 shadow-md cursor-pointer flex items-center justify-center gap-2">
-                    <span>🌐 オンライン対戦 (マルチ)</span>
+                    <span>オンライン対戦 (マルチ)</span>
                 </button>
 
                 <div id="modalVolumeBox" class="mobile-hide-volume items-center justify-center gap-2 bg-slate-950/80 p-2 rounded border border-purple-800/80 mt-2">
@@ -383,6 +362,7 @@
                 <div class="text-yellow-300 font-black tracking-widest text-xl sm:text-3xl" style="text-shadow: 2px 2px 0 #b91c1c;">PLAYER SELECT</div>
                 <div id="csModeLabel" class="text-[11px] sm:text-xs font-black text-cyan-200"></div>
             </div>
+            <div class="hidden portrait:block text-center text-[10px] text-cyan-200/90 font-bold flex-none mb-0.5">📱 横画面にするとアイコンが大きく表示されます</div>
             <div id="csMapWrap" onclick="onCsMapClick(event)" class="relative w-full rounded-lg overflow-hidden border-2 border-indigo-300/60 bg-[#2a2f9e] cursor-pointer select-none flex-none">
                 <img id="csWorldMap" class="w-full h-24 sm:h-36 object-cover block" alt="">
                 <div id="csMapFallback" class="absolute inset-0 hidden items-center justify-center text-4xl sm:text-5xl tracking-widest">🗺️🌏⭐</div>
@@ -391,7 +371,7 @@
             <div id="csStatus" class="text-center text-[11px] sm:text-xs font-black text-yellow-200 mt-1.5 min-h-[1.2em] flex-none"></div>
             <div id="csSeqCounter" class="text-center text-[10px] sm:text-[11px] font-mono font-bold mt-0.5 flex-none"></div>
             <div class="flex gap-2 mt-1 flex-1 min-h-0">
-                <div class="flex flex-col gap-1.5 w-[24%] max-w-[150px] flex-none min-h-0">
+                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] flex-none min-h-0">
                     <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
                         <div class="flex items-center justify-between px-0.5">
                             <span class="text-[11px] font-black text-yellow-300">1P</span>
@@ -420,11 +400,11 @@
                     <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
                     <div class="flex gap-2 mt-auto pt-2">
                         <button id="csConfirmBtn" onclick="csConfirm()" class="pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer">✔ このキャラに決定</button>
-                        <button id="csStartBtn" onclick="csStartCpu()" class="hidden pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-pink-600 shadow cursor-pointer">🚀 ゲームスタート！</button>
+                        <button id="csStartBtn" onclick="csStartCpu()" class="hidden pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-pink-600 shadow cursor-pointer">ゲームスタート！</button>
                         <button onclick="closeCharSelect()" class="pixel-btn py-2 px-3 font-bold text-xs text-gray-200 rounded-lg bg-slate-700/80 hover:bg-slate-600 cursor-pointer">← もどる</button>
                     </div>
                 </div>
-                <div class="flex flex-col gap-1.5 w-[24%] max-w-[150px] flex-none min-h-0">
+                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] flex-none min-h-0">
                     <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
                         <div class="flex items-center justify-between px-0.5">
                             <span class="text-[11px] font-black text-yellow-300">3P</span>
@@ -673,6 +653,7 @@
             charFileStands[c.id] = img;
         });
         const GOSHU_ENABLED = false; // ごしゅ(お供)システムは凍結中。true にすると復活する
+        const OPENING_ENABLED = false; // オープニング会話は非表示中。true にすると復活する
         let isFullMapView = false;
         let activeTab = 'events';
 
@@ -1578,7 +1559,7 @@
                         '<span class="relative block w-full" style="aspect-ratio:1/1;">' +
                         '<span class="absolute inset-0 flex items-center justify-center text-2xl font-black text-white/70">？</span>' +
                         '</span>' +
-                        '<span class="text-[9px] font-black text-white/70 leading-tight truncate w-full text-center">？？？</span>';
+                        '<span class="text-[8px] sm:text-[10px] font-black text-white/70 leading-[1.1] break-all w-full text-center">？？？</span>';
                     mbtn.onmouseenter = () => csHoverMystery();
                     mbtn.addEventListener('click', () => csRegisterCellClick('mystery'));
                     mbtn.onclick = () => setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）');
@@ -1596,7 +1577,7 @@
                     '<img src="' + charIconUrl(id) + '" alt="" class="absolute inset-0 w-full h-full object-cover' + (isTaken ? ' grayscale opacity-50' : '') + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
                     '<span class="absolute inset-0 items-center justify-center text-xl font-black" style="display:none; color:' + def.color + ';">' + def.name.charAt(0) + '</span>' +
                     '</span>' +
-                    '<span class="text-[9px] font-black text-white leading-tight truncate w-full text-center">' + def.name + '</span>' +
+                    '<span class="text-[8px] sm:text-[10px] font-black text-white leading-[1.1] break-all w-full text-center">' + def.name + '</span>' +
                     ((def.hidden && id !== 'tomoko') ? '<span class="absolute top-0 left-0 bg-purple-600 text-white text-[8px] font-black px-1 rounded-br z-10">隠し</span>' : '') +
                     (isTaken ? '<span class="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black px-1 rounded-bl z-10">' + (taken[id] + 1) + 'P使用中</span>' : '');
                 btn.onmouseenter = () => csHover(id);
@@ -2850,6 +2831,7 @@
         }
 
         function playOpening() {
+            if (!OPENING_ENABLED) return;
             if (currentOpeningScript().length === 0) return;
             openingIndex = 0;
             openingActive = true;
