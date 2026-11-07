@@ -610,6 +610,9 @@
         let mapEditorCanvas, mapEditorCtx;
 
         let myChar = 'utsuro';
+        let myCharPending = false; // ゲストがキャラ登録を送ってホストの反映を待っている間 true
+        let myCharSentAt = 0;
+        let lastCharRejectionAt = 0; // ホストにキャラ登録を拒否された時刻（通知表示の保持用）
 
         // 🗂️ キャラクター一覧（通常14人＋隠し2人）
         const CHARACTERS = [
@@ -699,7 +702,8 @@
         let finishedRankCount = 0;
         let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
         // ⭐ 星のカケラ＆星の祭壇ルール
-        const FRAGMENTS_REQUIRED = 5;   // ゴールに必要な星のカケラの数
+        const FRAGMENTS_REQUIRED = 5;
+        const STEP_JUMP_HEIGHT = 7; // 移動時ジャンプの高さ（px）。大きくすると跳ねる、小さくすると滑らか   // ゴールに必要な星のカケラの数
         const STAR_TILE_COUNT = 4;      // マップ上に同時に出る星マスの数
         const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
@@ -2012,7 +2016,11 @@
                             let pIdx = connIdx + 1;
                             let pairId = csPairOf(data.char);
                             let conflict = pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== pIdx && onlineMemberChars[k] === pairId);
-                            if (!conflict) onlineMemberChars[pIdx] = data.char;
+                            if (!conflict) {
+                                onlineMemberChars[pIdx] = data.char;
+                            } else if (conn.open) {
+                                conn.send({ type: 'CHAR_REJECTED', char: data.char });
+                            }
                             updateLobbyCharUI();
                             broadcastLobbyState();
                         }
@@ -2054,12 +2062,28 @@
                     } else if (data.type === 'LOBBY_STATE') {
                         if (data.onlineMemberChars) {
                             onlineMemberChars = data.onlineMemberChars;
-                            onlineMemberChars[myPlayerIndex] = myChar;
+                            let hostMine = onlineMemberChars[myPlayerIndex] || null;
+                            if (myCharPending && Date.now() - myCharSentAt > 2000) myCharPending = false;
+                            if (hostMine === myChar) {
+                                myCharPending = false;
+                            } else if (myCharPending && !hostMine) {
+                                onlineMemberChars[myPlayerIndex] = myChar; // 登録の反映待ちの間だけ自分の選択を保持
+                            } else {
+                                myChar = hostMine; // ホストの確定状態に合わせる（拒否された選択はここで戻る）
+                                myCharPending = false;
+                            }
                         }
                         if (data.memberCount) {
                             document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 4`;
                         }
                         updateLobbyCharUI();
+                    } else if (data.type === 'CHAR_REJECTED') {
+                        if (myChar === data.char) {
+                            myChar = onlineMemberChars[myPlayerIndex] && onlineMemberChars[myPlayerIndex] !== data.char ? onlineMemberChars[myPlayerIndex] : null;
+                            myCharPending = false;
+                            lastCharRejectionAt = Date.now();
+                            updateLobbyCharUI();
+                        }
                     } else if (data.type === 'START_GAME') {
                         if (data.mapGrid) { customMapGrid = data.mapGrid; convertCustomGridToTileCoords(); }
                         isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
@@ -2146,6 +2170,12 @@
         }
 
         function setLobbyChar(char) {
+            let pairId = csPairOf(char);
+            if (pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== myPlayerIndex && onlineMemberChars[k] === pairId)) {
+                let st = document.getElementById('lobbyStatusText');
+                if (st) st.innerText = `⚠️ ${charName(char)} と ${charName(pairId)} は表裏一体なので、同じ対戦には出られません`;
+                return;
+            }
             myChar = char;
             onlineMemberChars[myPlayerIndex] = char;
             updateLobbyCharUI();
@@ -2153,6 +2183,8 @@
             if (isHost) {
                 broadcastLobbyState();
             } else if (peerConnections[0] && peerConnections[0].open) {
+                myCharPending = true;
+                myCharSentAt = Date.now();
                 peerConnections[0].send({
                     type: 'REGISTER_CHAR',
                     char: char
@@ -2184,6 +2216,10 @@
                     } else {
                         statusText.innerText = 'ホストがゲームを開始するのを待っています...';
                         statusText.className = 'text-xs text-cyan-300 font-bold animate-pulse mb-2';
+                    }
+                    if (Date.now() - lastCharRejectionAt < 8000) {
+                        statusText.innerText = '⚠️ そのキャラクターは、表裏一体の相方が使用中のため選べませんでした';
+                        statusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
                     }
                 }
             } else {
@@ -3357,7 +3393,7 @@
 
                     p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
                     p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
-                    p.jumpY = -Math.sin(progress * Math.PI) * 18;
+                    p.jumpY = -Math.sin(progress * Math.PI) * STEP_JUMP_HEIGHT;
 
                     if (isOnlineMode && isHost) {
                         broadcastGameState();
