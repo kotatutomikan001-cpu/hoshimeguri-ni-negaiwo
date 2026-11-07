@@ -1328,6 +1328,8 @@
                 p.goshuY = startTile.y;
             });
             updateFragmentUI();
+            let drt2 = document.getElementById('diceResultText');
+            if (drt2) drt2.innerText = '準備完了';
         }
 
         function toggleCameraView() {
@@ -3775,6 +3777,8 @@
 
             let activePlayer = players[currentPlayerIndex];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            let drt = document.getElementById('diceResultText');
+            if (drt) drt.innerText = '準備完了';
 
             let canRoll = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
 
