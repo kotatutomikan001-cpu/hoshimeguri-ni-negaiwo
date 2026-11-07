@@ -1675,6 +1675,7 @@
                     retryUpperExt(img, () => { img.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(id).charAt(0); ph.style.color = charColor(id); });
                     if (img.dataset.charId !== id) {
                         img.dataset.charId = id;
+                        delete img.dataset.upperFor;
                         ph.style.display = 'none';
                         img.classList.remove('hidden');
                         img.src = charStandUrl(id);
@@ -2131,6 +2132,7 @@
                 retryUpperExt(icon, () => { icon.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(myChar).charAt(0); ph.style.color = charColor(myChar); });
                 if (icon.dataset.charId !== myChar) {
                     icon.dataset.charId = myChar;
+                    delete icon.dataset.upperFor;
                     ph.style.display = 'none';
                     icon.classList.remove('hidden');
                     icon.src = charIconUrl(myChar);
