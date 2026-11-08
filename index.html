@@ -50,7 +50,7 @@
         /* 📱 横画面・iOS対策：見えている画面（dvh）に表示とタップ位置を一致させる */
         html, body { height: 100dvh !important; min-height: 100dvh !important; }
         body { overflow: hidden !important; overscroll-behavior: none; }
-        #titleScreen, #startModal, #roomCodeModal, #onlineLobbyModal, #charSelectModal, #openingOverlay, #resultModal, #debugModal {
+        #titleScreen, #startModal, #roomCodeModal, #onlineLobbyModal, #charSelectModal, #openingOverlay, #resultModal, #debugModal, #endingResultOverlay {
             height: 100dvh; max-height: 100dvh;
         }
         .text-outline {
@@ -281,6 +281,16 @@
         </div>
     </div>
 
+    <!-- 🏆 エンディング結果画面（立ち絵ポーディウム＋おしまい） -->
+    <div id="endingResultOverlay" class="fixed inset-0 z-[100002] hidden flex-col items-center justify-center gap-3 p-3 overflow-y-auto" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);">
+        <div class="text-center flex-none">
+            <div class="text-5xl sm:text-7xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.65), 3px 3px 0 #b45309;">✨ おしまい ✨</div>
+            <div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-1 tracking-widest">〜 星めぐりに願いを 〜</div>
+        </div>
+        <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl flex-none"></div>
+        <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">🔄 タイトルへ戻る</button>
+    </div>
+
     <!-- 🌟 オンライン待合ロビーモーダル -->
     <div id="onlineLobbyModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-[100002] hidden">
         <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-400 shadow-2xl text-center flex flex-col gap-3">
@@ -332,7 +342,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-21 ・ 277,213 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-22 ・ 299,328 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -661,6 +671,28 @@
                             <span id="storySheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-yellow-300 font-bold">🎬 エンディング会話のセリフ</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">ゲーム終了後に流れる会話シーンを編集できます。話者に「🏆 優勝者（ゴールした人）」を選ぶと、その対戦でカケラを集めてゴールした1位のキャラが喋ります。セリフの中に {winner} と書くと、1位のキャラクター名に置き換わって表示されます。会話が終わると、順位順に立ち絵が並んだ結果画面に切り替わります。</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="addEndingLine()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">＋ 行を追加</button>
+                            <button onclick="previewEndingFromEditor()" class="px-2 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded font-bold shadow">▶ 試し再生</button>
+                            <button onclick="resetEndingScript()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">デフォルトに戻す</button>
+                            <button onclick="exportEndingCsv()" class="px-2 py-1 text-xs bg-sky-700 hover:bg-sky-600 text-white rounded font-bold shadow">📋 CSVで書き出し</button>
+                        </div>
+                        <div id="endingLinesList" class="flex flex-col gap-1.5"></div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-purple-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-purple-300 font-bold">📊 Googleスプレッドシート連携（エンディング会話）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">エンディング会話もシートで編集できます。形式はオープニング会話と同じ speaker / text / fx 列です。連携シートが最優先で、無い場合は上のエディタ→内蔵デフォルトの順で再生されます。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -668,6 +700,7 @@
                 <button onclick="resetDebugDefaults()" class="px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
                     初期リセット
                 </button>
+                <button onclick="forceShowEnding()" class="pixel-btn px-3 py-1 text-xs font-black text-white rounded bg-amber-600 hover:bg-amber-500 shadow cursor-pointer">🎬 エンディング確認</button>
                 <button onclick="saveDebugSettings()" class="pixel-btn px-4 py-1 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
                     💾 設定・変更を適用
                 </button>
@@ -905,6 +938,7 @@
             setMapTool(selectedMapTool);
             renderDebugEvents();
             renderOpeningEditor();
+            renderEndingEditor();
             renderDotCanvas();
             renderMapEditorCanvas();
         }
@@ -924,7 +958,7 @@
             document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnLines').className = tab === 'lines' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            if (tab === 'lines') renderOpeningEditor();
+            if (tab === 'lines') { renderOpeningEditor(); renderEndingEditor(); }
         }
 
         function filterDebugEvents(type) {
@@ -1361,12 +1395,14 @@
 
         // 📖 会話（ストーリー）シート連携: セリフを Google スプレッドシートで自由に編集できる。連携シートが最優先
         let sheetStoryScript = null; // シートから読み込んだセリフ
+        let sheetEndingScript = null; // シートから読み込んだエンディング会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
             if (!s) return null;
             let lower = s.toLowerCase();
             if (['narration', 'ナレーション', '地の文'].includes(lower)) return 'narration';
             if (s === '???' || s === '？？？') return '???';
+            if (['winner', '優勝者', '1位', '１位', 'ゴールした人', '勝者'].includes(lower)) return 'winner';
             if (lower === 'gengo') return 'kataru';
             let byId = CHARACTERS.find(c => c.id === lower);
             if (byId) return byId.id;
@@ -1451,6 +1487,62 @@
                 return false;
             }
         }
+        const OFFICIAL_ENDING_SHEET_URL = '';
+        function getPersonalEndingSheetUrl() {
+            try { return localStorage.getItem('utsuro_ending_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingSheetUrl() {
+            return getPersonalEndingSheetUrl() || OFFICIAL_ENDING_SHEET_URL;
+        }
+        function setEndingSheetStatus(msg) {
+            let el = document.getElementById('endingSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingFromSheet(manual) {
+            let savedUrl = getEffectiveEndingSheetUrl();
+            let isOfficialEnding = !!OFFICIAL_ENDING_SHEET_URL && savedUrl === OFFICIAL_ENDING_SHEET_URL;
+            if (!savedUrl) { if (manual) setEndingSheetStatus('未連携です'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingScript = lines;
+                try { localStorage.setItem('utsuro_ending_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingSheetStatus(isOfficialEnding ? `✅ 公式シートから${lines.length}行のエンディング会話を読み込みました` : `✅ ${lines.length}行のエンディング会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('エンディングシート読み込み失敗:', e);
+                setEndingSheetStatus('⚠️ 読み込み失敗（現在のセリフで継続します）');
+                return false;
+            }
+        }
+        function saveEndingSheetUrlAndLoad() {
+            let input = document.getElementById('endingSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_ending_sheet_url', url); } catch (e) {}
+            loadEndingFromSheet(true);
+        }
+        function unlinkEndingSheet() {
+            try { localStorage.removeItem('utsuro_ending_sheet_url'); localStorage.removeItem('utsuro_ending_sheet_cache'); } catch (e) {}
+            sheetEndingScript = null;
+            let input = document.getElementById('endingSheetUrlInput');
+            if (OFFICIAL_ENDING_SHEET_URL) {
+                if (input) input.value = OFFICIAL_ENDING_SHEET_URL;
+                loadEndingFromSheet(false);
+                setEndingSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingSheetStatus('連携を解除しました（エディタ／内蔵デフォルトに戻ります）');
+            }
+        }
         function saveStorySheetUrlAndLoad() {
             let input = document.getElementById('storySheetUrlInput');
             let url = input ? input.value.trim() : '';
@@ -1506,6 +1598,17 @@
                 let cachedStory = localStorage.getItem('utsuro_story_sheet_cache');
                 if (cachedStory) { try { sheetStoryScript = sanitizeOpeningLines(JSON.parse(cachedStory)); } catch (e) { sheetStoryScript = null; } }
                 if (personalStoryUrl || OFFICIAL_STORY_SHEET_URL) loadStoryFromSheet(false); // セリフシート（個人／公式）があれば起動時に自動読み込み（失敗時はキャッシュで継続）
+
+                let savedEnding = localStorage.getItem('utsuro_ending_script');
+                if (savedEnding) {
+                    try { activeEndingScript = sanitizeOpeningLines(JSON.parse(savedEnding)); } catch (e) { activeEndingScript = null; }
+                }
+                let endingInput = document.getElementById('endingSheetUrlInput');
+                let personalEndingUrl = localStorage.getItem('utsuro_ending_sheet_url');
+                if (endingInput) endingInput.value = personalEndingUrl || OFFICIAL_ENDING_SHEET_URL;
+                let cachedEnding = localStorage.getItem('utsuro_ending_sheet_cache');
+                if (cachedEnding) { try { sheetEndingScript = sanitizeOpeningLines(JSON.parse(cachedEnding)); } catch (e) { sheetEndingScript = null; } }
+                if (personalEndingUrl || OFFICIAL_ENDING_SHEET_URL) loadEndingFromSheet(false); // エンディングシート（個人／公式）があれば起動時に自動読み込み
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3239,7 +3342,7 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: normalizeSpeakerWho(l.who), fx: l.fx === 'shake' ? 'shake' : undefined,
+                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: l.fx === 'shake' ? 'shake' : undefined,
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -3386,6 +3489,252 @@
             }
         }
 
+        // 🎬 エンディング会話: 優先順位は シート ＞ デバッグ内エディタ ＞ 内蔵デフォルト(ENDING_SCRIPT)
+        const ENDING_SCRIPT = [
+            { who: 'narration', text: '星のカケラの光が、祭壇いっぱいに広がっていく――。' },
+            { who: 'utsuro', text: '集まりました…！ 星のカケラが、全部…！' },
+            { who: 'hikari', text: '見て見て！ 祭壇が光ってる！ すっごい綺麗…！' },
+            { who: 'shano', text: '伝説は本当じゃったな。星の祭壇は、願いを叶える力を取り戻したのじゃ。' },
+            { who: 'narration', text: '眩い光の中に、懐かしい星めぐり学園の景色が浮かび上がってくる。' },
+            { who: 'utsuro', text: 'あ…！ あれは学園です！ みんな、帰れるんですね…！' },
+            { who: 'hikari', text: 'やったぁ！ でも、{winner}は本当に強かったよね。さすが一位だよ！' },
+            { who: 'winner', text: '星のカケラを全部集めて、祭壇に辿り着いた！ みんなが見ててくれたからだ！' },
+            { who: 'winner', text: '願いなら、もう叶ったよ。みんなと星をめぐれた、それだけで十分だ。' },
+            { who: 'shano', text: 'うむ、見事な星めぐりじゃった。皆もよく頑張ったぞ。' },
+            { who: 'utsuro', text: 'わたし、今日のこと絶対に忘れません。みんなと星をめぐれて、とっても楽しかったです！' },
+            { who: 'narration', text: 'こうして星めぐりの冒険は、終わりを告げた。――ねえ、あなたの願いは、何ですか？' }
+        ];
+        let activeEndingScript = null; // null = デフォルト(ENDING_SCRIPT)を使用
+
+        function currentEndingScript() {
+            if (typeof sheetEndingScript !== 'undefined' && sheetEndingScript && sheetEndingScript.length) return sheetEndingScript;
+            return (activeEndingScript && activeEndingScript.length) ? activeEndingScript : ENDING_SCRIPT;
+        }
+
+        function ensureEditableEnding() {
+            if (!activeEndingScript) activeEndingScript = JSON.parse(JSON.stringify(ENDING_SCRIPT));
+            return activeEndingScript;
+        }
+
+        function saveEndingScript() {
+            try {
+                if (activeEndingScript) localStorage.setItem('utsuro_ending_script', JSON.stringify(activeEndingScript));
+                else localStorage.removeItem('utsuro_ending_script');
+            } catch (e) {}
+        }
+
+        function renderEndingEditor() {
+            let container = document.getElementById('endingLinesList');
+            if (!container) return;
+            container.innerHTML = '';
+            currentEndingScript().forEach((line, idx) => {
+                let row = document.createElement('div');
+                row.className = 'p-1.5 bg-slate-950 border border-purple-800 rounded-lg flex flex-col gap-1';
+                let head = document.createElement('div');
+                head.className = 'flex items-center gap-1';
+                let num = document.createElement('span');
+                num.className = 'text-[11px] text-gray-400 font-bold w-5 text-center';
+                num.innerText = String(idx + 1);
+                let sel = document.createElement('select');
+                sel.className = 'bg-slate-900 border border-purple-500 rounded px-1 py-0.5 text-xs text-white font-bold';
+                OPENING_SPEAKER_IDS.forEach(k => {
+                    let opt = document.createElement('option');
+                    opt.value = k;
+                    opt.innerText = OPENING_CHAR_NAMES[k];
+                    sel.appendChild(opt);
+                });
+                let wopt = document.createElement('option');
+                wopt.value = 'winner';
+                wopt.innerText = '🏆 優勝者（ゴールした人）';
+                sel.appendChild(wopt);
+                sel.value = line.who || 'utsuro';
+                sel.onchange = () => updateEndingLine(idx, 'who', sel.value);
+                let upBtn = document.createElement('button');
+                upBtn.className = 'px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+                upBtn.innerText = '↑';
+                upBtn.onclick = () => moveEndingLine(idx, -1);
+                let downBtn = document.createElement('button');
+                downBtn.className = 'px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600';
+                downBtn.innerText = '↓';
+                downBtn.onclick = () => moveEndingLine(idx, 1);
+                let insBtn = document.createElement('button');
+                insBtn.className = 'px-1.5 py-0.5 text-xs bg-emerald-800 hover:bg-emerald-600 text-white rounded border border-emerald-600';
+                insBtn.innerText = '＋';
+                insBtn.title = 'この行の下に新しい行を追加';
+                insBtn.onclick = () => addEndingLine(idx);
+                let delBtn = document.createElement('button');
+                delBtn.className = 'px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded border border-red-700 ml-auto';
+                delBtn.innerText = '✕ 削除';
+                delBtn.onclick = () => removeEndingLine(idx);
+                head.append(num, sel, upBtn, downBtn, insBtn, delBtn);
+                let ta = document.createElement('textarea');
+                ta.className = 'w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-xs text-white';
+                ta.rows = 2;
+                ta.value = line.text || '';
+                ta.onchange = () => updateEndingLine(idx, 'text', ta.value);
+                row.append(head, ta);
+                container.appendChild(row);
+            });
+            let addBtn = document.createElement('button');
+            addBtn.className = 'w-full py-2 text-sm bg-emerald-800/50 hover:bg-emerald-700 text-emerald-100 rounded-lg font-bold border border-dashed border-emerald-500';
+            addBtn.innerText = '＋ 行を追加（末尾）';
+            addBtn.onclick = () => addEndingLine();
+            container.appendChild(addBtn);
+        }
+
+        function updateEndingLine(idx, field, value) {
+            let lines = ensureEditableEnding();
+            if (!lines[idx]) return;
+            lines[idx][field] = value;
+            saveEndingScript();
+        }
+
+        function addEndingLine(afterIdx) {
+            let lines = ensureEditableEnding();
+            let newIdx;
+            if (typeof afterIdx === 'number' && afterIdx >= 0 && afterIdx < lines.length) {
+                lines.splice(afterIdx + 1, 0, { who: 'utsuro', text: '' });
+                newIdx = afterIdx + 1;
+            } else {
+                lines.push({ who: 'utsuro', text: '' });
+                newIdx = lines.length - 1;
+            }
+            saveEndingScript();
+            renderEndingEditor();
+            let cont = document.getElementById('endingLinesList');
+            let rowEl = cont && cont.children[newIdx];
+            if (rowEl) {
+                let ta = rowEl.querySelector('textarea');
+                if (ta) { try { rowEl.scrollIntoView({ block: 'nearest' }); ta.focus(); } catch (e) {} }
+            }
+        }
+
+        function removeEndingLine(idx) {
+            let lines = ensureEditableEnding();
+            lines.splice(idx, 1);
+            saveEndingScript();
+            renderEndingEditor();
+        }
+
+        function moveEndingLine(idx, dir) {
+            let lines = ensureEditableEnding();
+            let to = idx + dir;
+            if (to < 0 || to >= lines.length) return;
+            [lines[idx], lines[to]] = [lines[to], lines[idx]];
+            saveEndingScript();
+            renderEndingEditor();
+        }
+
+        function resetEndingScript() {
+            if (!confirm('エンディング会話をデフォルトに戻しますか？')) return;
+            activeEndingScript = null;
+            saveEndingScript();
+            renderEndingEditor();
+        }
+
+        function exportEndingCsv() {
+            let csv = openingScriptToCsv(currentEndingScript());
+            try {
+                let blob = new Blob([csv], { type: 'text/csv' });
+                let a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'ending_edited.csv';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 4000);
+            } catch (e) {
+                try { navigator.clipboard.writeText(csv); } catch (e2) {}
+            }
+        }
+
+        function previewEndingFromEditor() {
+            closeDebugMenu();
+            playEndingDialogue();
+        }
+
+        // 🧪 デバッグ用: 対戦途中でも、現在の順位（リスナー数）とカケラ数のままエンディングを強制再生する
+        function forceShowEnding() {
+            closeDebugMenu();
+            playEndingDialogue();
+        }
+
+        // 🎬 エンディング再生（会話オーバーレイをオープニングと共用し、終了後は結果ポーディウムへ）
+        let dialogueMode = 'opening';
+        let endingPlayLines = [];
+
+        function dialogueLines() {
+            return dialogueMode === 'ending' ? endingPlayLines : currentOpeningScript();
+        }
+
+        function playEndingDialogue() {
+            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let winnerChar = sorted.length ? sorted[0].char : 'utsuro';
+            let winnerName = charName(winnerChar);
+            let lines = currentEndingScript()
+                .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner}').join(winnerName) }))
+                .filter(l => l.text.trim() !== '');
+            if (!lines.length) { showEndingResults(); return; }
+            endingPlayLines = lines;
+            dialogueMode = 'ending';
+            openingIndex = 0;
+            openingActive = true;
+            let ov = document.getElementById('openingOverlay');
+            if (!ov) { showEndingResults(); return; }
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+            renderOpeningLine();
+        }
+
+        function endEndingDialogue() {
+            openingActive = false;
+            dialogueMode = 'opening';
+            let ov = document.getElementById('openingOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            showEndingResults();
+        }
+
+        function showEndingResults() {
+            let ov = document.getElementById('endingResultOverlay');
+            let podium = document.getElementById('endingPodium');
+            if (!ov || !podium) return;
+            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let frameH = [46, 38, 31, 25];
+            let rankLabels = ['👑 1位', '2位', '3位', '4位'];
+            podium.innerHTML = '';
+            sorted.forEach((p, idx) => {
+                let col = document.createElement('div');
+                col.className = 'flex flex-col items-center justify-end gap-1 min-w-0 ' + (idx === 0 ? 'flex-[1.2]' : 'flex-1');
+                let badge = document.createElement('div');
+                badge.className = idx === 0 ? 'text-sm sm:text-lg font-black text-yellow-300' : 'text-xs sm:text-sm font-black text-purple-200';
+                badge.innerText = rankLabels[idx] || ((idx + 1) + '位');
+                let frame = document.createElement('div');
+                frame.className = 'relative w-full rounded-lg overflow-hidden ' + (idx === 0 ? 'border-2 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,.45)] bg-indigo-950/70' : 'border border-purple-500/70 bg-indigo-950/50');
+                frame.style.height = (frameH[idx] || 22) + 'dvh';
+                let ph = document.createElement('div');
+                ph.className = 'absolute inset-0 flex items-center justify-center text-4xl font-black';
+                ph.style.color = charColor(p.char);
+                ph.innerText = charName(p.char).charAt(0);
+                let img = document.createElement('img');
+                img.className = 'absolute inset-0 w-full h-full object-contain';
+                img.alt = '';
+                img.setAttribute('draggable', 'false');
+                retryUpperExt(img, () => { img.style.display = 'none'; });
+                img.src = charStandUrl(p.char);
+                frame.append(ph, img);
+                let nm = document.createElement('div');
+                nm.className = 'text-[11px] sm:text-sm font-black text-white text-center leading-tight';
+                nm.innerHTML = splitSurnameHtml(p.name);
+                let st = document.createElement('div');
+                st.className = 'text-[9px] sm:text-[11px] font-bold text-cyan-200 text-center';
+                st.innerText = '👥 ' + p.listeners.toLocaleString() + '人 ・ ⭐ ' + p.fragments;
+                col.append(badge, frame, nm, st);
+                podium.appendChild(col);
+            });
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+        }
+
         function previewOpeningFromEditor() {
             closeDebugMenu();
             playOpening(true);
@@ -3416,6 +3765,7 @@
         function playOpening(force) {
             if (!force && !OPENING_ENABLED) return;
             if (currentOpeningScript().length === 0) return;
+            dialogueMode = 'opening';
             openingIndex = 0;
             openingActive = true;
             let ov = document.getElementById('openingOverlay');
@@ -3426,7 +3776,7 @@
         }
 
         function renderOpeningLine() {
-            let line = currentOpeningScript()[openingIndex];
+            let line = dialogueLines()[openingIndex];
             if (!line) { endOpening(); return; }
             let isNarr = line.who === 'narration';
             let ovEl = document.getElementById('openingOverlay');
@@ -3471,11 +3821,12 @@
         function advanceOpening() {
             if (!openingActive) return;
             openingIndex++;
-            if (openingIndex >= currentOpeningScript().length) endOpening();
+            if (openingIndex >= dialogueLines().length) endOpening();
             else renderOpeningLine();
         }
 
         function endOpening() {
+            if (dialogueMode === 'ending') { endEndingDialogue(); return; }
             openingActive = false;
             let ov = document.getElementById('openingOverlay');
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
@@ -4507,27 +4858,7 @@
         function showFinalResultModal() {
             cpuGameActive = false;
             clearSuspendedGame();
-            let modal = document.getElementById('resultModal');
-            let list = document.getElementById('resultRankList');
-            if (!modal || !list) return;
-
-            list.innerHTML = '';
-            let sortedPlayers = [...players].sort((a, b) => b.listeners - a.listeners);
-
-            sortedPlayers.forEach((p, idx) => {
-                let div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2 rounded bg-slate-800 border border-purple-500';
-                div.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="font-black text-yellow-300 text-sm">${idx + 1}位</span>
-                        <span class="font-bold text-white text-xs">${p.name}</span>
-                    </div>
-                    <span class="font-mono text-cyan-300 font-bold text-xs">${p.listeners.toLocaleString()}人</span>
-                `;
-                list.appendChild(div);
-            });
-
-            modal.classList.remove('hidden');
+            playEndingDialogue();
         }
 
         function drawCityObject(context, obj) {
