@@ -716,7 +716,7 @@
         let dotHistoryStack = [];
 
         let selectedMapTool = 'plus';
-        let customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+        let customMapGrid = Array(13).fill(null).map(() => Array(13).fill(null));
 
         let players = [
             { id: 0, name: '氷室うつろ', char: 'utsuro', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#a855f7', finished: false, rank: 0, items: [], isHuman: true },
@@ -990,9 +990,10 @@
                 let rect = mapEditorCanvas.getBoundingClientRect();
                 let clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                let c = Math.floor((clientX - rect.left) / (rect.width / 12));
-                let r = Math.floor((clientY - rect.top) / (rect.height / 12));
-                if (r >= 0 && r < 12 && c >= 0 && c < 12) {
+                let gridN = customMapGrid.length || 13;
+                let c = Math.floor((clientX - rect.left) / (rect.width / gridN));
+                let r = Math.floor((clientY - rect.top) / (rect.height / gridN));
+                if (r >= 0 && r < gridN && c >= 0 && c < gridN) {
                     customMapGrid[r][c] = selectedMapTool === 'erase' ? null : selectedMapTool;
                     renderMapEditorCanvas();
                 }
@@ -1020,10 +1021,10 @@
         function renderMapEditorCanvas() {
             if (!mapEditorCtx) return;
             mapEditorCtx.clearRect(0, 0, 384, 384);
-            let pSize = 32;
+            let pSize = 384 / (customMapGrid.length || 12);
             let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#e2e8f0', goal: '#a855f7' };
-            for (let r = 0; r < 12; r++) {
-                for (let c = 0; c < 12; c++) {
+            for (let r = 0; r < customMapGrid.length; r++) {
+                for (let c = 0; c < (customMapGrid[r] ? customMapGrid[r].length : 0); c++) {
                     let type = customMapGrid[r] ? customMapGrid[r][c] : null;
                     if (type && typeColors[type]) {
                         mapEditorCtx.fillStyle = typeColors[type];
@@ -1114,7 +1115,7 @@
         }
 
         function clearCustomMap() {
-            customMapGrid = Array(12).fill(null).map(() => Array(12).fill(null));
+            customMapGrid = Array(customMapGrid.length || 13).fill(null).map(() => Array(customMapGrid.length || 13).fill(null));
             renderMapEditorCanvas();
         }
 
@@ -2937,18 +2938,19 @@
 
         // 🗺️ 最初に共有された時点のマップ（復元用に固定保存）
         const ORIGINAL_MAP_GRID = [
-                [null,null,null,null,null,null,null,null,null,null,null,null],
-                [null,"item","minus","white","plus","start","white","plus","minus","white","item",null],
-                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
-                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
-                [null,"minus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
-                [null,"item",null,null,null,null,null,null,null,null,"item",null],
-                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
-                [null,"minus","white","plus","item","white","minus","plus","white","white","plus",null],
-                [null,null,null,null,null,null,null,null,null,null,null,null]
+                [null,null,null,null,null,null,null,null,null,null,null,null,null],
+                [null,"item","white","minus","white","white","start","white","plus","white","item","white",null],
+                [null,"plus",null,null,null,null,null,null,null,null,null,"plus",null],
+                [null,"white",null,null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus",null,null,null,null,null,null,null,null,null,"white",null],
+                [null,"plus",null,null,null,null,null,null,null,null,null,"plus",null],
+                [null,"white",null,null,null,null,null,null,null,null,null,"item",null],
+                [null,"item",null,null,null,null,null,null,null,null,null,"minus",null],
+                [null,"minus",null,null,null,null,null,null,null,null,null,"white",null],
+                [null,"white",null,null,null,null,null,null,null,null,null,"plus",null],
+                [null,"plus",null,null,null,null,null,null,null,null,null,"white",null],
+                [null,"white","minus","item","plus","white","minus","plus","white","item","plus","minus",null],
+                [null,null,null,null,null,null,null,null,null,null,null,null,null]
             ];
 
         function restoreOriginalMap() {
@@ -2962,20 +2964,7 @@
         }
 
         function initDefaultMapGrid() {
-            customMapGrid = [
-                [null,null,null,null,null,null,null,null,null,null,null,null],
-                [null,"item","minus","white","plus","start","white","plus","minus","white","item",null],
-                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
-                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
-                [null,"minus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"plus",null],
-                [null,"item",null,null,null,null,null,null,null,null,"item",null],
-                [null,"plus",null,null,null,null,null,null,null,null,"white",null],
-                [null,"white",null,null,null,null,null,null,null,null,"minus",null],
-                [null,"minus","white","plus","item","white","minus","plus","white","white","plus",null],
-                [null,null,null,null,null,null,null,null,null,null,null,null]
-            ];
+            customMapGrid = JSON.parse(JSON.stringify(ORIGINAL_MAP_GRID));
         }
 
         function convertCustomGridToTileCoords() {
@@ -2984,8 +2973,8 @@
             let pSize = 64;
 
             let rawTiles = [];
-            for (let r = 0; r < 12; r++) {
-                for (let c = 0; c < 12; c++) {
+            for (let r = 0; r < customMapGrid.length; r++) {
+                for (let c = 0; c < (customMapGrid[r] ? customMapGrid[r].length : 0); c++) {
                     let type = customMapGrid[r] ? customMapGrid[r][c] : null;
                     if (type) {
                         rawTiles.push({
@@ -4520,6 +4509,40 @@
             ctx.restore();
         }
 
+        // スタート（祭壇マス）から星の祭壇までを結ぶ、光の点線
+        function drawAltarPath(ctx) {
+            if (!tileCoords || tileCoords.length === 0) return;
+            let s = tileCoords[0];
+            let minX = Math.min(...tileCoords.map(t => t.x));
+            let maxX = Math.max(...tileCoords.map(t => t.x));
+            let minY = Math.min(...tileCoords.map(t => t.y));
+            let maxY = Math.max(...tileCoords.map(t => t.y));
+            let cx = (minX + maxX) / 2;
+            let cy = (minY + maxY) / 2;
+            if (Math.abs(s.x - cx) < 1 && Math.abs(s.y - cy) < 1) return;
+            ctx.save();
+            // 下地のほんのりした光
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(cx, cy);
+            ctx.strokeStyle = 'rgba(253, 224, 71, 0.13)';
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            // 流れる光の点線
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(cx, cy);
+            ctx.strokeStyle = 'rgba(254, 240, 138, 0.95)';
+            ctx.lineWidth = 4.5;
+            ctx.setLineDash([0.1, 15]);
+            ctx.lineDashOffset = -((Date.now() / 28) % 15);
+            ctx.shadowColor = 'rgba(253, 224, 71, 0.95)';
+            ctx.shadowBlur = 9;
+            ctx.stroke();
+            ctx.restore();
+        }
+
         function gameLoop() {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -4611,6 +4634,8 @@
                     ctx.fillText('⭐', st.x, st.y - 20 + Math.sin(Date.now() / 300) * 2);
                     ctx.restore();
                 });
+
+                drawAltarPath(ctx);
 
                 if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
                     activeBranchCandidates.forEach(cand => {
