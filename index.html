@@ -359,7 +359,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-37 ・ 303,281 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-38 ・ 303,515 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -1471,6 +1471,7 @@
                 let line = { who: who, text: text };
                 if (['shake', '揺れ', '地震'].includes(fxRaw)) line.fx = 'shake';
                 else if (['white', '白', 'ホワイト', 'whiteout'].includes(fxRaw)) line.fx = 'white';
+                else if (['normal', 'off', '元に戻す', 'もどす', '戻す', 'clear'].includes(fxRaw)) line.fx = 'normal';
                 lines.push(line);
             }
             return lines;
@@ -3377,7 +3378,7 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: (l.fx === 'shake' || l.fx === 'white') ? l.fx : undefined,
+                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: (l.fx === 'shake' || l.fx === 'white' || l.fx === 'normal') ? l.fx : undefined,
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -3819,6 +3820,7 @@
                 ovEl.classList.remove('opening-shake');
                 if (line.fx === 'shake') { void ovEl.offsetWidth; ovEl.classList.add('opening-shake'); }
                 if (line.fx === 'white') ovEl.classList.add('opening-whiteout');
+                if (line.fx === 'normal') ovEl.classList.remove('opening-whiteout');
             }
             document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
             let txEl = document.getElementById('openingText');
