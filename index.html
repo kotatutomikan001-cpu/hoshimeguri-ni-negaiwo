@@ -1306,6 +1306,7 @@
             if (!s) return null;
             let lower = s.toLowerCase();
             if (['narration', 'ナレーション', '地の文'].includes(lower)) return 'narration';
+            if (s === '???' || s === '？？？') return '???';
             if (lower === 'gengo') return 'kataru';
             let byId = CHARACTERS.find(c => c.id === lower);
             if (byId) return byId.id;
@@ -1413,6 +1414,7 @@
         }
 
         function loadDataFromLocalStorage() {
+            preloadCharVoices();
             try {
                 let savedEvents = localStorage.getItem('utsuro_custom_events');
                 gameEvents = savedEvents ? JSON.parse(savedEvents) : JSON.parse(JSON.stringify(defaultEvents));
@@ -1612,6 +1614,37 @@
                 gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.12);
+            }
+        }
+
+        // ===== キャラボイス（リスナー増減時の喜び・悲鳴） =====
+        // char_assets/voice/<id>_plus.mp3 / <id>_minus.mp3 があればそれを再生する。無い場合は無音。
+        const charVoiceFiles = {};
+        function preloadCharVoices() {
+            CHARACTERS.forEach(c => {
+                ['plus', 'minus'].forEach(kind => {
+                    try {
+                        const a = new Audio();
+                        a.preload = 'auto';
+                        a.src = 'char_assets/voice/' + c.id + '_' + kind + '.mp3';
+                        const rec = { el: a, ok: false };
+                        a.addEventListener('canplaythrough', () => { rec.ok = true; });
+                        charVoiceFiles[c.id + '_' + kind] = rec;
+                    } catch (e) {}
+                });
+            });
+        }
+        function playCharVoice(charId, kind) {
+            // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
+            if (!charId) return;
+            const rec = charVoiceFiles[charId + '_' + kind];
+            if (rec && rec.ok) {
+                try {
+                    rec.el.volume = 0.9;
+                    rec.el.currentTime = 0;
+                    const pr = rec.el.play();
+                    if (pr && pr.catch) pr.catch(() => {});
+                } catch (e) {}
             }
         }
 
@@ -2952,9 +2985,10 @@
             { who: 'hikari', text: 'よーし、がんばる！あたしが一番にカケラを集めて、みんなで帰ろう！' },
             { who: 'utsuro', text: 'うん、行こう。――星めぐりの旅、スタート！' }
         ];
-        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), 'narration'];
+        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'narration'];
         const OPENING_CHAR_NAMES = {};
         CHARACTERS.forEach(c => { OPENING_CHAR_NAMES[c.id] = c.name; });
+        OPENING_CHAR_NAMES['???'] = '???';
         OPENING_CHAR_NAMES.utsuro = '❄️ 氷室うつろ';
         OPENING_CHAR_NAMES.kataru = '🟩 繰言かたる';
         OPENING_CHAR_NAMES.tomoko = '🌸 トモコ';
@@ -3185,14 +3219,21 @@
                 } else {
                     fWrap.style.display = '';
                     let cid = normalizeSpeakerWho(line.who);
-                    fPh.innerText = charName(cid).charAt(0);
-                    fPh.style.color = charColor(cid);
-                    retryUpperExt(fImg, () => { fImg.style.display = 'none'; });
-                    if (fImg.dataset.charId !== cid) {
-                        fImg.dataset.charId = cid;
-                        delete fImg.dataset.upperFor;
-                        fImg.style.display = '';
-                        fImg.src = charStandUrl(cid);
+                    if (cid === '???') {
+                        fPh.innerText = '？';
+                        fPh.style.color = '#c4b5fd';
+                        fImg.style.display = 'none';
+                        fImg.dataset.charId = '???';
+                    } else {
+                        fPh.innerText = charName(cid).charAt(0);
+                        fPh.style.color = charColor(cid);
+                        retryUpperExt(fImg, () => { fImg.style.display = 'none'; });
+                        if (fImg.dataset.charId !== cid) {
+                            fImg.dataset.charId = cid;
+                            delete fImg.dataset.upperFor;
+                            fImg.style.display = '';
+                            fImg.src = charStandUrl(cid);
+                        }
                     }
                 }
             }
@@ -3936,6 +3977,7 @@
             if (!shielded) {
                 p.listeners = Math.max(0, p.listeners + val);
                 document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+                playCharVoice(p.char, val > 0 ? 'plus' : 'minus');
             }
 
             document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
@@ -3963,6 +4005,7 @@
 
             let bonus = goalBonuses[p.rank] || 1000;
             p.listeners += bonus;
+            playCharVoice(p.char, 'plus');
 
             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
             playSe('dice_stop');
