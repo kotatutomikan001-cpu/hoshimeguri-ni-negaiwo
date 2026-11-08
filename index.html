@@ -360,7 +360,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-42 ・ 307,590 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-43 ・ 307,784 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -1457,6 +1457,19 @@
             });
             return byPart ? byPart.id : null;
         }
+        const FX_ALIASES = { shake: ['shake', '揺れ', '地震'], white: ['white', '白', 'ホワイト', 'whiteout'], normal: ['normal', 'off', '元に戻す', 'もどす', '戻す', 'clear'], gold: ['gold', '金', 'ゴールド', 'きん'], yellow: ['yellow', '黄', '黄色', 'イエロー'], pink: ['pink', 'ピンク', '桜', 'さくら'], blue: ['blue', '青', '水色', 'あお'], rainbow: ['rainbow', '虹', '虹色', 'レインボー'], slow: ['slow', 'ゆっくり', 'スロー'], black: ['black', '黒', 'ブラック', '暗闇', '真っ暗'] };
+        function parseFxTokens(raw) {
+            if (!raw) return [];
+            let out = [];
+            String(raw).toLowerCase().split(/[\s,、+＋\/／・]+/).forEach(tok => {
+                tok = tok.trim();
+                if (!tok) return;
+                for (let key in FX_ALIASES) {
+                    if (key === tok || FX_ALIASES[key].includes(tok)) { if (!out.includes(key)) out.push(key); return; }
+                }
+            });
+            return out;
+        }
         function sheetRowsToStory(rows) {
             if (!rows || rows.length === 0) return [];
             let header = rows[0].map(h => String(h).trim().toLowerCase());
@@ -1478,16 +1491,8 @@
                 if (!who || !text) continue; // 話者不明・空行はスキップ
                 let fxRaw = fi >= 0 ? String(row[fi] || '').trim().toLowerCase() : '';
                 let line = { who: who, text: text };
-                if (['shake', '揺れ', '地震'].includes(fxRaw)) line.fx = 'shake';
-                else if (['white', '白', 'ホワイト', 'whiteout'].includes(fxRaw)) line.fx = 'white';
-                else if (['normal', 'off', '元に戻す', 'もどす', '戻す', 'clear'].includes(fxRaw)) line.fx = 'normal';
-                else if (['gold', '金', 'ゴールド', 'きん'].includes(fxRaw)) line.fx = 'gold';
-                else if (['yellow', '黄', '黄色', 'イエロー'].includes(fxRaw)) line.fx = 'yellow';
-                else if (['pink', 'ピンク', '桜', 'さくら'].includes(fxRaw)) line.fx = 'pink';
-                else if (['blue', '青', '水色', 'あお'].includes(fxRaw)) line.fx = 'blue';
-                else if (['rainbow', '虹', '虹色', 'レインボー'].includes(fxRaw)) line.fx = 'rainbow';
-                else if (['slow', 'ゆっくり', 'スロー'].includes(fxRaw)) line.fx = 'slow';
-                else if (['black', '黒', 'ブラック', '暗闇', '真っ暗'].includes(fxRaw)) line.fx = 'black';
+                let fxToksParsed = parseFxTokens(fxRaw);
+                if (fxToksParsed.length) line.fx = fxToksParsed.join(' ');
                 lines.push(line);
             }
             return lines;
@@ -3394,7 +3399,7 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: ['shake', 'white', 'normal', 'gold', 'yellow', 'pink', 'blue', 'rainbow', 'slow', 'black'].includes(l.fx) ? l.fx : undefined,
+                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -3870,17 +3875,19 @@
             let line = dialogueLines()[openingIndex];
             if (!line) { endOpening(); return; }
             let isNarr = line.who === 'narration';
+            let fxToks = parseFxTokens(line.fx || '');
             let ovEl = document.getElementById('openingOverlay');
             if (ovEl) {
                 ovEl.classList.remove('opening-shake');
-                if (line.fx === 'shake') { void ovEl.offsetWidth; ovEl.classList.add('opening-shake'); }
-                if (OPENING_BG_FX.includes(line.fx)) setOpeningBg(line.fx);
-                if (line.fx === 'normal') setOpeningBg(null);
+                if (fxToks.includes('shake')) { void ovEl.offsetWidth; ovEl.classList.add('opening-shake'); }
+                let bgFx = undefined;
+                fxToks.forEach(t => { if (OPENING_BG_FX.includes(t)) bgFx = t; else if (t === 'normal') bgFx = null; });
+                if (bgFx !== undefined) setOpeningBg(bgFx);
             }
             document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
             let txEl = document.getElementById('openingText');
             stopOpeningType(false);
-            if (line.fx === 'slow') {
+            if (fxToks.includes('slow')) {
                 openingTypeFull = line.text || '';
                 openingTypeDone = false;
                 let chars = Array.from(openingTypeFull);
