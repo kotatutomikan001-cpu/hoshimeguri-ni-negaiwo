@@ -359,7 +359,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-35 ・ 302,428 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-36 ・ 303,081 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -446,6 +446,8 @@
         .cs-flipping { animation: csFlipAnim 0.52s ease; }
         @keyframes openingShake { 0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-9px, 3px) rotate(-0.4deg); } 20% { transform: translate(8px, -4px); } 30% { transform: translate(-7px, -2px) rotate(0.4deg); } 40% { transform: translate(6px, 3px); } 50% { transform: translate(-5px, 1px); } 60% { transform: translate(4px, -2px); } 70% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } 90% { transform: translate(-1px, 1px); } }
         .opening-shake { animation: openingShake 1s ease-in-out; }
+        #openingOverlay { transition: background-color 0.35s ease; }
+        .opening-whiteout { background: #ffffff !important; }
     </style>
     <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
         <div class="h-full flex flex-col max-w-3xl mx-auto p-2 sm:p-3">
@@ -1468,6 +1470,7 @@
                 let fxRaw = fi >= 0 ? String(row[fi] || '').trim().toLowerCase() : '';
                 let line = { who: who, text: text };
                 if (['shake', '揺れ', '地震'].includes(fxRaw)) line.fx = 'shake';
+                else if (['white', '白', 'ホワイト', 'whiteout'].includes(fxRaw)) line.fx = 'white';
                 lines.push(line);
             }
             return lines;
@@ -3374,7 +3377,7 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
-                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: l.fx === 'shake' ? 'shake' : undefined,
+                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: (l.fx === 'shake' || l.fx === 'white') ? l.fx : undefined,
                 text: String(l.text)
             }));
             return cleaned.length ? cleaned : null;
@@ -3713,7 +3716,7 @@
             openingActive = true;
             let ov = document.getElementById('openingOverlay');
             if (!ov) { showEndingResults(); return; }
-            ov.classList.remove('hidden');
+            ov.classList.remove('hidden', 'opening-whiteout');
             ov.classList.add('flex');
             renderOpeningLine();
         }
@@ -3801,7 +3804,7 @@
             openingActive = true;
             let ov = document.getElementById('openingOverlay');
             if (!ov) return;
-            ov.classList.remove('hidden');
+            ov.classList.remove('hidden', 'opening-whiteout');
             ov.classList.add('flex');
             renderOpeningLine();
         }
@@ -3814,6 +3817,7 @@
             if (ovEl) {
                 ovEl.classList.remove('opening-shake');
                 if (line.fx === 'shake') { void ovEl.offsetWidth; ovEl.classList.add('opening-shake'); }
+                if (line.fx === 'white') ovEl.classList.add('opening-whiteout');
             }
             document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
             let txEl = document.getElementById('openingText');
@@ -3832,18 +3836,22 @@
                     if (cid === '???') {
                         fPh.innerText = '？';
                         fPh.style.color = '#c4b5fd';
+                        fPh.style.display = '';
                         fImg.style.display = 'none';
                         fImg.dataset.charId = '???';
                     } else {
                         fPh.innerText = charName(cid).charAt(0);
                         fPh.style.color = charColor(cid);
-                        retryUpperExt(fImg, () => { fImg.style.display = 'none'; });
+                        retryUpperExt(fImg, () => { fImg.style.display = 'none'; fPh.style.display = ''; });
+                        fImg.onload = () => { fPh.style.display = 'none'; };
                         if (fImg.dataset.charId !== cid) {
                             fImg.dataset.charId = cid;
                             delete fImg.dataset.upperFor;
+                            fPh.style.display = '';
                             fImg.style.display = '';
                             fImg.src = charIconUrl(cid);
                         }
+                        if (fImg.naturalWidth) fPh.style.display = 'none';
                     }
                 }
             }
