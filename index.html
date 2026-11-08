@@ -92,6 +92,20 @@
             }
         }
     </style>
+    <!-- 📊 Google Analytics (GA4)：測定ID（G-XXXX）を入れるとアクセス計測が有効になる。空の間は無効 -->
+    <script>
+        const GA_MEASUREMENT_ID = 'G-3F6JS2ETYC';
+        if (GA_MEASUREMENT_ID) {
+            const gaScript = document.createElement('script');
+            gaScript.async = true;
+            gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID;
+            document.head.appendChild(gaScript);
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = function () { window.dataLayer.push(arguments); };
+            window.gtag('js', new Date());
+            window.gtag('config', GA_MEASUREMENT_ID);
+        }
+    </script>
 </head>
 <body class="flex flex-col min-h-screen sm:h-screen w-screen overflow-x-hidden sm:overflow-hidden text-white bg-slate-950">
 
@@ -306,6 +320,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-15 ・ 274,268 bytes</div>
         <div class="text-center max-w-2xl w-full">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -1833,7 +1848,6 @@
                     '<span class="absolute inset-0 items-center justify-center text-xl font-black" style="display:none; color:' + def.color + ';">' + def.name.charAt(0) + '</span>' +
                     '</span>' +
                     '<span class="text-[8px] sm:text-[10px] font-black text-white leading-[1.1] break-all w-full text-center">' + splitSurnameHtml(def.name) + '</span>' +
-                    ((def.hidden && id !== 'tomoko') ? '<span class="absolute top-0 left-0 bg-purple-600 text-white text-[8px] font-black px-1 rounded-br z-10">隠し</span>' : '') +
                     (isTaken ? '<span class="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black px-1 rounded-bl z-10">' + (taken[id] + 1) + 'P使用中</span>' : '');
                 btn.onmouseenter = () => csHover(id);
                 btn.onclick = () => { csRegisterCellClick(id); csHover(id); if (csMode === 'cpu') csConfirm(); };
@@ -2808,18 +2822,25 @@
             if (guestBranchShownKey === key) return;
             guestBranchShownKey = key;
 
-            let candidates = (req.candidateTileIdxs || []).map(idx => ({ tileIdx: idx, tile: tileCoords[idx] })).filter(c => c.tile);
+            let candidates = (req.candidateTileIdxs || []).map(idx => ({ tileIdx: idx, tile: tileCoords[idx] || (idx === tileCoords.length ? altarVirtualTile() : null) })).filter(c => c.tile);
             if (candidates.length === 0) { guestBranchShownKey = null; return; }
 
             isWaitingForBranchChoice = true;
-            showBranchSelectionUI(myPlayerIndex, candidates, req.remainingSteps, (chosenTileIdx) => {
-                hideBranchSelectionUI();
-                isWaitingForBranchChoice = false;
-                guestBranchShownKey = null;
-                if (peerConnections[0] && peerConnections[0].open) {
-                    peerConnections[0].send({ type: 'ACTION_BRANCH', playerIndex: myPlayerIndex, tileIdx: chosenTileIdx });
-                }
-            });
+            const presentGuestBranch = () => {
+                showBranchSelectionUI(myPlayerIndex, candidates, req.remainingSteps, (chosenTileIdx) => {
+                    let isAltarBranch = candidates.some(c => c.tileIdx === tileCoords.length);
+                    if (isAltarBranch && chosenTileIdx !== tileCoords.length) {
+                        if (!confirm('星のカケラを5つ持っています。祭壇へは行かず、このまま周回コースを進みますか？')) { presentGuestBranch(); return; }
+                    }
+                    hideBranchSelectionUI();
+                    isWaitingForBranchChoice = false;
+                    guestBranchShownKey = null;
+                    if (peerConnections[0] && peerConnections[0].open) {
+                        peerConnections[0].send({ type: 'ACTION_BRANCH', playerIndex: myPlayerIndex, tileIdx: chosenTileIdx });
+                    }
+                });
+            };
+            presentGuestBranch();
         }
 
         function broadcastGameState(force) {
@@ -3704,13 +3725,6 @@
             p.lastVisitedTileIndex = p.lastVisitedTileIndex !== undefined ? p.lastVisitedTileIndex : -1;
 
             function stepNext() {
-                if (p.altarGoalPending) {
-                    p.altarGoalPending = false;
-                    p.jumpY = 0;
-                    isMoving = false;
-                    handlePlayerGoal(pIndex, true);
-                    return;
-                }
                 if (remainingSteps > 0) {
                     if (!tileCoords[p.pos]) { p.jumpY = 0; isMoving = false; if (!isOnlineMode || isHost) setTimeout(() => { nextTurn(); }, 300); return; }
                     if (tileCoords[p.pos].type === 'goal') {
@@ -3720,7 +3734,7 @@
                         return;
                     }
 
-                    let possibleNextTiles = getAdjacentNextTiles(p.pos, p.lastVisitedTileIndex);
+                    let possibleNextTiles = getAdjacentNextTiles(p.pos, p.lastVisitedTileIndex, pIndex);
                     if (possibleNextTiles.length === 0) {
                         p.jumpY = 0;
                         isMoving = false;
@@ -3730,14 +3744,21 @@
 
                     if (possibleNextTiles.length > 1) {
                         if (p.isHuman && (!isOnlineMode || myPlayerIndex === pIndex)) {
-                            isWaitingForBranchChoice = true;
-                            turnPhase = 'branch';
-                            showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
-                                hideBranchSelectionUI();
-                                isWaitingForBranchChoice = false;
-                                turnPhase = 'moving';
-                                executeSingleStep(chosenTileIdx);
-                            });
+                            const presentLocalBranch = () => {
+                                isWaitingForBranchChoice = true;
+                                turnPhase = 'branch';
+                                showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
+                                    let isAltarBranch = possibleNextTiles.some(c => c.tileIdx === altarTileIndex());
+                                    if (isAltarBranch && chosenTileIdx !== altarTileIndex()) {
+                                        if (!confirm('星のカケラを5つ持っています。祭壇へは行かず、このまま周回コースを進みますか？')) { presentLocalBranch(); return; }
+                                    }
+                                    hideBranchSelectionUI();
+                                    isWaitingForBranchChoice = false;
+                                    turnPhase = 'moving';
+                                    executeSingleStep(chosenTileIdx);
+                                });
+                            };
+                            presentLocalBranch();
                             return;
                         } else if (p.isHuman && isOnlineMode && isHost) {
                             // 🌿 遠隔プレイヤーの分岐は、ホストが勝手に決めず本人に選ばせる
@@ -3757,7 +3778,7 @@
                                     pendingBranchResolver = null;
                                     pendingBranchInfo = null;
                                     pendingBranchFallbackTimer = null;
-                                    r(info.candidateTileIdxs[Math.floor(Math.random() * info.candidateTileIdxs.length)]);
+                                    r(info.candidateTileIdxs.includes(altarTileIndex()) ? altarTileIndex() : info.candidateTileIdxs[Math.floor(Math.random() * info.candidateTileIdxs.length)]);
                                 }
                             }, 20000);
                             broadcastGameState(true);
@@ -3768,7 +3789,7 @@
                             setTimeout(() => {
                                 isWaitingForBranchChoice = false;
                                 turnPhase = 'moving';
-                                let chosen = possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
+                                let chosen = possibleNextTiles.find(c => c.tileIdx === altarTileIndex()) || possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
                                 executeSingleStep(chosen.tileIdx);
                             }, 800);
                             return;
@@ -3788,6 +3809,7 @@
             }
 
             function executeSingleStep(toTileIdx) {
+                if (toTileIdx === altarTileIndex()) { executeAltarStep(); return; }
                 let fromTile = tileCoords[p.pos];
                 p.lastVisitedTileIndex = p.pos;
                 p.pos = toTileIdx;
@@ -3797,8 +3819,7 @@
                 // ⛩️ 星の祭壇（スタートマス）に到達
                 if (toTileIdx === 0 && !p.finished) {
                     if ((p.fragments || 0) >= FRAGMENTS_REQUIRED) {
-                        p.altarGoalPending = true;
-                        remainingSteps = 0;
+                        // カケラが揃っていれば自動ゴールはせず、この先の分岐で「祭壇への道」を選べる
                     } else {
                         p.listeners += LAP_BONUS_LISTENERS;
                         let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
@@ -3837,10 +3858,48 @@
                 requestAnimationFrame(animateStep);
             }
 
+            // ⛩️ 祭壇への1マス：光の道を下ってゴール
+            function executeAltarStep() {
+                let fromTile = tileCoords[p.pos];
+                let toTile = altarVirtualTile();
+                p.lastVisitedTileIndex = p.pos;
+                remainingSteps = 0;
+                playSe('jump');
+                let duration = 450;
+                let startTime = performance.now();
+                function animateAltarStep(now) {
+                    let elapsed = now - startTime;
+                    let progress = Math.min(1, elapsed / duration);
+                    p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
+                    p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
+                    p.jumpY = -Math.sin(progress * Math.PI) * STEP_JUMP_HEIGHT;
+                    if (isOnlineMode && isHost) broadcastGameState();
+                    if (progress < 1) {
+                        requestAnimationFrame(animateAltarStep);
+                    } else {
+                        p.jumpY = 0;
+                        isMoving = false;
+                        handlePlayerGoal(pIndex, true);
+                    }
+                }
+                requestAnimationFrame(animateAltarStep);
+            }
+
             stepNext();
         }
 
-        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx) {
+        // ⛩️ 星の祭壇は「スタートの真下の仮想マス」。インデックスは tileCoords.length（実マスの直後）
+        function altarTileIndex() { return tileCoords.length; }
+        function altarVirtualTile() {
+            let minX = Math.min(...tileCoords.map(t => t.x));
+            let maxX = Math.max(...tileCoords.map(t => t.x));
+            let minY = Math.min(...tileCoords.map(t => t.y));
+            let maxY = Math.max(...tileCoords.map(t => t.y));
+            let s = tileCoords[0] || { r: 1, c: 6 };
+            return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, r: s.r + 1, c: s.c, type: 'altar' };
+        }
+
+        function getAdjacentNextTiles(currentTileIdx, lastVisitedTileIdx, pIndex) {
             let curr = tileCoords[currentTileIdx];
             let candidates = [];
 
@@ -3861,6 +3920,13 @@
             });
 
             candidates.sort((a, b) => (tileCoords.length - 1 - a.tileIdx) - (tileCoords.length - 1 - b.tileIdx));
+            // ⛩️ スタートマス上でカケラが5個揃っていれば、祭壇への道も候補に入る（1マス分で移動）
+            if (currentTileIdx === 0 && typeof pIndex === 'number') {
+                let pl = players[pIndex];
+                if (pl && !pl.finished && (pl.fragments || 0) >= FRAGMENTS_REQUIRED) {
+                    candidates.push({ tileIdx: altarTileIndex(), tile: altarVirtualTile() });
+                }
+            }
             return candidates;
         }
 
@@ -3894,7 +3960,9 @@
 
                 let btn = document.createElement('button');
                 btn.className = 'absolute pointer-events-auto pixel-btn px-2.5 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
-                btn.innerHTML = `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
+                btn.innerHTML = (cand.tileIdx === tileCoords.length)
+                    ? `<span>⬇️ 星の祭壇へ（ゴール！）</span>`
+                    : `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
 
                 let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
                 btn.style.left = `${screenPos.x}px`;
@@ -3912,6 +3980,7 @@
         }
 
         function calculateBranchDestinationTile(pIndex, startBranchTileIdx, remSteps) {
+            if (startBranchTileIdx >= tileCoords.length) return startBranchTileIdx; // 祭壇はそのままゴール
             let currIdx = startBranchTileIdx;
             let lastIdx = players[pIndex].pos;
             let steps = remSteps;
@@ -4050,7 +4119,7 @@
                 let need = FRAGMENTS_REQUIRED - (p.fragments || 0);
                 resolveSpecialLanding(pIndex,
                     '【⛩️ 星の祭壇】',
-                    need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！祭壇でゴール！`,
+                    need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！次の自分の番でサイコロを振ると、祭壇への道（⬇️）か周回コース（⬅️）を選べる！`,
                     `⭐ 星のカケラ ${p.fragments || 0} / ${FRAGMENTS_REQUIRED}`);
                 return;
             }
@@ -4676,7 +4745,7 @@
 
                 if (isWaitingForBranchChoice && activeBranchCandidates.length > 0) {
                     activeBranchCandidates.forEach(cand => {
-                        let destTile = tileCoords[cand.destTileIdx];
+                        let destTile = tileCoords[cand.destTileIdx] || (cand.destTileIdx === tileCoords.length ? altarVirtualTile() : null);
                         if (destTile) {
                             ctx.save();
                             ctx.globalAlpha = 0.55;
