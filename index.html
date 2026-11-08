@@ -26,6 +26,16 @@
             letter-spacing: 0.02em;
         }
 
+        /* 上部ステータス欄：スマホでは4等分の縦積み、PCでは従来の横並び */
+        .hud-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .hud-card { min-width: 0; overflow: hidden; border-radius: 6px; padding: 4px 6px; display: flex; flex-direction: column; gap: 1px; }
+        .hud-card .hud-top { display: flex; align-items: flex-start; gap: 3px; min-width: 0; }
+        .hud-card .hud-bottom { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+        @media (min-width: 640px) {
+            .hud-cards { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+            .hud-card { flex-direction: row; align-items: center; gap: 4px; padding: 4px 8px; }
+            .hud-card .hud-top, .hud-card .hud-bottom { display: contents; }
+        }
         .text-outline {
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
         }
@@ -109,30 +119,46 @@
             </div>
 
             <!-- リスナー数比較 -->
-            <div class="flex items-center justify-around sm:justify-end gap-1 sm:gap-3 text-xs sm:text-sm font-bold">
-                <div class="flex items-center gap-0.5 sm:gap-1 bg-purple-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-400">
-                    <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black">1P</span>
-                    <span id="p1Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">氷室<br>うつろ</span>
-                    <span id="p1Listeners" class="text-yellow-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                    <span id="p1Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
+            <div class="hud-cards text-xs sm:text-sm font-bold">
+                <div class="hud-card bg-purple-900/80 border border-purple-400">
+                    <div class="hud-top">
+                        <span id="p1Badge" class="text-purple-300 text-[9px] sm:text-[10px] font-black pt-px">1P</span>
+                        <span id="p1Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">氷室<br>うつろ</span>
+                    </div>
+                    <div class="hud-bottom">
+                        <span id="p1Listeners" class="text-yellow-300 font-mono text-[10px] sm:text-xs font-bold text-outline">1,000人</span>
+                        <span id="p1Fragments" class="text-yellow-200 font-mono text-[10px] sm:text-xs font-bold text-outline">⭐×0</span>
+                    </div>
                 </div>
-                <div class="flex items-center gap-0.5 sm:gap-1 bg-indigo-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-indigo-400">
-                    <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black">2P</span>
-                    <span id="p2Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">繰言<br>かたる</span>
-                    <span id="p2Listeners" class="text-cyan-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                    <span id="p2Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
+                <div class="hud-card bg-indigo-900/80 border border-indigo-400">
+                    <div class="hud-top">
+                        <span id="p2Badge" class="text-indigo-300 text-[9px] sm:text-[10px] font-black pt-px">2P</span>
+                        <span id="p2Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">繰言<br>かたる</span>
+                    </div>
+                    <div class="hud-bottom">
+                        <span id="p2Listeners" class="text-cyan-300 font-mono text-[10px] sm:text-xs font-bold text-outline">1,000人</span>
+                        <span id="p2Fragments" class="text-yellow-200 font-mono text-[10px] sm:text-xs font-bold text-outline">⭐×0</span>
+                    </div>
                 </div>
-                <div id="p3Box" class="flex items-center gap-0.5 sm:gap-1 bg-pink-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-pink-400">
-                    <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black">3P</span>
-                    <span id="p3Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">トモコ</span>
-                    <span id="p3Listeners" class="text-pink-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                    <span id="p3Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
+                <div id="p3Box" class="hud-card bg-pink-900/80 border border-pink-400">
+                    <div class="hud-top">
+                        <span id="p3Badge" class="text-pink-300 text-[9px] sm:text-[10px] font-black pt-px">3P</span>
+                        <span id="p3Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">トモコ</span>
+                    </div>
+                    <div class="hud-bottom">
+                        <span id="p3Listeners" class="text-pink-300 font-mono text-[10px] sm:text-xs font-bold text-outline">1,000人</span>
+                        <span id="p3Fragments" class="text-yellow-200 font-mono text-[10px] sm:text-xs font-bold text-outline">⭐×0</span>
+                    </div>
                 </div>
-                <div id="p4Box" class="flex items-center gap-0.5 sm:gap-1 bg-orange-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-400">
-                    <span id="p4Badge" class="text-orange-300 text-[9px] sm:text-[10px] font-black">4P</span>
-                    <span id="p4Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">依夢<br>りつ</span>
-                    <span id="p4Listeners" class="text-orange-300 font-mono text-[11px] sm:text-xs font-bold text-outline">1,000人</span>
-                    <span id="p4Fragments" class="text-yellow-200 font-mono text-[11px] sm:text-xs font-bold text-outline">⭐×0</span>
+                <div id="p4Box" class="hud-card bg-orange-900/80 border border-orange-400">
+                    <div class="hud-top">
+                        <span id="p4Badge" class="text-orange-300 text-[9px] sm:text-[10px] font-black pt-px">4P</span>
+                        <span id="p4Name" class="text-white text-[11px] sm:text-xs leading-[1.1] text-outline">依夢<br>りつ</span>
+                    </div>
+                    <div class="hud-bottom">
+                        <span id="p4Listeners" class="text-orange-300 font-mono text-[10px] sm:text-xs font-bold text-outline">1,000人</span>
+                        <span id="p4Fragments" class="text-yellow-200 font-mono text-[10px] sm:text-xs font-bold text-outline">⭐×0</span>
+                    </div>
                 </div>
             </div>
         </header>
