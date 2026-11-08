@@ -152,6 +152,9 @@
                 <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
                 </button>
+                <button onclick="suspendGameToTitle()" id="btnSuspendGame" class="bg-emerald-900/90 hover:bg-emerald-800 border border-emerald-400 text-emerald-200 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
+                    💾 中断
+                </button>
             </div>
         </section>
 
@@ -283,6 +286,10 @@
             <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
                 ▶ タップしてスタート
             </button>
+            <div class="mt-3">
+                <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">💾 中断したゲームから再開</button>
+                <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
+            </div>
         </div>
     </div>
 
@@ -1449,6 +1456,7 @@
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
+            updateResumeButton();
         }
 
         function resetAllPlayerPositions() {
@@ -2024,7 +2032,137 @@
             }
         }
 
+        // ===== 中断・再開（CPU戦のみ。手番の切り替わりごとに自動保存） =====
+        let cpuGameActive = false;
+        const SUSPEND_KEY = 'utsuro_suspended_game';
+        function saveSuspendedGame() {
+            if (isOnlineMode || !cpuGameActive) return;
+            try {
+                let data = {
+                    v: 1,
+                    savedAt: Date.now(),
+                    mapGrid: JSON.parse(JSON.stringify(customMapGrid)),
+                    goalBonuses: JSON.parse(JSON.stringify(goalBonuses)),
+                    currentPlayerIndex: currentPlayerIndex,
+                    currentTurnNumber: currentTurnNumber,
+                    finishedRankCount: finishedRankCount,
+                    starTiles: starTileIdxs.slice(),
+                    players: players.map(p => ({
+                        name: p.name, char: p.char, color: p.color, pos: p.pos,
+                        listeners: p.listeners, fragments: p.fragments,
+                        items: (p.items || []).slice(), diceBonus: p.diceBonus || 0,
+                        shield: p.shield || 0, finished: !!p.finished, rank: p.rank || 0,
+                        isHuman: !!p.isHuman, lastVisitedTileIndex: p.lastVisitedTileIndex
+                    }))
+                };
+                localStorage.setItem(SUSPEND_KEY, JSON.stringify(data));
+            } catch (e) {}
+            updateResumeButton();
+        }
+        function loadSuspendedGameData() {
+            try {
+                let raw = localStorage.getItem(SUSPEND_KEY);
+                if (!raw) return null;
+                let data = JSON.parse(raw);
+                if (!data || data.v !== 1 || !Array.isArray(data.players) || data.players.length !== players.length || !data.mapGrid) return null;
+                return data;
+            } catch (e) { return null; }
+        }
+        function clearSuspendedGame() {
+            try { localStorage.removeItem(SUSPEND_KEY); } catch (e) {}
+            updateResumeButton();
+        }
+        function updateResumeButton() {
+            let btn = document.getElementById('resumeGameBtn');
+            let info = document.getElementById('resumeGameInfo');
+            if (!btn || !info) return;
+            let data = loadSuspendedGameData();
+            if (data) {
+                btn.classList.remove('hidden');
+                info.classList.remove('hidden');
+                info.innerText = `${formatElapsedDate(data.currentTurnNumber)}時点 ・ 1P: ${data.players[0].name}`;
+            } else {
+                btn.classList.add('hidden');
+                info.classList.add('hidden');
+            }
+        }
+        function suspendGameToTitle() {
+            if (isOnlineMode) { alert('オンライン対戦では中断できません'); return; }
+            if (!cpuGameActive) { alert('まだ対戦が始まっていません'); return; }
+            saveSuspendedGame();
+            let t = document.getElementById('titleScreen');
+            if (t) { t.classList.remove('hidden'); t.classList.add('flex'); }
+            let dbgBtn = document.getElementById('debugEntryBtn');
+            if (dbgBtn) dbgBtn.classList.add('hidden');
+            try { playSelectBgm(); } catch (e) {}
+            updateResumeButton();
+        }
+        function resumeSuspendedGame() {
+            let data = loadSuspendedGameData();
+            if (!data) { updateResumeButton(); return; }
+            customMapGrid = JSON.parse(JSON.stringify(data.mapGrid));
+            convertCustomGridToTileCoords();
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            isOnlineMode = false;
+            myPlayerIndex = 0;
+            cpuGameActive = true;
+            data.players.forEach((sp, i) => {
+                let p = players[i];
+                p.name = sp.name; p.char = sp.char; p.color = sp.color;
+                p.pos = sp.pos; p.listeners = sp.listeners; p.fragments = sp.fragments;
+                p.items = (sp.items || []).slice(); p.diceBonus = sp.diceBonus || 0;
+                p.shield = sp.shield || 0; p.finished = !!sp.finished; p.rank = sp.rank || 0;
+                p.isHuman = !!sp.isHuman;
+                p.lastVisitedTileIndex = (typeof sp.lastVisitedTileIndex === 'number') ? sp.lastVisitedTileIndex : tileCoords.length - 1;
+                let tile = tileCoords[p.pos] || tileCoords[0];
+                p.renderX = tile.x; p.renderY = tile.y; p.goshuX = tile.x; p.goshuY = tile.y; p.offsetX = 0;
+                let lEl = document.getElementById(`p${i + 1}Listeners`);
+                if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
+            });
+            if (data.goalBonuses) goalBonuses = JSON.parse(JSON.stringify(data.goalBonuses));
+            starTileIdxs = (data.starTiles || []).slice();
+            currentPlayerIndex = data.currentPlayerIndex;
+            currentTurnNumber = data.currentTurnNumber;
+            finishedRankCount = data.finishedRankCount || 0;
+            isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
+            let t = document.getElementById('titleScreen');
+            if (t) { t.classList.add('hidden'); t.classList.remove('flex'); }
+            let sm = document.getElementById('startModal');
+            if (sm) sm.classList.add('hidden');
+            let csm = document.getElementById('charSelectModal');
+            if (csm) csm.classList.add('hidden');
+            let dbgBtn = document.getElementById('debugEntryBtn');
+            if (dbgBtn) dbgBtn.classList.remove('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
+            playGameBgm();
+            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+            document.getElementById('diceResultText').innerText = '準備完了';
+            currentDiceVal = 1;
+            drawDice(1);
+            applyHudNames();
+            updateFragmentUI();
+            let activePlayer = players[currentPlayerIndex];
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            let btnRoll = document.getElementById('btnRoll');
+            if (activePlayer.isHuman) {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                document.getElementById('currentEventEffect').innerText = '-';
+                if (btnRoll) { btnRoll.disabled = false; btnRoll.innerText = '🎲 移動！'; }
+            } else {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name} (CPU) のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中...`;
+                document.getElementById('currentEventEffect').innerText = '-';
+                if (btnRoll) btnRoll.disabled = true;
+                setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
+            }
+            updateItemUI();
+        }
+
         function startCpuGame() {
+            if (loadSuspendedGameData()) {
+                if (!confirm('中断中のゲームがあります。新しいゲームを始めると上書きされます。よいですか？')) return;
+            }
             if (!tileCoords || tileCoords.length === 0) {
                 convertCustomGridToTileCoords();
             }
@@ -2064,6 +2202,8 @@
                 btnRoll.disabled = false;
                 btnRoll.innerText = '🎲 移動！';
             }
+            cpuGameActive = true;
+            saveSuspendedGame();
             playOpening();
         }
 
@@ -2414,6 +2554,7 @@
         }
 
         function forceStartOnlineLobby() {
+            cpuGameActive = false;
             if (!isHost) return;
 
             let selectedChars = Object.values(onlineMemberChars);
@@ -4078,6 +4219,7 @@
 
             updateItemUI();
             broadcastGameState(true);
+            saveSuspendedGame();
         }
 
         // 🎒 アイテム効果（名前から判定。シートで増えた名前にもキーワードで対応）
@@ -4216,6 +4358,8 @@
         }
 
         function showFinalResultModal() {
+            cpuGameActive = false;
+            clearSuspendedGame();
             let modal = document.getElementById('resultModal');
             let list = document.getElementById('resultRankList');
             if (!modal || !list) return;
