@@ -47,9 +47,11 @@
         @media (orientation: landscape) and (max-height: 520px) {
             .ending-oshimai { font-size: 2.1rem !important; }
         }
-        /* 🗺️ 横画面（背が低い時）は世界地図を少し小さくして、立ち絵スロットの高さを確保する */
+        /* 🗺️ 世界地図は少し小さめにして、全体が見えるようにする（object-cover の切り取り分が減る） */
+        #csMapWrap { width: 88%; margin-left: auto; margin-right: auto; }
+        /* 🗺️ 横画面（背が低い時）はさらに小さくして、立ち絵スロットの高さを確保する */
         @media (orientation: landscape) and (max-height: 520px) {
-            #csMapWrap { width: 72%; margin-left: auto; margin-right: auto; }
+            #csMapWrap { width: 60%; margin-left: auto; margin-right: auto; }
         }
         /* 📱 横画面・iOS対策：見えている画面（dvh）に表示とタップ位置を一致させる */
         html, body { height: 100dvh !important; min-height: 100dvh !important; }
@@ -348,7 +350,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-31 ・ 300,088 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-33 ・ 301,253 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -1993,7 +1995,8 @@
             if (mb) mb.classList.toggle('cs-cursor', csCursor === '?');
         }
 
-        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.9; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
+        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 1.2; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
+        function charPieceScale(id) { if (id === 'tomoko') return 1.25; return 1; } // 駒の見かけ倍率（トモコは立ち絵が細長く小さく見える分だけ大きく）
 
         function csHover(id) {
             if (!csVisibleIds().includes(id)) return;
@@ -2212,14 +2215,24 @@
             } else apply();
         }
 
-        const CS_JAPAN_ZONE = { x1: 0.40, x2: 0.50, y1: 0.40, y2: 0.75 };
+        const CS_JAPAN_ZONE = { x1: 0.40, x2: 0.50, y1: 0.45, y2: 0.61 }; // worldmap.png 画像自体への比率（実測の赤い日本 x .427-.471 / y .496-.557 に余裕を持たせた）
 
         function onCsMapClick(e) {
             let wrap = document.getElementById('csMapWrap');
             if (!wrap || !e) return;
             let rect = wrap.getBoundingClientRect();
             if (!rect.width || !rect.height) return;
-            onCsMapTapAt((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+            let cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+            let img = document.getElementById('csWorldMap');
+            let iw = img ? img.naturalWidth : 0, ih = img ? img.naturalHeight : 0;
+            if (iw && ih) {
+                // object-cover で切り取られて表示されている分を割り戻し、画像自体への比率に変換する
+                let scale = Math.max(rect.width / iw, rect.height / ih);
+                let dw = iw * scale, dh = ih * scale;
+                onCsMapTapAt((cx - (rect.width - dw) / 2) / dw, (cy - (rect.height - dh) / 2) / dh);
+            } else {
+                onCsMapTapAt(cx / rect.width, cy / rect.height);
+            }
         }
 
         function onCsMapTapAt(fx, fy) {
@@ -3944,6 +3957,7 @@
         }
 
         function drawPlayerDotModel(context, charType, x, y, size = 32) {
+            size = size * charPieceScale(charType);
             let img = charImages[charType] || charImages[legacyCharId(charType)];
             if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
             let fimg = charFileStands[charType];
