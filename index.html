@@ -232,9 +232,9 @@
     <div id="openingOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3 z-[100003]" onclick="advanceOpening()">
         <button onclick="event.stopPropagation(); endOpening();" class="absolute top-3 right-3 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
         <div class="pixel-box relative max-w-lg w-full bg-slate-900 border-2 border-purple-400 rounded-xl p-3 sm:p-4 flex gap-3 items-center shadow-2xl mb-4 sm:mb-0">
-            <div id="openingFaceWrap" class="relative flex-none w-[92px] h-[118px] bg-slate-950 rounded-lg border border-purple-700 overflow-hidden">
+            <div id="openingFaceWrap" class="relative flex-none w-[92px] h-[92px] bg-slate-950 rounded-lg border border-purple-700 overflow-hidden">
                 <span id="openingFacePh" class="absolute inset-0 flex items-center justify-center text-3xl font-black text-white/80"></span>
-                <img id="openingFaceImg" alt="" class="absolute inset-0 w-full h-full object-cover object-top" draggable="false">
+                <img id="openingFaceImg" alt="" class="absolute inset-0 w-full h-full object-cover" draggable="false">
             </div>
             <div class="flex-1 min-w-0">
                 <div id="openingSpeaker" class="text-sm font-black text-yellow-300 mb-0.5"></div>
@@ -1350,16 +1350,16 @@
             // 苗字だけ・名前だけでも引けるように（重複する場合は使わない）
             let surnameCount = {}, givenCount = {};
             CHARACTERS.forEach(c => {
-                let m = c.name.match(/^[\u4E00-\u9FAF\u3005]+/);
-                let sur = m ? m[0] : '';
-                let giv = sur ? c.name.slice(sur.length) : c.name;
+                let parts = splitNameParts(c.name);
+                let sur = parts[0];
+                let giv = parts[1];
                 if (sur && sur !== c.name) surnameCount[sur] = (surnameCount[sur] || 0) + 1;
                 if (giv) givenCount[giv] = (givenCount[giv] || 0) + 1;
             });
             let byPart = CHARACTERS.find(c => {
-                let m = c.name.match(/^[\u4E00-\u9FAF\u3005]+/);
-                let sur = m ? m[0] : '';
-                let giv = sur ? c.name.slice(sur.length) : c.name;
+                let parts = splitNameParts(c.name);
+                let sur = parts[0];
+                let giv = parts[1];
                 return (sur && sur !== c.name && surnameCount[sur] === 1 && sur === flat) || (giv && givenCount[giv] === 1 && giv === flat);
             });
             return byPart ? byPart.id : null;
@@ -1857,7 +1857,7 @@
             if (mb) mb.classList.toggle('cs-cursor', csCursor === '?');
         }
 
-        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.9; return 1.4; }
+        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.9; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
 
         function csHover(id) {
             if (!csVisibleIds().includes(id)) return;
@@ -3388,7 +3388,7 @@
                             fImg.dataset.charId = cid;
                             delete fImg.dataset.upperFor;
                             fImg.style.display = '';
-                            fImg.src = charStandUrl(cid);
+                            fImg.src = charIconUrl(cid);
                         }
                     }
                 }
@@ -3963,10 +3963,21 @@
             };
         }
 
+        // 名前を [苗字, 名前] に分ける。例外はここで明示する（馬鹿蝶＝苗字「馬鹿」＋名前「蝶」）
+        function splitNameParts(name) {
+            name = String(name);
+            const overrides = { '馬鹿蝶': ['馬鹿', '蝶'] };
+            if (overrides[name]) return overrides[name];
+            let m = name.match(/^[\u4E00-\u9FAF\u3005]+/);
+            if (m && m[0].length < name.length) return [m[0], name.slice(m[0].length)];
+            if (m) return [name, ''];
+            return ['', name];
+        }
         function splitSurnameHtml(name) {
-            let m = String(name).match(/^[\u4E00-\u9FAF\u3005]+/);
-            if (m && m[0].length < String(name).length) return m[0] + '<br>' + String(name).slice(m[0].length);
-            return String(name);
+            let parts = splitNameParts(name);
+            if (parts[0] && parts[1]) return parts[0] + '<br>' + parts[1];
+            // 下の名前が無い人は、見えない1行を足して表示の高さを揃える
+            return String(name) + '<br><span style="visibility:hidden">あ</span>';
         }
 
         function applyHudNames() {
