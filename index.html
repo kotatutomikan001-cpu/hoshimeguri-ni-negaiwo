@@ -288,6 +288,12 @@
         </div>
     </div>
 
+    <!-- 🎬 スタッフロール（エンディング会話の後・順位発表の前） -->
+    <div id="staffRollOverlay" class="fixed inset-0 z-[100002] hidden overflow-hidden" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);" onclick="onStaffRollTap()">
+        <div id="staffRollInner" class="absolute left-0 right-0 top-0 mx-auto w-full max-w-xl px-6 text-center will-change-transform"></div>
+        <button onclick="event.stopPropagation(); skipStaffRoll();" class="absolute top-3 right-3 z-10 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
+    </div>
+
     <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100001] hidden">
         <div class="pixel-box p-4 sm:p-5 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center flex flex-col gap-3">
             <h2 class="text-base sm:text-lg font-black text-yellow-300 tracking-wider">🎉 最終結果発表 🎉</h2>
@@ -362,7 +368,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-53 ・ 316,218 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-54 ・ 321,014 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -3789,8 +3795,65 @@
             dialogueMode = 'opening';
             let ov = document.getElementById('openingOverlay');
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            startStaffRoll();
+        }
+
+        let staffRollTimer = null;
+        let staffRollActive = false;
+        let staffRollStartedAt = 0;
+        function buildStaffRollHtml() {
+            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let winner = sorted[0];
+            let h = '';
+            h += '<div class="text-4xl sm:text-5xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.55), 3px 3px 0 #b45309;">星めぐりに願いを</div>';
+            h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-3 tracking-[.4em]">〜 スタッフロール 〜</div>';
+            h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
+            h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + c.name + '</div>'; });
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">学園長</div>';
+            h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
+            players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
+            if (winner) {
+                h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 優勝 ✦</div>';
+                h += '<div class="text-2xl sm:text-3xl font-black text-yellow-300 leading-snug mt-2">👑 ' + winner.name + '</div>';
+            }
+            h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 制作 ✦</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">hiro-pon</div>';
+            h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スペシャルサンクス ✦</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">星めぐり学園のみなさん</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">遊んでくれた あなた</div>';
+            h += '<div class="mt-20 text-xl sm:text-2xl font-black text-purple-100">遊んでくれてありがとうございました！</div>';
+            return h;
+        }
+        function startStaffRoll() {
+            let ov = document.getElementById('staffRollOverlay');
+            let inner = document.getElementById('staffRollInner');
+            if (!ov || !inner) { showEndingResults(); return; }
+            inner.innerHTML = buildStaffRollHtml();
+            ov.classList.remove('hidden');
+            staffRollActive = true;
+            staffRollStartedAt = Date.now();
+            let vh = window.innerHeight || 800;
+            let contentH = inner.offsetHeight || 1600;
+            let dur = Math.max(15, (vh + contentH) / 60);
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(' + vh + 'px)';
+            void inner.offsetWidth;
+            inner.style.transition = 'transform ' + dur + 's linear';
+            inner.style.transform = 'translateY(' + (-(contentH + 60)) + 'px)';
+            if (staffRollTimer) clearTimeout(staffRollTimer);
+            staffRollTimer = setTimeout(finishStaffRoll, dur * 1000 + 700);
+        }
+        function finishStaffRoll() {
+            if (!staffRollActive) return;
+            staffRollActive = false;
+            if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+            let ov = document.getElementById('staffRollOverlay');
+            if (ov) ov.classList.add('hidden');
             showEndingResults();
         }
+        function skipStaffRoll() { finishStaffRoll(); }
+        function onStaffRollTap() { if (staffRollActive && Date.now() - staffRollStartedAt > 1500) skipStaffRoll(); }
 
         function showEndingResults() {
             let ov = document.getElementById('endingResultOverlay');
