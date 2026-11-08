@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="星めぐりに願いを">
+    <meta name="theme-color" content="#d8b4fe">
     <title>星めぐりに願いを</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,6 +42,10 @@
             .hud-cards { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
             .hud-card { flex-direction: row; align-items: center; gap: 4px; padding: 4px 8px; }
             .hud-card .hud-top, .hud-card .hud-bottom { display: contents; }
+        }
+        /* 🗺️ 横画面（背が低い時）は世界地図を少し小さくして、立ち絵スロットの高さを確保する */
+        @media (orientation: landscape) and (max-height: 520px) {
+            #csMapWrap { width: 72%; margin-left: auto; margin-right: auto; }
         }
         /* 📱 横画面・iOS対策：見えている画面（dvh）に表示とタップ位置を一致させる */
         html, body { height: 100dvh !important; min-height: 100dvh !important; }
@@ -326,7 +337,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-16 ・ 274,813 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-18 ・ 276,765 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -877,6 +888,10 @@
             setupCanvasDragAndTouch();
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('resize', () => {
+                let m = document.getElementById('charSelectModal');
+                if (m && !m.classList.contains('hidden')) refreshCsSlots();
+            });
 
             initDefaultDotGrids();
             initDefaultMapGrid();
@@ -1886,6 +1901,22 @@
             refreshCsSlots();
         }
 
+        // 立ち絵の上下が切れないよう、縦方向にはみ出さない範囲で倍率を自動調整する
+        // （横画面など背の低いスロットでは倍率が下がり、頭・足まで全体が表示される）
+        function fitCsSlotScale(img, id) {
+            if (!img || !id) return;
+            let box = img.parentElement;
+            if (!box || !img.naturalWidth || !img.naturalHeight) return;
+            let bw = box.clientWidth, bh = box.clientHeight;
+            if (!bw || !bh) return;
+            let s0 = Math.min(bw / img.naturalWidth, bh / img.naturalHeight);
+            if (!s0) return;
+            let dispH = img.naturalHeight * s0;
+            let kVert = dispH > 0 ? (bh / dispH) : 1;
+            let k = Math.min(charStandScale(id), Math.max(1, kVert));
+            img.style.transform = 'scale(' + k + ')';
+        }
+
         function refreshCsSlots() {
             let assignments;
             if (csMode === 'cpu') {
@@ -1902,7 +1933,9 @@
                 if (!img || !ph || !nm) continue;
                 if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (i <= peerConnections.length ? 'PLAYER' : 'CPU'));
                 if (id) {
+                    img.onload = () => { if (img.dataset.charId) fitCsSlotScale(img, img.dataset.charId); };
                     img.style.transform = 'scale(' + charStandScale(id) + ')';
+                    fitCsSlotScale(img, id);
                     nm.innerText = charName(id);
                     retryUpperExt(img, () => { img.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(id).charAt(0); ph.style.color = charColor(id); });
                     if (img.dataset.charId !== id) {
