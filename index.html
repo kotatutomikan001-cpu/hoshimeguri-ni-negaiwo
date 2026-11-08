@@ -292,6 +292,7 @@
     <div id="staffRollOverlay" class="fixed inset-0 z-[100002] hidden overflow-hidden" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);" onclick="onStaffRollTap()">
         <div id="staffRollInner" class="absolute left-0 right-0 top-0 mx-auto w-full max-w-xl px-6 text-center will-change-transform"></div>
         <button onclick="event.stopPropagation(); skipStaffRoll();" class="absolute top-3 right-3 z-10 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
+        <div id="staffRollHint" class="absolute bottom-10 left-0 right-0 text-center text-sm sm:text-base font-bold text-purple-100 animate-pulse hidden pointer-events-none">▼ タップで順位発表へ</div>
     </div>
 
     <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 z-[100001] hidden">
@@ -368,7 +369,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-54 ・ 321,014 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-55 ・ 323,226 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -3799,8 +3800,9 @@
         }
 
         let staffRollTimer = null;
-        let staffRollActive = false;
+        let staffRollPhase = 'idle';
         let staffRollStartedAt = 0;
+        let staffRollEndY = 0;
         function buildStaffRollHtml() {
             let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
             let winner = sorted[0];
@@ -3823,6 +3825,10 @@
             h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">星めぐり学園のみなさん</div>';
             h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">遊んでくれた あなた</div>';
             h += '<div class="mt-20 text-xl sm:text-2xl font-black text-purple-100">遊んでくれてありがとうございました！</div>';
+            h += '<div class="relative flex items-center justify-center" style="height: 46vh; margin-top: 38vh;">'
+               + '<img src="oshimai.png" alt="おしまい" class="max-w-[88%] max-h-full object-contain" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper=\'1\';this.src=\'oshimai.PNG\';}else{this.classList.add(\'hidden\');document.getElementById(\'staffRollOshimaiFallback\').classList.remove(\'hidden\');}">'
+               + '<div id="staffRollOshimaiFallback" class="hidden text-5xl sm:text-7xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.65), 3px 3px 0 #b45309;">✨ おしまい ✨</div>'
+               + '</div>';
             return h;
         }
         function startStaffRoll() {
@@ -3830,30 +3836,56 @@
             let inner = document.getElementById('staffRollInner');
             if (!ov || !inner) { showEndingResults(); return; }
             inner.innerHTML = buildStaffRollHtml();
+            let hint = document.getElementById('staffRollHint');
+            if (hint) hint.classList.add('hidden');
             ov.classList.remove('hidden');
-            staffRollActive = true;
+            staffRollPhase = 'scroll';
             staffRollStartedAt = Date.now();
             let vh = window.innerHeight || 800;
             let contentH = inner.offsetHeight || 1600;
-            let dur = Math.max(15, (vh + contentH) / 60);
+            let finaleH = Math.round(vh * 0.46);
+            staffRollEndY = Math.round(vh / 2 - (contentH - finaleH / 2));
+            let dur = Math.max(15, (vh - staffRollEndY) / 60);
             inner.style.transition = 'none';
             inner.style.transform = 'translateY(' + vh + 'px)';
             void inner.offsetWidth;
             inner.style.transition = 'transform ' + dur + 's linear';
-            inner.style.transform = 'translateY(' + (-(contentH + 60)) + 'px)';
+            inner.style.transform = 'translateY(' + staffRollEndY + 'px)';
             if (staffRollTimer) clearTimeout(staffRollTimer);
-            staffRollTimer = setTimeout(finishStaffRoll, dur * 1000 + 700);
+            staffRollTimer = setTimeout(arriveStaffRollFinale, dur * 1000 + 100);
+        }
+        function arriveStaffRollFinale() {
+            if (staffRollPhase !== 'scroll') return;
+            staffRollPhase = 'hold';
+            if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+            let hint = document.getElementById('staffRollHint');
+            if (hint) hint.classList.remove('hidden');
         }
         function finishStaffRoll() {
-            if (!staffRollActive) return;
-            staffRollActive = false;
+            if (staffRollPhase === 'idle') return;
+            staffRollPhase = 'idle';
             if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
             let ov = document.getElementById('staffRollOverlay');
             if (ov) ov.classList.add('hidden');
             showEndingResults();
         }
-        function skipStaffRoll() { finishStaffRoll(); }
-        function onStaffRollTap() { if (staffRollActive && Date.now() - staffRollStartedAt > 1500) skipStaffRoll(); }
+        function skipStaffRoll() {
+            if (staffRollPhase === 'scroll') {
+                let inner = document.getElementById('staffRollInner');
+                if (inner) {
+                    if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+                    inner.style.transition = 'transform 0.6s ease';
+                    inner.style.transform = 'translateY(' + staffRollEndY + 'px)';
+                }
+                arriveStaffRollFinale();
+            } else if (staffRollPhase === 'hold') {
+                finishStaffRoll();
+            }
+        }
+        function onStaffRollTap() {
+            if (staffRollPhase === 'hold') finishStaffRoll();
+            else if (staffRollPhase === 'scroll' && Date.now() - staffRollStartedAt > 1500) skipStaffRoll();
+        }
 
         function showEndingResults() {
             let ov = document.getElementById('endingResultOverlay');
