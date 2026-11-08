@@ -43,6 +43,10 @@
             .hud-card { flex-direction: row; align-items: center; gap: 4px; padding: 4px 8px; }
             .hud-card .hud-top, .hud-card .hud-bottom { display: contents; }
         }
+        /* 🏆 横画面（背が低い時）はエンディングの「おしまい」を小さめにして全体を収める */
+        @media (orientation: landscape) and (max-height: 520px) {
+            .ending-oshimai { font-size: 2.1rem !important; }
+        }
         /* 🗺️ 横画面（背が低い時）は世界地図を少し小さくして、立ち絵スロットの高さを確保する */
         @media (orientation: landscape) and (max-height: 520px) {
             #csMapWrap { width: 72%; margin-left: auto; margin-right: auto; }
@@ -282,13 +286,15 @@
     </div>
 
     <!-- 🏆 エンディング結果画面（立ち絵ポーディウム＋おしまい） -->
-    <div id="endingResultOverlay" class="fixed inset-0 z-[100002] hidden flex-col items-center justify-center gap-3 p-3 overflow-y-auto" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);">
-        <div class="text-center flex-none">
-            <div class="text-5xl sm:text-7xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.65), 3px 3px 0 #b45309;">✨ おしまい ✨</div>
-            <div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-1 tracking-widest">〜 星めぐりに願いを 〜</div>
+    <div id="endingResultOverlay" class="fixed inset-0 z-[100002] hidden overflow-y-auto" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);">
+        <div class="min-h-full flex flex-col items-center justify-center gap-3 p-3">
+            <div class="text-center flex-none">
+                <div class="ending-oshimai text-5xl sm:text-7xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.65), 3px 3px 0 #b45309;">✨ おしまい ✨</div>
+                <div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-1 tracking-widest">〜 星めぐりに願いを 〜</div>
+            </div>
+            <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl flex-none"></div>
+            <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">🔄 タイトルへ戻る</button>
         </div>
-        <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl flex-none"></div>
-        <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">🔄 タイトルへ戻る</button>
     </div>
 
     <!-- 🌟 オンライン待合ロビーモーダル -->
@@ -342,7 +348,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-23 ・ 299,444 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-27 ・ 299,809 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -593,9 +599,9 @@
                     <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
                         <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
                         <select id="dotTargetSelect" onchange="changeDotTarget(this.value)" class="flex-1 bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
-                            <option value="utsuro">❄️ 氷室うつろ</option>
-                            <option value="gengo">🟩 繰言かたる</option>
-                            <option value="tomoko">🌸 トモコ</option>
+                            <option value="utsuro">氷室うつろ</option>
+                            <option value="gengo">繰言かたる</option>
+                            <option value="tomoko">トモコ</option>
                             <option value="utsuro_goshu">🟢 氷室うつろのごしゅ (緑)</option>
                             <option value="gengo_goshu">👑 繰言かたるのごしゅ (水色)</option>
                             <option value="tomoko_goshu">🩷 トモコのごしゅ</option>
@@ -1995,7 +2001,7 @@
         }
 
         // カットイン表示で目の帯を合わせる縦位置（％）。キャラごとにアイコン実物で実測して調整済み
-        const CHAR_EYE_POS_Y = { mikado: 20, hikari: 47, sakura: 45, nemea: 20, rui: 40, tefu: 45, eru: 20, utsuro: 20, shano: 20, ritsu: 42, tomoko: 20 };
+        const CHAR_EYE_POS_Y = { mikado: 26, hikari: 42, sakura: 45, nemea: 30, rui: 37, tefu: 48, mirine: 36, yuni: 33, eru: 26, utsuro: 32, shano: 32, ritsu: 37, kataru: 35, tomoko: 25 };
         function charEyePosY(id) { return (id in CHAR_EYE_POS_Y) ? CHAR_EYE_POS_Y[id] : 30; }
 
         // 横画面（背の低い画面）では、立ち絵の代わりに顔アイコンの「目の付近」を横長カットイン表示する
@@ -3321,10 +3327,10 @@
         const OPENING_CHAR_NAMES = {};
         CHARACTERS.forEach(c => { OPENING_CHAR_NAMES[c.id] = c.name; });
         OPENING_CHAR_NAMES['???'] = '???';
-        OPENING_CHAR_NAMES.utsuro = '❄️ 氷室うつろ';
-        OPENING_CHAR_NAMES.kataru = '🟩 繰言かたる';
-        OPENING_CHAR_NAMES.tomoko = '🌸 トモコ';
-        OPENING_CHAR_NAMES.narration = '📖 ナレーション';
+        OPENING_CHAR_NAMES.utsuro = '氷室うつろ';
+        OPENING_CHAR_NAMES.kataru = '繰言かたる';
+        OPENING_CHAR_NAMES.tomoko = 'トモコ';
+        OPENING_CHAR_NAMES.narration = 'ナレーション';
         OPENING_CHAR_NAMES.gengo = OPENING_CHAR_NAMES.kataru; // 旧キー互換（表示用）
         function normalizeSpeakerWho(who) {
             if (who === 'gengo') return 'kataru';
@@ -3699,7 +3705,7 @@
             let podium = document.getElementById('endingPodium');
             if (!ov || !podium) return;
             let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
-            let frameH = [46, 38, 31, 25];
+            let frameH = window.innerHeight <= 520 ? [34, 28, 23, 19] : [46, 38, 31, 25];
             let rankLabels = ['👑 1位', '2位', '3位', '4位'];
             podium.innerHTML = '';
             sorted.forEach((p, idx) => {
@@ -3732,7 +3738,6 @@
                 podium.appendChild(col);
             });
             ov.classList.remove('hidden');
-            ov.classList.add('flex');
         }
 
         function previewOpeningFromEditor() {
