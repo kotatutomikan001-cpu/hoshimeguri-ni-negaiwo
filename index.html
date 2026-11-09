@@ -377,7 +377,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-65 ・ 326,412 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-67 ・ 333,077 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -751,6 +751,17 @@
                             <button onclick="loadEndingFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
                             <button onclick="unlinkEndingSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
                             <span id="endingSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-pink-500 flex flex-col gap-1.5">
+                        <span class="text-xs text-pink-300 font-bold">🌸 Googleスプレッドシート連携（ひかり優勝時の専用エンディング）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">優勝者が「神乃ひかり」の時だけ、通常の代わりにこのシートの会話が流れます。形式は speaker / text / fx 列で同じです。未連携の時は通常のエンディング会話になります。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingHikariSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-pink-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingHikariSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingHikariFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingHikariSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingHikariSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
                 </div>
@@ -1460,6 +1471,7 @@
         // 📖 会話（ストーリー）シート連携: セリフを Google スプレッドシートで自由に編集できる。連携シートが最優先
         let sheetStoryScript = null; // シートから読み込んだセリフ
         let sheetEndingScript = null; // シートから読み込んだエンディング会話
+        let sheetEndingHikariScript = null; // シートから読み込んだ「ひかり優勝時」専用エンディング会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
             if (!s) return null;
@@ -1624,6 +1636,61 @@
                 setEndingSheetStatus('連携を解除しました（エディタ／内蔵デフォルトに戻ります）');
             }
         }
+        const OFFICIAL_ENDING_HIKARI_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1nzs-Ap3SdK99GgOugFPMOm24-2UOAR5Hnu_n2sOc9JQ/edit?gid=0#gid=0'; // ひかり優勝時専用エンディングの公式シート
+        function getPersonalEndingHikariSheetUrl() {
+            try { return localStorage.getItem('utsuro_ending_hikari_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingHikariSheetUrl() {
+            return getPersonalEndingHikariSheetUrl() || OFFICIAL_ENDING_HIKARI_SHEET_URL;
+        }
+        function setEndingHikariSheetStatus(msg) {
+            let el = document.getElementById('endingHikariSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingHikariFromSheet(manual) {
+            let savedUrl = getEffectiveEndingHikariSheetUrl();
+            if (!savedUrl) { if (manual) setEndingHikariSheetStatus('未連携です（ひかり優勝時も通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingHikariSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingHikariSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingHikariScript = lines;
+                try { localStorage.setItem('utsuro_ending_hikari_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingHikariSheetStatus(`✅ ${lines.length}行の「ひかり優勝時」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('ひかり優勝時シート読み込み失敗:', e);
+                setEndingHikariSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        function saveEndingHikariSheetUrlAndLoad() {
+            let input = document.getElementById('endingHikariSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingHikariSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingHikariSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_ending_hikari_sheet_url', url); } catch (e) {}
+            loadEndingHikariFromSheet(true);
+        }
+        function unlinkEndingHikariSheet() {
+            try { localStorage.removeItem('utsuro_ending_hikari_sheet_url'); localStorage.removeItem('utsuro_ending_hikari_sheet_cache'); } catch (e) {}
+            sheetEndingHikariScript = null;
+            let input = document.getElementById('endingHikariSheetUrlInput');
+            if (OFFICIAL_ENDING_HIKARI_SHEET_URL) {
+                if (input) input.value = OFFICIAL_ENDING_HIKARI_SHEET_URL;
+                loadEndingHikariFromSheet(false);
+                setEndingHikariSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingHikariSheetStatus('連携を解除しました（ひかり優勝時も通常のエンディング会話になります）');
+            }
+        }
         function saveStorySheetUrlAndLoad() {
             let input = document.getElementById('storySheetUrlInput');
             let url = input ? input.value.trim() : '';
@@ -1699,6 +1766,12 @@
                 let cachedEnding = localStorage.getItem('utsuro_ending_sheet_cache');
                 if (cachedEnding) { try { sheetEndingScript = sanitizeOpeningLines(JSON.parse(cachedEnding)); } catch (e) { sheetEndingScript = null; } }
                 if (personalEndingUrl || OFFICIAL_ENDING_SHEET_URL) loadEndingFromSheet(false); // エンディングシート（個人／公式）があれば起動時に自動読み込み
+                let hikariEndingInput = document.getElementById('endingHikariSheetUrlInput');
+                let personalHikariUrl = localStorage.getItem('utsuro_ending_hikari_sheet_url');
+                if (hikariEndingInput) hikariEndingInput.value = personalHikariUrl || OFFICIAL_ENDING_HIKARI_SHEET_URL;
+                let cachedHikariEnding = localStorage.getItem('utsuro_ending_hikari_sheet_cache');
+                if (cachedHikariEnding) { try { sheetEndingHikariScript = sanitizeOpeningLines(JSON.parse(cachedHikariEnding)); } catch (e) { sheetEndingHikariScript = null; } }
+                if (personalHikariUrl || OFFICIAL_ENDING_HIKARI_SHEET_URL) loadEndingHikariFromSheet(false); // ひかり優勝時シートがあれば起動時に自動読み込み
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3790,7 +3863,8 @@
             let winnerName = charName(winnerChar);
             let winnerGiven = splitNameParts(winnerName)[1] || winnerName;
             let winnerHonor = (winnerChar === 'heru' || winnerChar === 'shakuna') ? '君' : 'ちゃん';
-            let lines = currentEndingScript()
+            let endScript = (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) ? sheetEndingHikariScript : currentEndingScript();
+            let lines = endScript
                 .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
             if (!lines.length) { showEndingResults(); return; }
             endingPlayLines = lines;
@@ -3878,13 +3952,14 @@
                 finale.style.transform = 'translateY(55vh)';
             }
             if (staffRollTimer) clearTimeout(staffRollTimer);
-            staffRollTimer = setTimeout(startFinaleRise, textDur * 1000);
+            let textExitDur = (vh + staffRollTextH) / 60;
+            staffRollTimer = setTimeout(startFinaleRise, textExitDur * 1000);
         }
         function startFinaleRise() {
             if (staffRollPhase !== 'scroll') return;
             let finale = document.getElementById('staffRollFinale');
             if (!finale) { arriveStaffRollFinale(); return; }
-            let travelDur = (staffRollVh * 0.78) / 60;
+            let travelDur = (staffRollVh * 0.78) / 90;
             finale.style.transition = 'transform ' + travelDur + 's linear';
             finale.style.transform = 'translateY(-50%)';
             if (staffRollTimer) clearTimeout(staffRollTimer);
