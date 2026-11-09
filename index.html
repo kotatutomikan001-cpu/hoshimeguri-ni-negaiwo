@@ -381,7 +381,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-68 ・ 333,637 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-72 ・ 335,581 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -611,15 +611,15 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-yellow-300 font-bold">1位:</span>
-                                <input type="number" id="goalBonus1st" value="3000" step="100" class="w-full bg-slate-900 border border-yellow-400 rounded px-1 py-0.5 text-xs text-yellow-300 font-bold text-right">
+                                <input type="number" id="goalBonus1st" value="1500" step="100" class="w-full bg-slate-900 border border-yellow-400 rounded px-1 py-0.5 text-xs text-yellow-300 font-bold text-right">
                             </div>
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-cyan-300 font-bold">2位:</span>
-                                <input type="number" id="goalBonus2nd" value="2000" step="100" class="w-full bg-slate-900 border border-cyan-400 rounded px-1 py-0.5 text-xs text-cyan-300 font-bold text-right">
+                                <input type="number" id="goalBonus2nd" value="1000" step="100" class="w-full bg-slate-900 border border-cyan-400 rounded px-1 py-0.5 text-xs text-cyan-300 font-bold text-right">
                             </div>
                             <div class="flex items-center gap-1">
                                 <span class="text-xs text-pink-300 font-bold">3位:</span>
-                                <input type="number" id="goalBonus3rd" value="1000" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1 py-0.5 text-xs text-pink-300 font-bold text-right">
+                                <input type="number" id="goalBonus3rd" value="500" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1 py-0.5 text-xs text-pink-300 font-bold text-right">
                             </div>
                         </div>
                     </div>
@@ -884,11 +884,11 @@
             { id: 3, name: '依夢りつ', char: 'ritsu', pos: 0, goshuPos: 0, listeners: 1000, fragments: 0, color: '#a21caf', finished: false, rank: 0, items: [], isHuman: false }
         ];
         let finishedRankCount = 0;
-        let goalBonuses = { 1: 3000, 2: 2000, 3: 1000 };
+        let goalBonuses = { 1: 1500, 2: 1000, 3: 500 };
         // ⭐ 星のカケラ＆星の祭壇ルール
         const FRAGMENTS_REQUIRED = 5;
         const STEP_JUMP_HEIGHT = 7; // 移動時ジャンプの高さ（px）。大きくすると跳ねる、小さくすると滑らか   // ゴールに必要な星のカケラの数
-        const STAR_TILE_COUNT = 4;      // マップ上に同時に出る星マスの数
+        const STAR_TILE_COUNT = 6;      // マップ上に同時に出る星マスの数
         const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
         // 📅 ターン経過は「月」で数える（12ヶ月＝1年）。6ヶ月ごとにマスの上昇・下降量が倍増していく
@@ -980,9 +980,9 @@
             if (savedBonuses) {
                 try { goalBonuses = JSON.parse(savedBonuses); } catch(e) {}
             }
-            if (document.getElementById('goalBonus1st')) document.getElementById('goalBonus1st').value = goalBonuses[1] || 3000;
-            if (document.getElementById('goalBonus2nd')) document.getElementById('goalBonus2nd').value = goalBonuses[2] || 2000;
-            if (document.getElementById('goalBonus3rd')) document.getElementById('goalBonus3rd').value = goalBonuses[3] || 1000;
+            if (document.getElementById('goalBonus1st')) document.getElementById('goalBonus1st').value = goalBonuses[1] || 1500;
+            if (document.getElementById('goalBonus2nd')) document.getElementById('goalBonus2nd').value = goalBonuses[2] || 1000;
+            if (document.getElementById('goalBonus3rd')) document.getElementById('goalBonus3rd').value = goalBonuses[3] || 500;
 
             setupDotEditorEvents();
             setupMapEditorEvents();
@@ -1305,9 +1305,9 @@
         function saveDebugSettings() {
             saveCurrentDotGridToTarget();
 
-            goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 3000;
-            goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 2000;
-            goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 1000;
+            goalBonuses[1] = parseInt(document.getElementById('goalBonus1st').value) || 1500;
+            goalBonuses[2] = parseInt(document.getElementById('goalBonus2nd').value) || 1000;
+            goalBonuses[3] = parseInt(document.getElementById('goalBonus3rd').value) || 500;
 
             try {
                 localStorage.setItem('utsuro_custom_events', JSON.stringify(gameEvents));
@@ -3861,8 +3861,12 @@
             return dialogueMode === 'ending' ? endingPlayLines : currentOpeningScript();
         }
 
+        function rankSortedPlayers() {
+            // 順位は「星のカケラの数 → リスナー数」の順で決める（優勝者判定・スタッフロールの優勝表示・順位発表で共通）
+            return [...players].sort((a, b) => ((b.fragments || 0) - (a.fragments || 0)) || (b.listeners - a.listeners));
+        }
         function playEndingDialogue() {
-            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let sorted = rankSortedPlayers();
             let winnerChar = sorted.length ? sorted[0].char : 'utsuro';
             let winnerName = charName(winnerChar);
             let winnerGiven = splitNameParts(winnerName)[1] || winnerName;
@@ -3898,7 +3902,7 @@
         let staffRollVh = 800;
         let staffRollTextTargetY = 0;
         function buildStaffRollHtml() {
-            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let sorted = rankSortedPlayers();
             let winner = sorted[0];
             let h = '';
             h += '<div class="text-4xl sm:text-5xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.55), 3px 3px 0 #b45309;">星めぐりに願いを</div>';
@@ -3927,6 +3931,11 @@
             let inner = document.getElementById('staffRollInner');
             if (!ov || !inner) { showEndingResults(); return; }
             inner.innerHTML = buildStaffRollHtml();
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(' + (window.innerHeight || 800) + 'px)';
+            inner.style.visibility = 'hidden';
+            let finalePre = document.getElementById('staffRollFinale');
+            if (finalePre) { finalePre.style.transition = 'none'; finalePre.style.transform = 'translateY(55vh)'; finalePre.style.visibility = 'hidden'; }
             ov.classList.remove('hidden');
             staffRollPhase = 'scroll';
             staffRollStartedAt = Date.now();
@@ -3948,10 +3957,12 @@
             inner.style.transition = 'none';
             inner.style.transform = 'translateY(' + vh + 'px)';
             void inner.offsetWidth;
+            inner.style.visibility = 'visible';
             inner.style.transition = 'transform ' + textDur + 's linear';
             inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
             if (finale) {
                 finale.classList.remove('finale-pop');
+                finale.style.visibility = 'hidden';
                 finale.style.transition = 'none';
                 finale.style.transform = 'translateY(55vh)';
             }
@@ -3964,6 +3975,7 @@
             let finale = document.getElementById('staffRollFinale');
             if (!finale) { arriveStaffRollFinale(); return; }
             let travelDur = (staffRollVh * 0.78) / 90;
+            finale.style.visibility = 'visible';
             finale.style.transition = 'transform ' + travelDur + 's linear';
             finale.style.transform = 'translateY(-50%)';
             if (staffRollTimer) clearTimeout(staffRollTimer);
@@ -3989,11 +4001,13 @@
                 if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
                 let inner = document.getElementById('staffRollInner');
                 if (inner) {
+                    inner.style.visibility = 'visible';
                     inner.style.transition = 'transform 0.5s ease';
                     inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
                 }
                 let finale = document.getElementById('staffRollFinale');
                 if (finale) {
+                    finale.style.visibility = 'visible';
                     finale.style.transition = 'transform 0.6s ease';
                     finale.style.transform = 'translateY(-50%)';
                 }
@@ -4011,7 +4025,7 @@
             let ov = document.getElementById('endingResultOverlay');
             let podium = document.getElementById('endingPodium');
             if (!ov || !podium) return;
-            let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
+            let sorted = rankSortedPlayers();
             let frameH = window.innerHeight <= 520 ? [34, 28, 23, 19] : [46, 38, 31, 25];
             let rankLabels = ['👑 1位', '2位', '3位', '4位'];
             podium.innerHTML = '';
@@ -5007,6 +5021,20 @@
                     let itemGot = event.itemName || '⚡ スパチャブースター';
                     document.getElementById('currentEventEffect').innerText = `獲得アイテム: ${itemGot}`;
                     addPlayerItem(pIndex, itemGot);
+                } else if (tile.type === 'white') {
+                    let evVal = (Number(event.val) || 0) * tileAmountMultiplier();
+                    if (evVal !== 0) {
+                        let shielded = false;
+                        if (evVal < 0 && (p.shield || 0) > 0) { p.shield--; shielded = true; }
+                        if (!shielded) {
+                            p.listeners = Math.max(0, p.listeners + evVal);
+                            document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
+                            playCharVoice(p.char, evVal > 0 ? 'plus' : 'minus');
+                        }
+                        document.getElementById('currentEventEffect').innerText = shielded ? '🛡️ シールドでマイナスを無効化した！' : `リスナー ${evVal > 0 ? '+' : ''}${evVal.toLocaleString()}人`;
+                    } else {
+                        document.getElementById('currentEventEffect').innerText = '変化なし';
+                    }
                 } else {
                     document.getElementById('currentEventEffect').innerText = '変化なし';
                 }
@@ -5070,7 +5098,7 @@
             finishedRankCount++;
             p.rank = finishedRankCount;
 
-            let bonus = goalBonuses[p.rank] || 1000;
+            let bonus = goalBonuses[p.rank] || 500;
             p.listeners += bonus;
             playCharVoice(p.char, 'plus');
 
