@@ -62,6 +62,11 @@
         @media (orientation: landscape) and (max-height: 520px) {
             #csMapWrap { width: 60%; margin-left: auto; margin-right: auto; }
         }
+        /* 📱 縦画面・狭い画面では選択画面の下部ボタンを縦積みにして、ボタン内の文字が途中で割れないようにする */
+        @media (max-width: 640px), (orientation: portrait) {
+            #csFooterBtns { flex-direction: column; }
+            #csFooterBtns > button { width: 100%; }
+        }
         /* 📱 横画面・iOS対策：見えている画面（dvh）に表示とタップ位置を一致させる */
         html, body { height: 100dvh !important; min-height: 100dvh !important; }
         body { overflow: hidden !important; overscroll-behavior: none; }
@@ -372,7 +377,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-61 ・ 324,981 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-65 ・ 326,412 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -526,11 +531,11 @@
                 <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto">
                     <div id="csIconGrid" class="grid grid-cols-5 gap-1.5 content-start"></div>
                     <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
-                    <div class="flex gap-2 mt-auto pt-2">
-                        <button id="csRandomBtn" onclick="csRandomPick()" class="pixel-btn py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-teal-500 to-emerald-600 shadow cursor-pointer">🎲 ランダム</button>
-                        <button id="csConfirmBtn" onclick="csConfirm()" class="pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer">✔ このキャラに決定</button>
-                        <button id="csStartBtn" onclick="csStartCpu()" class="hidden pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-pink-600 shadow cursor-pointer">ゲームスタート！</button>
-                        <button onclick="closeCharSelect()" class="pixel-btn py-2 px-3 font-bold text-xs text-gray-200 rounded-lg bg-slate-700/80 hover:bg-slate-600 cursor-pointer">← もどる</button>
+                    <div id="csFooterBtns" class="flex gap-2 mt-auto pt-2">
+                        <button id="csRandomBtn" onclick="csRandomPick()" class="whitespace-nowrap pixel-btn py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-teal-500 to-emerald-600 shadow cursor-pointer">🎲 ランダム</button>
+                        <button id="csConfirmBtn" onclick="csConfirm()" class="whitespace-nowrap pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer">✔ このキャラに決定</button>
+                        <button id="csStartBtn" onclick="csStartCpu()" class="whitespace-nowrap hidden pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-purple-600 to-pink-600 shadow cursor-pointer">ゲームスタート！</button>
+                        <button onclick="closeCharSelect()" class="whitespace-nowrap pixel-btn py-2 px-3 font-bold text-xs text-gray-200 rounded-lg bg-slate-700/80 hover:bg-slate-600 cursor-pointer">← もどる</button>
                     </div>
                 </div>
                 <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] flex-none min-h-0">
@@ -798,6 +803,7 @@
         CHARACTERS.forEach(c => { CHAR_DEF[c.id] = c; });
         CHAR_DEF['gengo'] = CHAR_DEF['kataru']; // 旧ID互換（ドット絵・PNG差し替え・オープニング等の保存データは gengo のまま）
         CHAR_DEF['gakuencho'] = { id: 'gakuencho', name: '学園長', color: '#64748b' }; // 会話専用話者（対戦キャラではない）
+        CHAR_DEF['megami'] = { id: 'megami', name: '星めぐりの女神', color: '#d4a017' }; // 会話専用話者（対戦キャラではない）
         function legacyCharId(id) { return id === 'kataru' ? 'gengo' : id; }
         function charName(id) { return (CHAR_DEF[id] && CHAR_DEF[id].name) || '氷室うつろ'; }
         function charColor(id) { return (CHAR_DEF[id] && CHAR_DEF[id].color) || '#a855f7'; }
@@ -1462,6 +1468,7 @@
             if (s === '???' || s === '？？？') return '???';
             if (['winner', '優勝者', '1位', '１位', 'ゴールした人', '勝者'].includes(lower)) return 'winner';
             if (['gakuencho', '学園長', 'principal'].includes(lower)) return 'gakuencho';
+            if (['megami', '女神', '女神さま', '女神様', '星めぐりの女神', '星めぐりの女神さま', '星の女神', 'goddess'].includes(lower)) return 'megami';
             if (lower === 'gengo') return 'kataru';
             let byId = CHARACTERS.find(c => c.id === lower);
             if (byId) return byId.id;
@@ -1517,7 +1524,7 @@
                 let who = storySpeakerKey(row[si]);
                 let text = String(row[ti] || '').trim();
                 text = text.split('\\n').join('\n');
-                if (!who || !text) continue; // 話者不明・空行はスキップ
+                if (!who) continue; // 話者不明はスキップ（本文が空の行は「無言の1行」として残す）
                 let fxRaw = fi >= 0 ? String(row[fi] || '').trim().toLowerCase() : '';
                 let line = { who: who, text: text };
                 let fxToksParsed = parseFxTokens(fxRaw);
@@ -3425,7 +3432,7 @@
             { who: 'hikari', text: 'よーし、がんばる！あたしが一番にカケラを集めて、みんなで帰ろう！' },
             { who: 'utsuro', text: 'うん、行こう。――星めぐりの旅、スタート！' }
         ];
-        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'gakuencho', 'narration'];
+        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'gakuencho', 'megami', 'narration'];
         const OPENING_CHAR_NAMES = {};
         CHARACTERS.forEach(c => { OPENING_CHAR_NAMES[c.id] = c.name; });
         OPENING_CHAR_NAMES['???'] = '???';
@@ -3434,6 +3441,7 @@
         OPENING_CHAR_NAMES.tomoko = 'トモコ';
         OPENING_CHAR_NAMES.narration = 'ナレーション';
         OPENING_CHAR_NAMES.gakuencho = '学園長';
+        OPENING_CHAR_NAMES.megami = '星めぐりの女神';
         OPENING_CHAR_NAMES.gengo = OPENING_CHAR_NAMES.kataru; // 旧キー互換（表示用）
         function normalizeSpeakerWho(who) {
             if (who === 'gengo') return 'kataru';
@@ -3450,9 +3458,9 @@
 
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
-            let cleaned = lines.filter(l => l && typeof l.text === 'string' && l.text.trim() !== '').map(l => ({
+            let cleaned = lines.filter(l => l && typeof l.text === 'string').map(l => ({
                 who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
-                text: String(l.text)
+                text: l.text.trim() === '' ? '' : String(l.text)
             }));
             return cleaned.length ? cleaned : null;
         }
@@ -3783,8 +3791,7 @@
             let winnerGiven = splitNameParts(winnerName)[1] || winnerName;
             let winnerHonor = (winnerChar === 'heru' || winnerChar === 'shakuna') ? '君' : 'ちゃん';
             let lines = currentEndingScript()
-                .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }))
-                .filter(l => l.text.trim() !== '');
+                .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
             if (!lines.length) { showEndingResults(); return; }
             endingPlayLines = lines;
             dialogueMode = 'ending';
@@ -3810,6 +3817,8 @@
         let staffRollPhase = 'idle';
         let staffRollStartedAt = 0;
         let staffRollTextH = 0;
+        let staffRollVh = 800;
+        let staffRollTextTargetY = 0;
         function buildStaffRollHtml() {
             let sorted = [...players].sort((a, b) => b.listeners - a.listeners);
             let winner = sorted[0];
@@ -3838,37 +3847,48 @@
         function startStaffRoll() {
             let ov = document.getElementById('staffRollOverlay');
             let inner = document.getElementById('staffRollInner');
-            let finale = document.getElementById('staffRollFinale');
             if (!ov || !inner) { showEndingResults(); return; }
             inner.innerHTML = buildStaffRollHtml();
             ov.classList.remove('hidden');
             staffRollPhase = 'scroll';
             staffRollStartedAt = Date.now();
+            let begin = () => { if (staffRollPhase === 'scroll') runStaffRollMotion(); };
+            if (document.fonts && document.fonts.ready) {
+                Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 600))]).then(begin).catch(begin);
+            } else begin();
+        }
+        function runStaffRollMotion() {
+            let inner = document.getElementById('staffRollInner');
+            let finale = document.getElementById('staffRollFinale');
+            if (!inner) { showEndingResults(); return; }
             let vh = window.innerHeight || 800;
+            staffRollVh = vh;
             staffRollTextH = inner.offsetHeight || 1600;
-            let dur = Math.max(15, (vh + staffRollTextH) / 60);
+            let over = Math.round(vh * 0.25);
+            staffRollTextTargetY = -(staffRollTextH + over);
+            let textDur = (vh + staffRollTextH + over) / 60;
             inner.style.transition = 'none';
             inner.style.transform = 'translateY(' + vh + 'px)';
             void inner.offsetWidth;
-            inner.style.transition = 'transform ' + dur + 's linear';
-            inner.style.transform = 'translateY(' + (-(staffRollTextH + 40)) + 'px)';
-            if (staffRollTimer) clearTimeout(staffRollTimer);
+            inner.style.transition = 'transform ' + textDur + 's linear';
+            inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
             if (finale) {
                 finale.classList.remove('finale-pop');
-                let finaleH = Math.round(vh * 0.46);
-                let gap = Math.round(vh * 0.38);
-                let travelDur = (vh * 0.8 + finaleH / 2) / 60;
-                let arriveAt = (staffRollTextH + gap + vh / 2 + finaleH / 2) / 60;
-                let fDelay = Math.max(0.5, arriveAt - travelDur);
                 finale.style.transition = 'none';
-                finale.style.transform = 'translateY(80vh)';
-                void finale.offsetWidth;
-                finale.style.transition = 'transform ' + travelDur + 's linear ' + fDelay + 's';
-                finale.style.transform = 'translateY(-50%)';
-                staffRollTimer = setTimeout(arriveStaffRollFinale, arriveAt * 1000 + 120);
-            } else {
-                staffRollTimer = setTimeout(arriveStaffRollFinale, dur * 1000 + 100);
+                finale.style.transform = 'translateY(55vh)';
             }
+            if (staffRollTimer) clearTimeout(staffRollTimer);
+            staffRollTimer = setTimeout(startFinaleRise, textDur * 1000);
+        }
+        function startFinaleRise() {
+            if (staffRollPhase !== 'scroll') return;
+            let finale = document.getElementById('staffRollFinale');
+            if (!finale) { arriveStaffRollFinale(); return; }
+            let travelDur = (staffRollVh * 0.78) / 60;
+            finale.style.transition = 'transform ' + travelDur + 's linear';
+            finale.style.transform = 'translateY(-50%)';
+            if (staffRollTimer) clearTimeout(staffRollTimer);
+            staffRollTimer = setTimeout(arriveStaffRollFinale, travelDur * 1000 + 120);
         }
         function arriveStaffRollFinale() {
             if (staffRollPhase !== 'scroll') return;
@@ -3891,7 +3911,7 @@
                 let inner = document.getElementById('staffRollInner');
                 if (inner) {
                     inner.style.transition = 'transform 0.5s ease';
-                    inner.style.transform = 'translateY(' + (-(staffRollTextH + 40)) + 'px)';
+                    inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
                 }
                 let finale = document.getElementById('staffRollFinale');
                 if (finale) {
