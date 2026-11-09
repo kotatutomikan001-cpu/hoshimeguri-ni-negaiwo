@@ -372,7 +372,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-60 ・ 324,172 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-61 ・ 324,981 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -471,6 +471,8 @@
         .opening-shake { animation: openingShake 1s ease-in-out; }
         @keyframes dialogueSway { 0%, 100% { transform: scale(1.045) translateX(0) rotate(0deg); } 25% { transform: scale(1.045) translateX(7px) rotate(0.45deg); } 75% { transform: scale(1.045) translateX(-7px) rotate(-0.45deg); } }
         .dialogue-sway { animation: dialogueSway 1.4s ease-in-out infinite; }
+        @keyframes finalePop { 0% { transform: translateY(-50%) scale(1); } 35% { transform: translateY(-54%) scale(1.06); } 62% { transform: translateY(-48.5%) scale(0.99); } 100% { transform: translateY(-50%) scale(1); } }
+        .finale-pop { animation: finalePop 0.6s ease-out; }
         #openingOverlay { transition: background-color 0.35s ease; }
         #openingBgLayer, #openingBgLayer2 { transition: opacity 0.7s ease; }
         .opening-bg-white { background: #ffffff !important; }
@@ -3852,13 +3854,18 @@
             inner.style.transform = 'translateY(' + (-(staffRollTextH + 40)) + 'px)';
             if (staffRollTimer) clearTimeout(staffRollTimer);
             if (finale) {
-                let fDelay = Math.max(1, dur - 1.2);
+                finale.classList.remove('finale-pop');
+                let finaleH = Math.round(vh * 0.46);
+                let gap = Math.round(vh * 0.38);
+                let travelDur = (vh * 0.8 + finaleH / 2) / 60;
+                let arriveAt = (staffRollTextH + gap + vh / 2 + finaleH / 2) / 60;
+                let fDelay = Math.max(0.5, arriveAt - travelDur);
                 finale.style.transition = 'none';
                 finale.style.transform = 'translateY(80vh)';
                 void finale.offsetWidth;
-                finale.style.transition = 'transform 2.6s ease-out ' + fDelay + 's';
+                finale.style.transition = 'transform ' + travelDur + 's linear ' + fDelay + 's';
                 finale.style.transform = 'translateY(-50%)';
-                staffRollTimer = setTimeout(arriveStaffRollFinale, (fDelay + 2.75) * 1000);
+                staffRollTimer = setTimeout(arriveStaffRollFinale, arriveAt * 1000 + 120);
             } else {
                 staffRollTimer = setTimeout(arriveStaffRollFinale, dur * 1000 + 100);
             }
@@ -3867,6 +3874,8 @@
             if (staffRollPhase !== 'scroll') return;
             staffRollPhase = 'hold';
             if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+            let finale = document.getElementById('staffRollFinale');
+            if (finale) { finale.classList.remove('finale-pop'); void finale.offsetWidth; finale.classList.add('finale-pop'); }
         }
         function finishStaffRoll() {
             if (staffRollPhase === 'idle') return;
