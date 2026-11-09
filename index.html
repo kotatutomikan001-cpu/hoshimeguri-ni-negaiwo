@@ -395,7 +395,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-77 ・ 339,612 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-78 ・ 346,537 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -781,6 +781,17 @@
                             <button onclick="loadEndingHikariFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
                             <button onclick="unlinkEndingHikariSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
                             <span id="endingHikariSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-cyan-400 flex flex-col gap-1.5">
+                        <span class="text-xs text-cyan-300 font-bold">🧊 Googleスプレッドシート連携（うつろ優勝時・プレイヤー操作の時だけの専用エンディング）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">優勝者が「氷室うつろ」で、そのうつろを操作しているのがプレイヤー（CPU戦の1P／オンラインの人間プレイヤー）の時だけ、通常の代わりにこのシートの会話が流れます。CPUのうつろが優勝した時は通常のエンディング会話になります。形式は speaker / text / fx 列で同じです。未連携の時は通常のエンディング会話になります。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingUtsuroSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-cyan-400 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingUtsuroSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingUtsuroFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingUtsuroSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingUtsuroSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
                 </div>
@@ -1491,6 +1502,7 @@
         let sheetStoryScript = null; // シートから読み込んだセリフ
         let sheetEndingScript = null; // シートから読み込んだエンディング会話
         let sheetEndingHikariScript = null; // シートから読み込んだ「ひかり優勝時」専用エンディング会話
+        let sheetEndingUtsuroScript = null; // シートから読み込んだ「うつろ優勝時（プレイヤー操作）」専用エンディング会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
             if (!s) return null;
@@ -1697,6 +1709,61 @@
             try { localStorage.setItem('utsuro_ending_hikari_sheet_url', url); } catch (e) {}
             loadEndingHikariFromSheet(true);
         }
+        const OFFICIAL_ENDING_UTSURO_SHEET_URL = ''; // うつろ優勝時（プレイヤー操作）専用エンディングの公式シート（未作成）
+        function getPersonalEndingUtsuroSheetUrl() {
+            try { return localStorage.getItem('utsuro_ending_utsuro_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingUtsuroSheetUrl() {
+            return getPersonalEndingUtsuroSheetUrl() || OFFICIAL_ENDING_UTSURO_SHEET_URL;
+        }
+        function setEndingUtsuroSheetStatus(msg) {
+            let el = document.getElementById('endingUtsuroSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingUtsuroFromSheet(manual) {
+            let savedUrl = getEffectiveEndingUtsuroSheetUrl();
+            if (!savedUrl) { if (manual) setEndingUtsuroSheetStatus('未連携です（うつろ優勝時も通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingUtsuroSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingUtsuroSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingUtsuroScript = lines;
+                try { localStorage.setItem('utsuro_ending_utsuro_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingUtsuroSheetStatus(`✅ ${lines.length}行の「うつろ優勝時」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('うつろ優勝時シート読み込み失敗:', e);
+                setEndingUtsuroSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        function saveEndingUtsuroSheetUrlAndLoad() {
+            let input = document.getElementById('endingUtsuroSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingUtsuroSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingUtsuroSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_ending_utsuro_sheet_url', url); } catch (e) {}
+            loadEndingUtsuroFromSheet(true);
+        }
+        function unlinkEndingUtsuroSheet() {
+            try { localStorage.removeItem('utsuro_ending_utsuro_sheet_url'); localStorage.removeItem('utsuro_ending_utsuro_sheet_cache'); } catch (e) {}
+            sheetEndingUtsuroScript = null;
+            let input = document.getElementById('endingUtsuroSheetUrlInput');
+            if (OFFICIAL_ENDING_UTSURO_SHEET_URL) {
+                if (input) input.value = OFFICIAL_ENDING_UTSURO_SHEET_URL;
+                loadEndingUtsuroFromSheet(false);
+                setEndingUtsuroSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingUtsuroSheetStatus('連携を解除しました（うつろ優勝時も通常のエンディング会話になります）');
+            }
+        }
         function unlinkEndingHikariSheet() {
             try { localStorage.removeItem('utsuro_ending_hikari_sheet_url'); localStorage.removeItem('utsuro_ending_hikari_sheet_cache'); } catch (e) {}
             sheetEndingHikariScript = null;
@@ -1791,6 +1858,12 @@
                 let cachedHikariEnding = localStorage.getItem('utsuro_ending_hikari_sheet_cache');
                 if (cachedHikariEnding) { try { sheetEndingHikariScript = sanitizeOpeningLines(JSON.parse(cachedHikariEnding)); } catch (e) { sheetEndingHikariScript = null; } }
                 if (personalHikariUrl || OFFICIAL_ENDING_HIKARI_SHEET_URL) loadEndingHikariFromSheet(false); // ひかり優勝時シートがあれば起動時に自動読み込み
+                let utsuroEndingInput = document.getElementById('endingUtsuroSheetUrlInput');
+                let personalUtsuroUrl = localStorage.getItem('utsuro_ending_utsuro_sheet_url');
+                if (utsuroEndingInput) utsuroEndingInput.value = personalUtsuroUrl || OFFICIAL_ENDING_UTSURO_SHEET_URL;
+                let cachedUtsuroEnding = localStorage.getItem('utsuro_ending_utsuro_sheet_cache');
+                if (cachedUtsuroEnding) { try { sheetEndingUtsuroScript = sanitizeOpeningLines(JSON.parse(cachedUtsuroEnding)); } catch (e) { sheetEndingUtsuroScript = null; } }
+                if (personalUtsuroUrl || OFFICIAL_ENDING_UTSURO_SHEET_URL) loadEndingUtsuroFromSheet(false); // うつろ優勝時シートがあれば起動時に自動読み込み
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3924,7 +3997,10 @@
             let winnerName = charName(winnerChar);
             let winnerGiven = splitNameParts(winnerName)[1] || winnerName;
             let winnerHonor = (winnerChar === 'heru' || winnerChar === 'shakuna') ? '君' : 'ちゃん';
-            let endScript = (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) ? sheetEndingHikariScript : currentEndingScript();
+            let winnerIsHuman = sorted.length ? !!sorted[0].isHuman : false;
+            let endScript = currentEndingScript();
+            if (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) endScript = sheetEndingHikariScript;
+            else if (winnerChar === 'utsuro' && winnerIsHuman && sheetEndingUtsuroScript && sheetEndingUtsuroScript.length) endScript = sheetEndingUtsuroScript;
             let lines = endScript
                 .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
             if (!lines.length) { showEndingResults(); return; }
