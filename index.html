@@ -55,7 +55,7 @@
         /* 🏆 横画面（背が低い時）はエンディングの「おしまい」を小さめにして全体を収める */
         @media (orientation: landscape) and (max-height: 520px) {
             .ending-oshimai { font-size: 2.1rem !important; }
-            .ending-logo { max-height: 18dvh !important; }
+            .ending-logo { max-height: 30dvh !important; }
         }
         /* 🗺️ 世界地図は少し小さめにして、全体が見えるようにする（object-cover の切り取り分が減る） */
         #csMapWrap { width: 88%; margin-left: auto; margin-right: auto; }
@@ -234,7 +234,7 @@
             <!-- ターン表示＆カメラ切替オーバーレイ -->
             <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
-                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1ヶ月目</span>
+                    <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1日目</span>
                 </div>
                 <button onclick="toggleCameraView()" id="btnToggleCamera" class="bg-purple-900/90 hover:bg-purple-800 border border-purple-400 text-yellow-300 font-bold px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs backdrop-blur-sm transition cursor-pointer flex items-center gap-1">
                     🗺️ 全体表示
@@ -333,13 +333,14 @@
     <div id="endingResultOverlay" class="fixed inset-0 z-[100002] hidden overflow-y-auto" style="background: linear-gradient(to bottom, #d8b4fe 0%, #e9d5ff 50%, #e0e7ff 100%);">
         <div class="min-h-full flex flex-col items-center justify-center gap-3 p-3">
             <div class="text-center flex-none">
-                <img id="endingLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="ending-logo w-auto h-auto max-h-[24dvh] max-w-[92vw] sm:max-w-md object-contain mx-auto select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('endingLogoFallback').classList.remove('hidden');}">
+                <img id="endingLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="ending-logo w-auto h-auto max-h-[32dvh] max-w-[92vw] sm:max-w-lg object-contain mx-auto select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('endingLogoFallback').classList.remove('hidden');}">
                 <div id="endingLogoFallback" class="hidden">
                     <div class="ending-oshimai text-5xl sm:text-7xl font-black text-yellow-500 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.65), 3px 3px 0 #b45309;">✨ おしまい ✨</div>
                     <div class="text-[11px] sm:text-xs font-bold text-purple-700 mt-1 tracking-widest">〜 星めぐりに願いを 〜</div>
                 </div>
             </div>
             <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl flex-none"></div>
+            <div id="endingScoreTable" class="w-full max-w-3xl flex-none"></div>
             <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
         </div>
     </div>
@@ -395,7 +396,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-78 ・ 346,537 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-81 ・ 354,205 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -845,6 +846,8 @@
         CHAR_DEF['gengo'] = CHAR_DEF['kataru']; // 旧ID互換（ドット絵・PNG差し替え・オープニング等の保存データは gengo のまま）
         CHAR_DEF['gakuencho'] = { id: 'gakuencho', name: '学園長', color: '#64748b' }; // 会話専用話者（対戦キャラではない）
         CHAR_DEF['megami'] = { id: 'megami', name: '星めぐりの女神', color: '#d4a017' }; // 会話専用話者（対戦キャラではない）
+        CHAR_DEF['goshu'] = { id: 'goshu', name: 'ごしゅ', color: '#0f766e' }; // 会話専用話者（対戦キャラではない）
+        CHAR_DEF['utsuro_haha'] = { id: 'utsuro_haha', name: 'うつろ母', color: '#be185d' }; // 会話専用話者（対戦キャラではない）
         function legacyCharId(id) { return id === 'kataru' ? 'gengo' : id; }
         function charName(id) { return (CHAR_DEF[id] && CHAR_DEF[id].name) || '氷室うつろ'; }
         function charColor(id) { return (CHAR_DEF[id] && CHAR_DEF[id].color) || '#a855f7'; }
@@ -872,6 +875,8 @@
             img.src = charIconUrl(c.id);
             charFileIcons[c.id] = img;
         });
+        // 会話専用キャラ（学園長・女神）の顔アイコンも先読みしておく（表示時のチラつき防止）
+        ['gakuencho', 'megami', 'goshu', 'utsuro_haha'].forEach(id => { let im = new Image(); retryUpperExt(im); im.src = charIconUrl(id); });
         let charFileStands = {};
         CHARACTERS.forEach(c => {
             let img = new Image();
@@ -917,13 +922,25 @@
         const STAR_TILE_COUNT = 6;      // マップ上に同時に出る星マスの数
         const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
-        // 📅 ターン経過は「月」で数える（12ヶ月＝1年）。6ヶ月ごとにマスの上昇・下降量が倍増していく
+        // 📅 ターン経過は「日」で数える（1ターン＝1日、30日＝1ヶ月、12ヶ月＝1年）。リスナー倍率は従来どおり6ターンごとに上がる
         function formatElapsedDate(turnNo) {
-            let y = Math.floor(turnNo / 12);
-            let m = turnNo % 12;
-            if (y === 0) return turnNo + 'ヶ月目';
-            if (m === 0) return y + '年目';
-            return y + '年' + m + 'ヶ月目';
+            let rest = turnNo - 1;
+            let y = Math.floor(rest / 360);
+            let mo = Math.floor((rest % 360) / 30);
+            let d = (rest % 30) + 1;
+            let out = '';
+            if (y > 0) out += y + '年';
+            if (mo > 0) out += mo + 'ヶ月';
+            return out + d + '日目';
+        }
+        function turnCounterText() {
+            let t = formatElapsedDate(currentTurnNumber);
+            if (goalDeadlineDay !== null) {
+                let rest = goalDeadlineDay - currentTurnNumber;
+                if (rest > 0) t += '（あと' + rest + '日）';
+                else if (rest === 0) t += '（最終日）';
+            }
+            return t;
         }
         function tileAmountMultiplier() {
             return 1 + Math.floor((currentTurnNumber - 1) / 6);
@@ -931,6 +948,9 @@
 
         let currentPlayerIndex = 0;
         let currentTurnNumber = 1;
+        const GOAL_DEADLINE_DAYS = 10; // ⌛ 最初のゴールから何日でゲームを締めるか
+        let goalDeadlineDay = null;
+        let deadlineEndTriggered = false;
         let currentDiceVal = 1; // 🎲 同期用出目変数
         let isMoving = false;
         let isRolling = false;
@@ -1512,6 +1532,8 @@
             if (['winner', '優勝者', '1位', '１位', 'ゴールした人', '勝者'].includes(lower)) return 'winner';
             if (['gakuencho', '学園長', 'principal'].includes(lower)) return 'gakuencho';
             if (['megami', '女神', '女神さま', '女神様', '星めぐりの女神', '星めぐりの女神さま', '星の女神', 'goddess'].includes(lower)) return 'megami';
+            if (['goshu', 'ごしゅ', 'ゴシュ'].includes(lower)) return 'goshu';
+            if (['utsuro_haha', 'utsurohaha', 'うつろ母', 'うつろの母', '氷室うつろの母', 'mother'].includes(lower)) return 'utsuro_haha';
             if (lower === 'gengo') return 'kataru';
             let byId = CHARACTERS.find(c => c.id === lower);
             if (byId) return byId.id;
@@ -2087,9 +2109,10 @@
             let step = 0;
             bgmFadeTimer = setInterval(() => {
                 step++;
-                el.volume = Math.max(0, startVol * (1 - step / 20));
-                if (step >= 20) { clearInterval(bgmFadeTimer); bgmFadeTimer = null; try { el.pause(); } catch (e) {} }
-            }, 100);
+                let rest = 1 - step / 80;
+                el.volume = Math.max(0, startVol * rest * rest);
+                if (step >= 80) { clearInterval(bgmFadeTimer); bgmFadeTimer = null; try { el.pause(); } catch (e) {} }
+            }, 50);
         }
         function clearBgmFxMute() {
             bgmMutedByFx = false;
@@ -2559,6 +2582,7 @@
                     currentPlayerIndex: currentPlayerIndex,
                     currentTurnNumber: currentTurnNumber,
                     finishedRankCount: finishedRankCount,
+                    goalDeadlineDay: goalDeadlineDay,
                     starTiles: starTileIdxs.slice(),
                     players: players.map(p => ({
                         name: p.name, char: p.char, color: p.color, pos: p.pos,
@@ -2638,6 +2662,8 @@
             currentPlayerIndex = data.currentPlayerIndex;
             currentTurnNumber = data.currentTurnNumber;
             finishedRankCount = data.finishedRankCount || 0;
+            goalDeadlineDay = (typeof data.goalDeadlineDay === 'number') ? data.goalDeadlineDay : null;
+            deadlineEndTriggered = false;
             isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
             let t = document.getElementById('titleScreen');
             if (t) { t.classList.add('hidden'); t.classList.remove('flex'); }
@@ -2649,7 +2675,7 @@
             if (dbgBtn) dbgBtn.classList.remove('hidden');
             document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
             playGameBgm();
-            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+            document.getElementById('turnCounter').innerText = turnCounterText();
             document.getElementById('diceResultText').innerText = '準備完了';
             currentDiceVal = 1;
             drawDice(1);
@@ -2703,9 +2729,10 @@
             broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
+            goalDeadlineDay = null; deadlineEndTriggered = false;
             currentDiceVal = 1;
             drawDice(1);
-            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+            document.getElementById('turnCounter').innerText = turnCounterText();
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
@@ -2935,9 +2962,10 @@
 
                         currentPlayerIndex = 0;
                         currentTurnNumber = 1;
+                        goalDeadlineDay = null; deadlineEndTriggered = false;
                         currentDiceVal = 1;
                         drawDice(1);
-                        document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+                        document.getElementById('turnCounter').innerText = turnCounterText();
 
                         let activePlayer = players[0];
                         document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
@@ -3126,9 +3154,10 @@
             broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
+            goalDeadlineDay = null; deadlineEndTriggered = false;
             currentDiceVal = 1;
             drawDice(1);
-            document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+            document.getElementById('turnCounter').innerText = turnCounterText();
 
             let activePlayer = players[0];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
@@ -3245,7 +3274,12 @@
 
             if (data.turnNumber !== undefined) {
                 currentTurnNumber = data.turnNumber;
-                document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+                document.getElementById('turnCounter').innerText = turnCounterText();
+            }
+
+            if (data.goalDeadlineDay !== undefined) {
+                goalDeadlineDay = data.goalDeadlineDay;
+                if (goalDeadlineDay !== null && currentTurnNumber > goalDeadlineDay && !players.every(player => player.finished)) endGameByDeadline();
             }
 
             if (data.isMoving !== undefined) isMoving = data.isMoving;
@@ -3335,6 +3369,7 @@
             let syncState = {
                 type: 'GAME_STATE_UPDATE',
                 turnNumber: currentTurnNumber,
+                goalDeadlineDay: goalDeadlineDay,
                 currentPlayerIndex: currentPlayerIndex,
                 currentDiceVal: currentDiceVal,
                 isSubRollPending: isSubRollPending,
@@ -3635,7 +3670,7 @@
             { who: 'hikari', text: 'よーし、がんばる！あたしが一番にカケラを集めて、みんなで帰ろう！' },
             { who: 'utsuro', text: 'うん、行こう。――星めぐりの旅、スタート！' }
         ];
-        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'gakuencho', 'megami', 'narration'];
+        const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'gakuencho', 'megami', 'goshu', 'utsuro_haha', 'narration'];
         const OPENING_CHAR_NAMES = {};
         CHARACTERS.forEach(c => { OPENING_CHAR_NAMES[c.id] = c.name; });
         OPENING_CHAR_NAMES['???'] = '???';
@@ -3645,6 +3680,8 @@
         OPENING_CHAR_NAMES.narration = 'ナレーション';
         OPENING_CHAR_NAMES.gakuencho = '学園長';
         OPENING_CHAR_NAMES.megami = '星めぐりの女神';
+        OPENING_CHAR_NAMES.goshu = 'ごしゅ';
+        OPENING_CHAR_NAMES.utsuro_haha = 'うつろ母';
         OPENING_CHAR_NAMES.gengo = OPENING_CHAR_NAMES.kataru; // 旧キー互換（表示用）
         function normalizeSpeakerWho(who) {
             if (who === 'gengo') return 'kataru';
@@ -4025,6 +4062,7 @@
         }
 
         let staffRollTimer = null;
+        let staffRollWatchTimer = null;
         let staffRollPhase = 'idle';
         let staffRollStartedAt = 0;
         let staffRollTextH = 0;
@@ -4041,6 +4079,10 @@
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
             CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + c.name + '</div>'; });
             h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">学園長</div>';
+            let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
+            let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
             if (winner) {
@@ -4097,11 +4139,18 @@
                 finale.style.transform = 'translateY(55vh)';
             }
             if (staffRollTimer) clearTimeout(staffRollTimer);
-            let textExitDur = (vh + staffRollTextH) / 60;
-            staffRollTimer = setTimeout(startFinaleRise, textExitDur * 1000);
+            if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
+            // おしまいの登場は実測で決める：本文の末尾が実際に画面の上端を抜けたら開始する（フォントの遅延読み込み等で高さが後から変わっても追随できる）
+            staffRollWatchTimer = setInterval(() => {
+                if (staffRollPhase !== 'scroll') { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; return; }
+                let r = inner.getBoundingClientRect();
+                if (r.height > 0 && r.bottom <= 0) startFinaleRise();
+            }, 120);
+            staffRollTimer = setTimeout(startFinaleRise, textDur * 1000 + 4000); // 保険：実測で拾えない場合も、スクロール終了後には必ず出す
         }
         function startFinaleRise() {
             if (staffRollPhase !== 'scroll') return;
+            if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             let finale = document.getElementById('staffRollFinale');
             if (!finale) { arriveStaffRollFinale(); return; }
             let travelDur = (staffRollVh * 0.78) / 90;
@@ -4122,6 +4171,7 @@
             if (staffRollPhase === 'idle') return;
             staffRollPhase = 'idle';
             if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+            if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             let ov = document.getElementById('staffRollOverlay');
             if (ov) ov.classList.add('hidden');
             showEndingResults();
@@ -4129,6 +4179,7 @@
         function skipStaffRoll() {
             if (staffRollPhase === 'scroll') {
                 if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
+                if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
                 let inner = document.getElementById('staffRollInner');
                 if (inner) {
                     inner.style.visibility = 'visible';
@@ -4190,6 +4241,21 @@
                 col.append(badge, frame, nm, st);
                 podium.appendChild(col);
             });
+            let scoreEl = document.getElementById('endingScoreTable');
+            if (scoreEl) {
+                let rows = sorted.map((p, idx) => {
+                    let score = (p.fragments || 0) * 100000 + p.listeners;
+                    return '<tr class="border-t border-purple-300/60">'
+                        + '<td class="py-1 px-2 font-black whitespace-nowrap">' + (idx + 1) + '位</td>'
+                        + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + p.name + '</td>'
+                        + '<td class="py-1 px-2 text-right whitespace-nowrap">⭐ ' + (p.fragments || 0) + '</td>'
+                        + '<td class="py-1 px-2 text-right whitespace-nowrap">👥 ' + p.listeners.toLocaleString() + '</td>'
+                        + '<td class="py-1 px-2 text-right font-black whitespace-nowrap">' + score.toLocaleString() + '</td></tr>';
+                }).join('');
+                scoreEl.innerHTML = '<div class="bg-white/60 rounded-lg px-2 py-2 shadow">'
+                    + '<div class="text-[11px] sm:text-xs font-black text-purple-900 text-center mb-1">📊 順位の内訳（評価点 ＝ ⭐ × 100,000 ＋ 👥 リスナー）</div>'
+                    + '<table class="w-full text-[11px] sm:text-sm text-purple-950"><thead><tr class="text-purple-700"><th class="py-0.5 px-2 text-left">順位</th><th class="py-0.5 px-2 text-left">キャラ</th><th class="py-0.5 px-2 text-right">⭐ カケラ</th><th class="py-0.5 px-2 text-right">👥 リスナー</th><th class="py-0.5 px-2 text-right">評価点</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+            }
             ov.classList.remove('hidden');
         }
 
@@ -4358,8 +4424,9 @@
                 if (isNarr) {
                     fWrap.style.display = 'none';
                 } else {
-                    fWrap.style.display = '';
                     let cid = normalizeSpeakerWho(line.who);
+                    // 女神はアイコンが読み込めるまで枠自体を出さない（読み込み中の一瞬だけ枠が見えるチラつき防止。読み込めたら onload で出す）
+                    fWrap.style.display = (cid === 'megami' && !(fImg.dataset.charId === 'megami' && fImg.naturalWidth)) ? 'none' : '';
                     if (cid === '???') {
                         fPh.innerText = '？';
                         fPh.style.color = '#c4b5fd';
@@ -4868,6 +4935,11 @@
 
         // ⛩️ 星の祭壇は「スタートの真下の仮想マス」。インデックスは tileCoords.length（実マスの直後）
         function altarTileIndex() { return tileCoords.length; }
+        function branchGridStep() {
+            let ys = [...new Set(tileCoords.map(t => t.y))].sort((a, b) => a - b);
+            for (let i = 1; i < ys.length; i++) { if (ys[i] - ys[i - 1] > 0) return ys[i] - ys[i - 1]; }
+            return 80;
+        }
         function altarVirtualTile() {
             let minX = Math.min(...tileCoords.map(t => t.x));
             let maxX = Math.max(...tileCoords.map(t => t.x));
@@ -4942,7 +5014,10 @@
                     ? `<span>⬇️ 星の祭壇へ（ゴール！）</span>`
                     : `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
 
-                let screenPos = calculateScreenPos(targetTile.x, targetTile.y, currTile);
+                // 祭壇ボタンは盤面中央（祭壇の絵の位置）に出すとズーム画面では画面外に飛んで見えなくなるので、スタートマスの1マス下（光の道の入口）に出す
+                let screenPos = (cand.tileIdx === tileCoords.length)
+                    ? calculateScreenPos(currTile.x, currTile.y + branchGridStep(), currTile)
+                    : calculateScreenPos(targetTile.x, targetTile.y, currTile);
                 btn.style.left = `${screenPos.x}px`;
                 btn.style.top = `${screenPos.y}px`;
                 btn.style.transform = 'translate(-50%, -50%)';
@@ -5247,6 +5322,10 @@
                 document.getElementById('currentEventTitle').innerText = `【👑 ${p.name} ゴール！】`;
                 document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
             }
+            if (finishedRankCount === 1 && !players.every(player => player.finished)) {
+                goalDeadlineDay = currentTurnNumber + GOAL_DEADLINE_DAYS;
+                document.getElementById('currentEventDesc').innerText += ` ⌛ 最初のゴール！残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります。`;
+            }
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
             isEventResolving = true;
@@ -5261,6 +5340,16 @@
             }
         }
 
+        function endGameByDeadline() {
+            if (deadlineEndTriggered) return;
+            deadlineEndTriggered = true;
+            document.getElementById('currentEventTitle').innerText = '【⌛ 制限日数に到達！】';
+            document.getElementById('currentEventDesc').innerText = `最初のゴールから${GOAL_DEADLINE_DAYS}日が経ったので、ここでゲーム終了！ゴールできなかったプレイヤーは、今の星のカケラとリスナー数で順位が決まります。`;
+            document.getElementById('currentEventEffect').innerText = '⌛ 日数制限で終了';
+            if (!isOnlineMode || isHost) broadcastGameState(true);
+            setTimeout(showFinalResultModal, 2500);
+        }
+
         function nextTurn() {
             isMoving = false;
             isEventResolving = false;
@@ -5272,9 +5361,11 @@
                 checkCount++;
                 if (currentPlayerIndex === 0) {
                     currentTurnNumber++;
-                    document.getElementById('turnCounter').innerText = formatElapsedDate(currentTurnNumber);
+                    document.getElementById('turnCounter').innerText = turnCounterText();
                 }
             } while (players[currentPlayerIndex].finished && checkCount <= players.length);
+
+            if (goalDeadlineDay !== null && currentTurnNumber > goalDeadlineDay && !players.every(player => player.finished)) { endGameByDeadline(); return; }
 
             let activePlayer = players[currentPlayerIndex];
             document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
