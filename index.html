@@ -279,9 +279,9 @@
         </section>
 
         <!-- 所持アイテム欄 -->
-        <footer class="flex-none pixel-box p-1.5 rounded-lg bg-slate-900/90 border border-purple-500/70 flex items-center gap-2 overflow-x-auto">
+        <footer class="flex-none pixel-box p-1.5 rounded-lg bg-slate-900/90 border border-purple-500/70 flex items-center gap-2">
             <span class="text-[11px] sm:text-xs font-bold text-yellow-300 flex-none flex items-center gap-1">🎒 所持アイテム:</span>
-            <div id="itemListContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+            <div id="itemListContainer" class="flex flex-wrap items-center gap-1.5 py-0.5">
                 <span class="text-[11px] sm:text-xs text-gray-300 font-normal">なし（黄色のマスで獲得）</span>
             </div>
         </footer>
@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-92 ・ 373,344 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-94 ・ 372,390 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -616,9 +616,6 @@
                 <button id="tabBtnEvents" onclick="switchDebugTab('events')" class="flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40">
                     📝 イベント編集
                 </button>
-                <button id="tabBtnDots" onclick="switchDebugTab('dots')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
-                    🎨 ドット絵作成
-                </button>
                 <button id="tabBtnMap" onclick="switchDebugTab('map')" class="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent">
                     🗺️ マップ作成
                 </button>
@@ -666,7 +663,6 @@
                             <button onclick="filterDebugEvents('all')" id="filterBtn_all" class="px-1.5 py-0.5 text-xs bg-purple-900 text-white rounded border border-purple-500 font-bold">すべて</button>
                             <button onclick="filterDebugEvents('plus')" id="filterBtn_plus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔵 プラス</button>
                             <button onclick="filterDebugEvents('minus')" id="filterBtn_minus" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🔴 マイナス</button>
-                            <button onclick="filterDebugEvents('item')" id="filterBtn_item" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">🎁 アイテム</button>
                             <button onclick="filterDebugEvents('white')" id="filterBtn_white" class="px-1.5 py-0.5 text-xs bg-slate-800 text-gray-300 rounded border border-gray-600">⚪ 白色</button>
                         </div>
                         <div class="flex items-center gap-1.5">
@@ -675,46 +671,6 @@
                         </div>
                     </div>
                     <div id="debugEventsList" class="space-y-2"></div>
-                </div>
-
-                <div id="debugTabDots" class="hidden flex flex-col items-center gap-3">
-                    <div class="flex items-center gap-2 w-full max-w-xs bg-slate-950 p-1.5 rounded-lg border border-purple-800">
-                        <span class="text-xs text-yellow-300 font-bold flex-none">編集対象:</span>
-                        <select id="dotTargetSelect" onchange="changeDotTarget(this.value)" class="flex-1 bg-slate-900 border border-purple-500 rounded px-2 py-1 text-xs text-white focus:outline-none">
-                            <option value="utsuro">氷室うつろ</option>
-                            <option value="gengo">繰言かたる</option>
-                            <option value="tomoko">トモコ</option>
-                            <option value="utsuro_goshu">🟢 氷室うつろのごしゅ (緑)</option>
-                            <option value="gengo_goshu">👑 繰言かたるのごしゅ (水色)</option>
-                            <option value="tomoko_goshu">🩷 トモコのごしゅ</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-purple-800 flex-wrap justify-center">
-                        <span class="text-xs text-purple-300 font-bold">色:</span>
-                        <input type="color" id="dotColorPicker" value="#9333ea" class="w-6 h-6 bg-transparent cursor-pointer rounded">
-                        <button onclick="toggleDotEyedropper()" id="btnDotEyedropper" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">🧪 スポイト</button>
-                        <button onclick="setDotEraser()" id="btnDotEraser" class="px-1.5 py-0.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-gray-600">消しゴム</button>
-                        <button onclick="undoDotCanvas()" class="px-1.5 py-0.5 text-xs bg-purple-900/80 hover:bg-purple-800 text-white rounded border border-purple-600">↩️ 戻す</button>
-                        <button onclick="resetCurrentDotToDefault()" class="px-1.5 py-0.5 text-xs bg-indigo-900/80 hover:bg-indigo-800 text-white rounded border border-indigo-600">元に戻す</button>
-                        <button onclick="clearDotCanvas()" class="px-1.5 py-0.5 text-xs bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-600">クリア</button>
-                        <button onclick="copyDotDataToClipboard()" class="px-1.5 py-0.5 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold">📋 コピー</button>
-                    </div>
-
-                    <div class="flex flex-col gap-1.5 w-full max-w-xs bg-slate-950 p-2 rounded-lg border border-emerald-700">
-                        <span class="text-xs text-emerald-300 font-bold">🖼️ PNGに差し替え（上の「編集対象」に適用）</span>
-                        <span class="text-[11px] text-gray-300 leading-snug">クリスタ等で描いた透過PNGを選ぶと、そのキャラはドット絵の代わりにPNGで表示されます（盤面・プレビュー・分岐表示すべて）。自動で最大256pxに縮小して保存するので、大きな絵でもOK。</span>
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <button onclick="document.getElementById('charPngInput').click()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">PNGを読み込む</button>
-                            <button onclick="removeCharPng()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">PNGを解除</button>
-                            <span id="charPngStatus" class="text-[11px] text-gray-300 font-bold"></span>
-                        </div>
-                        <input type="file" id="charPngInput" accept="image/*" class="hidden" onchange="importCharPng(this)">
-                    </div>
-
-                    <div class="pixel-box p-2 bg-slate-950 border border-purple-500 rounded-lg">
-                        <canvas id="dotEditorCanvas" width="256" height="256" class="cursor-crosshair bg-slate-900 border border-slate-700"></canvas>
-                    </div>
                 </div>
 
                 <div id="debugTabMap" class="hidden flex flex-col items-center gap-3">
@@ -1098,12 +1054,10 @@
         function switchDebugTab(tab) {
             activeTab = tab;
             document.getElementById('debugTabEvents').classList.toggle('hidden', tab !== 'events');
-            document.getElementById('debugTabDots').classList.toggle('hidden', tab !== 'dots');
             document.getElementById('debugTabMap').classList.toggle('hidden', tab !== 'map');
             document.getElementById('debugTabLines').classList.toggle('hidden', tab !== 'lines');
 
             document.getElementById('tabBtnEvents').className = tab === 'events' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
-            document.getElementById('tabBtnDots').className = tab === 'dots' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnMap').className = tab === 'map' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             document.getElementById('tabBtnLines').className = tab === 'lines' ? 'flex-1 py-1.5 text-xs font-bold text-yellow-300 border-b-2 border-yellow-400 bg-purple-900/40' : 'flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-white border-b-2 border-transparent';
             if (tab === 'lines') { renderOpeningEditor(); renderEndingEditor(); }
@@ -1118,7 +1072,7 @@
             let container = document.getElementById('debugEventsList');
             if (!container) return;
             container.innerHTML = '';
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let list = debugEventList();
 
             list.forEach((ev, idx) => {
                 let div = document.createElement('div');
@@ -1144,15 +1098,22 @@
             });
         }
 
+        // イベント編集で扱う一覧（アイテム行は対象外：アイテムの効果は名前をもとにコード側で実装するため）
+        function debugEventList() {
+            let list = gameEvents.filter(e => e.type !== 'item');
+            if (currentEventFilter !== 'all') list = list.filter(e => e.type === currentEventFilter);
+            return list;
+        }
+
         function updateDebugEventValue(idx, field, val) {
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let list = debugEventList();
             if (list[idx]) {
                 list[idx][field] = (field === 'val') ? parseInt(val) || 0 : val;
             }
         }
 
         function deleteDebugEvent(idx) {
-            let list = currentEventFilter === 'all' ? gameEvents : gameEvents.filter(e => e.type === currentEventFilter);
+            let list = debugEventList();
             let targetEv = list[idx];
             if (targetEv) {
                 let realIdx = gameEvents.indexOf(targetEv);
@@ -4252,6 +4213,8 @@
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
             h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
             h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
+            h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
+            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
@@ -5105,25 +5068,40 @@
                 let toTile = altarVirtualTile();
                 p.lastVisitedTileIndex = p.pos;
                 remainingSteps = 0;
-                playSe('jump');
-                let duration = 450;
-                let startTime = performance.now();
-                function animateAltarStep(now) {
-                    let elapsed = now - startTime;
-                    let progress = Math.min(1, elapsed / duration);
-                    p.renderX = fromTile.x + (toTile.x - fromTile.x) * progress;
-                    p.renderY = fromTile.y + (toTile.y - fromTile.y) * progress;
-                    p.jumpY = -Math.sin(progress * Math.PI) * STEP_JUMP_HEIGHT;
-                    if (isOnlineMode && isHost) broadcastGameState();
-                    if (progress < 1) {
-                        requestAnimationFrame(animateAltarStep);
-                    } else {
-                        p.jumpY = 0;
-                        isMoving = false;
-                        handlePlayerGoal(pIndex, true);
+                // 祭壇までは見た目の距離が長いので、1マス分ずつに区切って通常マスと同じぴょんぴょん移動にする
+                let dxA = toTile.x - fromTile.x, dyA = toTile.y - fromTile.y;
+                let distA = Math.hypot(dxA, dyA);
+                let hopLen = branchGridStep() || 80;
+                let hops = Math.max(2, Math.round(distA / hopLen));
+                let hopIdx = 0;
+                function doAltarHop() {
+                    let segFrom = { x: fromTile.x + dxA * (hopIdx / hops), y: fromTile.y + dyA * (hopIdx / hops) };
+                    let segTo = { x: fromTile.x + dxA * ((hopIdx + 1) / hops), y: fromTile.y + dyA * ((hopIdx + 1) / hops) };
+                    playSe('jump');
+                    let duration = 300;
+                    let startTime = performance.now();
+                    function animateAltarHop(now) {
+                        let elapsed = now - startTime;
+                        let progress = Math.min(1, elapsed / duration);
+                        p.renderX = segFrom.x + (segTo.x - segFrom.x) * progress;
+                        p.renderY = segFrom.y + (segTo.y - segFrom.y) * progress;
+                        p.jumpY = -Math.sin(progress * Math.PI) * STEP_JUMP_HEIGHT;
+                        if (isOnlineMode && isHost) broadcastGameState();
+                        if (progress < 1) {
+                            requestAnimationFrame(animateAltarHop);
+                        } else {
+                            hopIdx++;
+                            if (hopIdx < hops) { doAltarHop(); return; }
+                            p.jumpY = 0;
+                            p.renderX = toTile.x;
+                            p.renderY = toTile.y;
+                            isMoving = false;
+                            handlePlayerGoal(pIndex, true);
+                        }
                     }
+                    requestAnimationFrame(animateAltarHop);
                 }
-                requestAnimationFrame(animateAltarStep);
+                doAltarHop();
             }
 
             stepNext();
@@ -5410,8 +5388,14 @@
                 }
             } else {
                 let matchingEvents = gameEvents.filter(e => e.type === tile.type);
-                if (matchingEvents.length === 0) matchingEvents = gameEvents;
-                let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+                let event;
+                if (tile.type === 'item' && matchingEvents.length === 0) {
+                    let poolEv = DEFAULT_ITEM_POOL[Math.floor(Math.random() * DEFAULT_ITEM_POOL.length)];
+                    event = { type: 'item', title: poolEv.title, desc: poolEv.desc, itemName: poolEv.itemName, val: 0 };
+                } else {
+                    if (matchingEvents.length === 0) matchingEvents = gameEvents;
+                    event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
+                }
 
                 document.getElementById('currentEventTitle').innerText = event.title;
                 document.getElementById('currentEventDesc').innerText = preDesc ? (preDesc + ' ' + event.desc) : event.desc;
@@ -5614,6 +5598,15 @@
         }
 
         // 🎒 アイテム効果（名前から判定。シートで増えた名前にもキーワードで対応）
+        // 🎁 内蔵アイテムプール：イベント（シート／編集）にアイテム行が無い時は、アイテムマスでここからランダムに配る。効果は itemEffectInfo の名前判定で決まる
+        const DEFAULT_ITEM_POOL = [
+            { itemName: '⚡ スパチャブースター', title: '【🎁 アイテムゲット！】', desc: 'スパチャブースターを手に入れた！使うとリスナーが+500人増える。' },
+            { itemName: '🎤 ASMR用マイク', title: '【🎁 アイテムゲット！】', desc: 'ASMR用マイクを手に入れた！使うと次のサイコロが+2マスになる。' },
+            { itemName: '⭐ 星のカケラ', title: '【🎁 アイテムゲット！】', desc: '星のカケラを手に入れた！使うと星のカケラが+1個増える。' },
+            { itemName: '🎲 魔法のサイコロ', title: '【🎁 アイテムゲット！】', desc: '魔法のサイコロを手に入れた！使うと次のサイコロが+3マスになる。' },
+            { itemName: '🛡️ 守りのシールド', title: '【🎁 アイテムゲット！】', desc: '守りのシールドを手に入れた！使うと次に受けるマイナスを1回防げる。' },
+            { itemName: '🌀 横取りチャーム', title: '【🎁 アイテムゲット！】', desc: '横取りチャームを手に入れた！使うと一番リスナーが多い相手から300人を奪える。' },
+        ];
         function itemEffectInfo(itemName) {
             const n = String(itemName || '');
             if (n.includes('スパチャ') || n.includes('ブースター')) return { kind: 'listeners', val: 500, label: 'リスナー +500人' };
@@ -5647,6 +5640,8 @@
             applyUseItem(currentPlayerIndex, itemIndex);
         }
 
+        let lastItemUseKey = '';
+        let lastItemUseAt = 0;
         function applyUseItem(pIndex, itemIndex, expectedName) {
             let p = players[pIndex];
             if (!p || !p.items || pIndex !== currentPlayerIndex) return;
@@ -5654,6 +5649,11 @@
             if (expectedName && p.items[itemIndex] !== expectedName) itemIndex = p.items.indexOf(expectedName);
             if (itemIndex < 0 || !p.items[itemIndex]) return;
             let itemName = p.items[itemIndex];
+            // 二度押し対策：スマホのダブルタップ等で同じアイテムの使用が二重に飛ぶと、同名アイテムが2個まとめて消えてしまうため、同一プレイヤー・同一アイテムの使用は0.8秒以内の連続実行を無効にする
+            let useKey = pIndex + ':' + itemName;
+            let nowUse = Date.now();
+            if (useKey === lastItemUseKey && nowUse - lastItemUseAt < 800) return;
+            lastItemUseKey = useKey; lastItemUseAt = nowUse;
             let info = itemEffectInfo(itemName);
             p.items.splice(itemIndex, 1);
             let effectText = '';
