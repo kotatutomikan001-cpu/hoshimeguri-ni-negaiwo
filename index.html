@@ -290,7 +290,7 @@
 
     <!-- 🌟 リザルト（結果発表）モーダル -->
     <!-- 🎬 オープニング会話オーバーレイ -->
-    <div id="openingOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3 z-[100003]" onclick="advanceOpening()">
+    <div id="openingOverlay" class="fixed inset-0 bg-black hidden items-end sm:items-center justify-center p-3 z-[100003]" onclick="advanceOpening()">
         <div id="openingBgLayer" class="absolute inset-0 pointer-events-none" style="opacity: 0;"></div>
         <div id="openingBgLayer2" class="absolute inset-0 pointer-events-none" style="opacity: 0;"></div>
         <button onclick="event.stopPropagation(); endOpening();" class="absolute top-3 right-3 z-10 px-3 py-1.5 text-xs bg-slate-800/90 hover:bg-slate-700 text-white rounded-full border border-gray-500 font-bold shadow cursor-pointer">スキップ ≫</button>
@@ -396,7 +396,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-83 ・ 354,529 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-84 ・ 354,509 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
