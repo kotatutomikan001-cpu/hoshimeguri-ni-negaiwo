@@ -309,6 +309,13 @@
     </div>
 
     <!-- 🎬 スタッフロール（エンディング会話の後・順位発表の前） -->
+    <div id="deadlineBanner" class="fixed inset-0 z-[90000] hidden items-center justify-center pointer-events-none p-4">
+        <div class="border-4 border-yellow-300 rounded-2xl px-6 py-5 shadow-2xl text-center max-w-lg w-full" style="background: rgba(30, 27, 75, 0.95);">
+            <div class="text-4xl sm:text-5xl font-black text-yellow-300 mb-2">🏁 ゴール！</div>
+            <div id="deadlineBannerMain" class="text-lg sm:text-2xl font-bold text-white leading-relaxed"></div>
+            <div id="deadlineBannerSub" class="text-base sm:text-xl font-bold text-yellow-200 mt-1"></div>
+        </div>
+    </div>
     <div id="staffRollOverlay" class="fixed inset-0 z-[100002] hidden overflow-hidden" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);" onclick="onStaffRollTap()">
         <div id="staffRollInner" class="absolute left-0 right-0 top-0 mx-auto w-full max-w-xl px-6 text-center will-change-transform"></div>
         <div id="staffRollFinale" class="absolute left-0 right-0 top-1/2 flex items-center justify-center pointer-events-none" style="height: 46vh; transform: translateY(80vh);">
@@ -396,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-84 ・ 354,509 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-90 ・ 372,305 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -589,6 +596,7 @@
     <audio id="selectBgmAudio" src="select_bgm.mp3" loop preload="auto"></audio>
     <audio id="gameBgmAudio" src="game_bgm.mp3" loop preload="auto"></audio>
     <audio id="endingBgmAudio" src="ending_bgm.mp3" preload="auto"></audio>
+    <audio id="endingUtsuroBgmAudio" src="ending_utsuro_bgm.mp3" preload="auto"></audio>
 
     <!-- 🛠️ デバッグモーダル -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
@@ -795,6 +803,28 @@
                             <span id="endingUtsuroSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-violet-400 flex flex-col gap-1.5">
+                        <span class="text-xs text-violet-300 font-bold">💜 Googleスプレッドシート連携（かたる優勝時の専用エンディング）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">優勝者が「繰言かたる」の時、通常の代わりにこのシートの会話が流れます。形式は speaker / text / fx 列で同じです。未連携の時は通常のエンディング会話になります。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingKataruSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-violet-400 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingKataruSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingKataruFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingKataruSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingKataruSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-rose-400 flex flex-col gap-1.5">
+                        <span class="text-xs text-rose-300 font-bold">🎀 Googleスプレッドシート連携（トモコ優勝時の専用エンディング）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">優勝者が「トモコ」の時、通常の代わりにこのシートの会話が流れます。形式は speaker / text / fx 列で同じです。未連携の時は通常のエンディング会話になります。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingTomokoSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-rose-400 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingTomokoSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingTomokoFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingTomokoSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingTomokoSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -922,16 +952,9 @@
         const STAR_TILE_COUNT = 6;      // マップ上に同時に出る星マスの数
         const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
-        // 📅 ターン経過は「日」で数える（1ターン＝1日、30日＝1ヶ月、12ヶ月＝1年）。リスナー倍率は従来どおり6ターンごとに上がる
+        // 📅 ターン経過は「日」で数える（1ターン＝1日）。表示は累積しても「○日目」のみ（月・年へは繰り上げない）。リスナー倍率は従来どおり6ターンごとに上がる
         function formatElapsedDate(turnNo) {
-            let rest = turnNo - 1;
-            let y = Math.floor(rest / 360);
-            let mo = Math.floor((rest % 360) / 30);
-            let d = (rest % 30) + 1;
-            let out = '';
-            if (y > 0) out += y + '年';
-            if (mo > 0) out += mo + 'ヶ月';
-            return out + d + '日目';
+            return turnNo + '日目';
         }
         function turnCounterText() {
             let t = formatElapsedDate(currentTurnNumber);
@@ -1523,6 +1546,8 @@
         let sheetEndingScript = null; // シートから読み込んだエンディング会話
         let sheetEndingHikariScript = null; // シートから読み込んだ「ひかり優勝時」専用エンディング会話
         let sheetEndingUtsuroScript = null; // シートから読み込んだ「うつろ優勝時（プレイヤー操作）」専用エンディング会話
+        let sheetEndingKataruScript = null; // シートから読み込んだ「かたる優勝時」専用エンディング会話
+        let sheetEndingTomokoScript = null; // シートから読み込んだ「トモコ優勝時」専用エンディング会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
             if (!s) return null;
@@ -1731,7 +1756,7 @@
             try { localStorage.setItem('utsuro_ending_hikari_sheet_url', url); } catch (e) {}
             loadEndingHikariFromSheet(true);
         }
-        const OFFICIAL_ENDING_UTSURO_SHEET_URL = ''; // うつろ優勝時（プレイヤー操作）専用エンディングの公式シート（未作成）
+        const OFFICIAL_ENDING_UTSURO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14Z14gLIYYdAFEg5aD8lUWHe5tyvwRPpXQqutMZCCt1I/edit?gid=1392843403#gid=1392843403'; // うつろ優勝時（プレイヤー操作）専用エンディングの公式シート（63行・ごしゅ/うつろ母登場）
         function getPersonalEndingUtsuroSheetUrl() {
             try { return localStorage.getItem('utsuro_ending_utsuro_sheet_url') || ''; } catch (e) { return ''; }
         }
@@ -1784,6 +1809,116 @@
             } else {
                 if (input) input.value = '';
                 setEndingUtsuroSheetStatus('連携を解除しました（うつろ優勝時も通常のエンディング会話になります）');
+            }
+        }
+        const OFFICIAL_ENDING_KATARU_SHEET_URL = ''; // かたる優勝時専用エンディングの公式シート（未作成）
+        function getPersonalEndingKataruSheetUrl() {
+            try { return localStorage.getItem('kataru_ending_kataru_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingKataruSheetUrl() {
+            return getPersonalEndingKataruSheetUrl() || OFFICIAL_ENDING_KATARU_SHEET_URL;
+        }
+        function setEndingKataruSheetStatus(msg) {
+            let el = document.getElementById('endingKataruSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingKataruFromSheet(manual) {
+            let savedUrl = getEffectiveEndingKataruSheetUrl();
+            if (!savedUrl) { if (manual) setEndingKataruSheetStatus('未連携です（かたる優勝時も通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingKataruSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingKataruSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingKataruScript = lines;
+                try { localStorage.setItem('kataru_ending_kataru_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingKataruSheetStatus(`✅ ${lines.length}行の「かたる優勝時」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('かたる優勝時シート読み込み失敗:', e);
+                setEndingKataruSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        function saveEndingKataruSheetUrlAndLoad() {
+            let input = document.getElementById('endingKataruSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingKataruSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingKataruSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('kataru_ending_kataru_sheet_url', url); } catch (e) {}
+            loadEndingKataruFromSheet(true);
+        }
+        function unlinkEndingKataruSheet() {
+            try { localStorage.removeItem('kataru_ending_kataru_sheet_url'); localStorage.removeItem('kataru_ending_kataru_sheet_cache'); } catch (e) {}
+            sheetEndingKataruScript = null;
+            let input = document.getElementById('endingKataruSheetUrlInput');
+            if (OFFICIAL_ENDING_KATARU_SHEET_URL) {
+                if (input) input.value = OFFICIAL_ENDING_KATARU_SHEET_URL;
+                loadEndingKataruFromSheet(false);
+                setEndingKataruSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingKataruSheetStatus('連携を解除しました（かたる優勝時も通常のエンディング会話になります）');
+            }
+        }
+        const OFFICIAL_ENDING_TOMOKO_SHEET_URL = ''; // トモコ優勝時専用エンディングの公式シート（未作成）
+        function getPersonalEndingTomokoSheetUrl() {
+            try { return localStorage.getItem('tomoko_ending_tomoko_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingTomokoSheetUrl() {
+            return getPersonalEndingTomokoSheetUrl() || OFFICIAL_ENDING_TOMOKO_SHEET_URL;
+        }
+        function setEndingTomokoSheetStatus(msg) {
+            let el = document.getElementById('endingTomokoSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingTomokoFromSheet(manual) {
+            let savedUrl = getEffectiveEndingTomokoSheetUrl();
+            if (!savedUrl) { if (manual) setEndingTomokoSheetStatus('未連携です（トモコ優勝時も通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingTomokoSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingTomokoSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingTomokoScript = lines;
+                try { localStorage.setItem('tomoko_ending_tomoko_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingTomokoSheetStatus(`✅ ${lines.length}行の「トモコ優勝時」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('トモコ優勝時シート読み込み失敗:', e);
+                setEndingTomokoSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        function saveEndingTomokoSheetUrlAndLoad() {
+            let input = document.getElementById('endingTomokoSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingTomokoSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingTomokoSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('tomoko_ending_tomoko_sheet_url', url); } catch (e) {}
+            loadEndingTomokoFromSheet(true);
+        }
+        function unlinkEndingTomokoSheet() {
+            try { localStorage.removeItem('tomoko_ending_tomoko_sheet_url'); localStorage.removeItem('tomoko_ending_tomoko_sheet_cache'); } catch (e) {}
+            sheetEndingTomokoScript = null;
+            let input = document.getElementById('endingTomokoSheetUrlInput');
+            if (OFFICIAL_ENDING_TOMOKO_SHEET_URL) {
+                if (input) input.value = OFFICIAL_ENDING_TOMOKO_SHEET_URL;
+                loadEndingTomokoFromSheet(false);
+                setEndingTomokoSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingTomokoSheetStatus('連携を解除しました（トモコ優勝時も通常のエンディング会話になります）');
             }
         }
         function unlinkEndingHikariSheet() {
@@ -1886,6 +2021,18 @@
                 let cachedUtsuroEnding = localStorage.getItem('utsuro_ending_utsuro_sheet_cache');
                 if (cachedUtsuroEnding) { try { sheetEndingUtsuroScript = sanitizeOpeningLines(JSON.parse(cachedUtsuroEnding)); } catch (e) { sheetEndingUtsuroScript = null; } }
                 if (personalUtsuroUrl || OFFICIAL_ENDING_UTSURO_SHEET_URL) loadEndingUtsuroFromSheet(false); // うつろ優勝時シートがあれば起動時に自動読み込み
+                let kataruEndingInput = document.getElementById('endingKataruSheetUrlInput');
+                let personalKataruUrl = localStorage.getItem('kataru_ending_kataru_sheet_url');
+                if (kataruEndingInput) kataruEndingInput.value = personalKataruUrl || OFFICIAL_ENDING_KATARU_SHEET_URL;
+                let cachedKataruEnding = localStorage.getItem('kataru_ending_kataru_sheet_cache');
+                if (cachedKataruEnding) { try { sheetEndingKataruScript = sanitizeOpeningLines(JSON.parse(cachedKataruEnding)); } catch (e) { sheetEndingKataruScript = null; } }
+                if (personalKataruUrl || OFFICIAL_ENDING_KATARU_SHEET_URL) loadEndingKataruFromSheet(false); // かたる優勝時シートがあれば起動時に自動読み込み
+                let tomokoEndingInput = document.getElementById('endingTomokoSheetUrlInput');
+                let personalTomokoUrl = localStorage.getItem('tomoko_ending_tomoko_sheet_url');
+                if (tomokoEndingInput) tomokoEndingInput.value = personalTomokoUrl || OFFICIAL_ENDING_TOMOKO_SHEET_URL;
+                let cachedTomokoEnding = localStorage.getItem('tomoko_ending_tomoko_sheet_cache');
+                if (cachedTomokoEnding) { try { sheetEndingTomokoScript = sanitizeOpeningLines(JSON.parse(cachedTomokoEnding)); } catch (e) { sheetEndingTomokoScript = null; } }
+                if (personalTomokoUrl || OFFICIAL_ENDING_TOMOKO_SHEET_URL) loadEndingTomokoFromSheet(false); // トモコ優勝時シートがあれば起動時に自動読み込み
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -1963,10 +2110,12 @@
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
             const endingAudio = document.getElementById('endingBgmAudio');
+            const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
 
             if (selectAudio) selectAudio.volume = currentBgmVolume;
             if (gameAudio) gameAudio.volume = currentBgmVolume;
             if (endingAudio) endingAudio.volume = currentBgmVolume;
+            if (endingUtsuroAudio) endingUtsuroAudio.volume = currentBgmVolume;
 
             updateVolumeControlsUI(currentBgmVolume);
             try { localStorage.setItem('utsuro_bgm_volume', currentBgmVolume); } catch (e) {}
@@ -2003,6 +2152,9 @@
                     } else if (activeBgm === 'ending') {
                         const endingAudio = document.getElementById('endingBgmAudio');
                         if (endingAudio) { endingAudio.volume = currentBgmVolume; endingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                    } else if (activeBgm === 'endingUtsuro') {
+                        const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
+                        if (endingUtsuroAudio) { endingUtsuroAudio.volume = currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     }
                 }
             };
@@ -2131,21 +2283,26 @@
             attemptPlayBgm();
         }
 
-        // 🎬 スタッフロール開始と同時にエンディング曲（ending_bgm.mp3）を流す。読み込めない時は対戦BGMに戻す
+        // 🎬 スタッフロール開始と同時にエンディング曲を流す。通常は ending_bgm.mp3、
+        // うつろ個別エンディングの時は専用曲 ending_utsuro_bgm.mp3。読み込めない時は通常のエンディング曲→対戦BGMの順にフォールバック
+        let utsuroEndingSong = false; // 直前のエンディング会話が「うつろ優勝時（プレイヤー操作）」専用だったか
         function playEndingBgm() {
             clearBgmFxMute();
-            activeBgm = 'ending';
+            activeBgm = utsuroEndingSong ? 'endingUtsuro' : 'ending';
             attemptPlayBgm();
         }
         (function () {
             const ea = document.getElementById('endingBgmAudio');
             if (ea) ea.addEventListener('error', () => { if (activeBgm === 'ending') { activeBgm = 'game'; attemptPlayBgm(); } }, true);
+            const ua = document.getElementById('endingUtsuroBgmAudio');
+            if (ua) ua.addEventListener('error', () => { if (activeBgm === 'endingUtsuro') { activeBgm = 'ending'; attemptPlayBgm(); } }, true);
         })();
 
         function attemptPlayBgm() {
             const selectAudio = document.getElementById('selectBgmAudio');
             const gameAudio = document.getElementById('gameBgmAudio');
             const endingAudio = document.getElementById('endingBgmAudio');
+            const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
 
             if (!selectAudio || !gameAudio) return;
             if (bgmMutedByFx) return; // fxで消音中は再開しない（曲の切り替え時は playSelectBgm/playGameBgm/playEndingBgm が解除してから来る）
@@ -2153,11 +2310,13 @@
             selectAudio.volume = currentBgmVolume;
             gameAudio.volume = currentBgmVolume;
             if (endingAudio) endingAudio.volume = currentBgmVolume;
+            if (endingUtsuroAudio) endingUtsuroAudio.volume = currentBgmVolume;
 
             let target = gameAudio;
             if (activeBgm === 'select') target = selectAudio;
             else if (activeBgm === 'ending' && endingAudio) target = endingAudio;
-            [selectAudio, gameAudio, endingAudio].forEach(a => { if (a && a !== target) { a.pause(); a.currentTime = 0; } });
+            else if (activeBgm === 'endingUtsuro' && endingUtsuroAudio) target = endingUtsuroAudio;
+            [selectAudio, gameAudio, endingAudio, endingUtsuroAudio].forEach(a => { if (a && a !== target) { a.pause(); a.currentTime = 0; } });
             let p = target.play();
             if (p !== undefined) {
                 p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
@@ -2301,7 +2460,7 @@
             if (mb) mb.classList.toggle('cs-cursor', csCursor === '?');
         }
 
-        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 1.2; if (id === 'shakuna' || id === 'heru' || id === 'kataru') return 1.6; return 1.4; }
+        function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.75; if (id === 'shakuna' || id === 'heru' || id === 'kataru') return 1.6; return 1.4; }
         function charPieceScale(id) { if (id === 'tomoko' || id === 'kataru') return 1.25; return 1; } // 駒の見かけ倍率（トモコ・かたるは立ち絵が細長く小さく見える分だけ大きく）
 
         function csHover(id) {
@@ -3278,7 +3437,12 @@
             }
 
             if (data.goalDeadlineDay !== undefined) {
+                let wasNullDeadline = goalDeadlineDay === null;
                 goalDeadlineDay = data.goalDeadlineDay;
+                if (wasNullDeadline && goalDeadlineDay !== null) {
+                    let wi = (data.players || []).findIndex(pl => pl && pl.rank === 1);
+                    if (wi >= 0 && players[wi]) showDeadlineBanner(players[wi].name);
+                }
                 if (goalDeadlineDay !== null && currentTurnNumber > goalDeadlineDay && !players.every(player => player.finished)) endGameByDeadline();
             }
 
@@ -4038,6 +4202,9 @@
             let endScript = currentEndingScript();
             if (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) endScript = sheetEndingHikariScript;
             else if (winnerChar === 'utsuro' && winnerIsHuman && sheetEndingUtsuroScript && sheetEndingUtsuroScript.length) endScript = sheetEndingUtsuroScript;
+            else if (winnerChar === 'kataru' && sheetEndingKataruScript && sheetEndingKataruScript.length) endScript = sheetEndingKataruScript;
+            else if (winnerChar === 'tomoko' && sheetEndingTomokoScript && sheetEndingTomokoScript.length) endScript = sheetEndingTomokoScript;
+            utsuroEndingSong = !!(sheetEndingUtsuroScript && endScript === sheetEndingUtsuroScript);
             let lines = endScript
                 .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
             if (!lines.length) { showEndingResults(); return; }
@@ -4063,6 +4230,8 @@
 
         let staffRollTimer = null;
         let staffRollWatchTimer = null;
+        let staffRollFast = false;
+        let staffRollMotionAt = 0;
         let staffRollPhase = 'idle';
         let staffRollStartedAt = 0;
         let staffRollTextH = 0;
@@ -4117,6 +4286,8 @@
             } else begin();
         }
         function runStaffRollMotion() {
+            staffRollFast = false;
+            staffRollMotionAt = Date.now();
             let inner = document.getElementById('staffRollInner');
             let finale = document.getElementById('staffRollFinale');
             if (!inner) { showEndingResults(); return; }
@@ -4179,6 +4350,24 @@
         }
         function skipStaffRoll() {
             if (staffRollPhase === 'scroll') {
+                if (!staffRollFast) {
+                    // 1回目のスキップ: 瞬間移動ではなく、ロールを一気にスピードアップして流し切る（流し終わったら通常通りおしまいが出る）
+                    staffRollFast = true;
+                    let inner = document.getElementById('staffRollInner');
+                    if (inner) {
+                        let elapsed = (Date.now() - staffRollMotionAt) / 1000;
+                        let curY = Math.max(staffRollTextTargetY, staffRollVh - 60 * elapsed);
+                        let remain = curY - staffRollTextTargetY;
+                        let fastDur = Math.max(0.3, remain / 900);
+                        inner.style.transition = 'none';
+                        inner.style.transform = 'translateY(' + curY + 'px)';
+                        void inner.offsetWidth;
+                        inner.style.transition = 'transform ' + fastDur + 's linear';
+                        inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
+                    }
+                    return;
+                }
+                // 2回目のスキップ: そのまま最後まで飛ばす
                 if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
                 if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
                 let inner = document.getElementById('staffRollInner');
@@ -5153,7 +5342,8 @@
             let tile = tileCoords[p.pos];
             if (!tile) { turnPhase = 'idle'; return; }
 
-            // ⭐ 星マス: 星のカケラを入手（取ると別の場所に再出現）
+            // ⭐ カケラ系の出来事（星マス入手・奪い合い）は先に処理し、この後でマス本来の効果（白・青・赤・黄）も通常通り適用する
+            let preDesc = '';
             if (starTileIdxs.includes(p.pos)) {
                 starTileIdxs = starTileIdxs.filter(i => i !== p.pos);
                 p.fragments = (p.fragments || 0) + 1;
@@ -5161,11 +5351,7 @@
                 if (nIdx >= 0) starTileIdxs.push(nIdx);
                 updateFragmentUI();
                 let need = FRAGMENTS_REQUIRED - p.fragments;
-                resolveSpecialLanding(pIndex,
-                    '【⭐ 星のカケラを手に入れた！】',
-                    need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の祭壇を目指そう！`,
-                    `⭐ 星のカケラ ${p.fragments} / ${FRAGMENTS_REQUIRED}`);
-                return;
+                preDesc = need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の祭壇を目指そう！`;
             }
 
             // ⛩️ 星の祭壇にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
@@ -5185,11 +5371,8 @@
                 victim.fragments--;
                 p.fragments = (p.fragments || 0) + 1;
                 updateFragmentUI();
-                resolveSpecialLanding(pIndex,
-                    '【⭐ カケラの奪い合い！】',
-                    `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`,
-                    `⭐ ${p.name} ${p.fragments}個 / ${victim.name} ${victim.fragments}個`);
-                return;
+                let stealDesc = `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`;
+                preDesc = preDesc ? (preDesc + ' ' + stealDesc) : stealDesc;
             }
 
             turnPhase = (tile.type === 'plus' || tile.type === 'minus') ? 'idle' : 'event';
@@ -5200,6 +5383,7 @@
 
                 let titleText = tile.type === 'plus' ? '【🔵 プラスマス到着！】' : '【🔴 マイナスマス到着！】';
                 let descText = `${p.name}さんの番です！${tile.type === 'plus' ? 'プラス' : 'マイナス'}マス効果決定のためサイコロを振ってください！`;
+                if (preDesc) descText = preDesc + ' ' + descText;
 
                 document.getElementById('currentEventTitle').innerText = titleText;
                 document.getElementById('currentEventDesc').innerText = descText;
@@ -5224,7 +5408,7 @@
                 let event = matchingEvents[Math.floor(Math.random() * matchingEvents.length)];
 
                 document.getElementById('currentEventTitle').innerText = event.title;
-                document.getElementById('currentEventDesc').innerText = event.desc;
+                document.getElementById('currentEventDesc').innerText = preDesc ? (preDesc + ' ' + event.desc) : event.desc;
 
                 if (tile.type === 'item') {
                     let itemGot = event.itemName || '⚡ スパチャブースター';
@@ -5326,6 +5510,7 @@
             if (finishedRankCount === 1 && !players.every(player => player.finished)) {
                 goalDeadlineDay = currentTurnNumber + GOAL_DEADLINE_DAYS;
                 document.getElementById('currentEventDesc').innerText += ` ⌛ 最初のゴール！残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります。`;
+                showDeadlineBanner(p.name);
             }
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
 
@@ -5339,6 +5524,20 @@
                     setTimeout(() => { isEventResolving = false; nextTurn(); }, 3500);
                 }
             }
+        }
+
+        let deadlineBannerTimer = null;
+        function showDeadlineBanner(playerName) {
+            let b = document.getElementById('deadlineBanner');
+            if (!b) return;
+            let main = document.getElementById('deadlineBannerMain');
+            let sub = document.getElementById('deadlineBannerSub');
+            if (main) main.innerText = `${playerName}さんが星の祭壇に到達！`;
+            if (sub) sub.innerText = `残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります`;
+            b.classList.remove('hidden');
+            b.classList.add('flex');
+            if (deadlineBannerTimer) clearTimeout(deadlineBannerTimer);
+            deadlineBannerTimer = setTimeout(() => { b.classList.add('hidden'); b.classList.remove('flex'); }, 3400);
         }
 
         function endGameByDeadline() {
@@ -5396,6 +5595,11 @@
                 if (!isOnlineMode || isHost) {
                     setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
                 }
+            }
+
+            if (goalDeadlineDay !== null && !deadlineEndTriggered) {
+                let rest = goalDeadlineDay - currentTurnNumber;
+                document.getElementById('currentEventDesc').innerText += rest > 0 ? ` ⌛ あと${rest}日でゲーム終了！` : ' ⌛ 今日が最終日！今日中にゴールしよう！';
             }
 
             updateItemUI();
