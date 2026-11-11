@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-114 ・ 384,536 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-116 ・ 384,898 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -4291,23 +4291,26 @@
         let staffRollTextH = 0;
         let staffRollVh = 800;
         let staffRollTextTargetY = 0;
+        function isRollPhone() { try { return Math.min(window.innerWidth || 9999, window.innerHeight || 9999) < 500; } catch (e) { return false; } }
         function buildStaffRollHtml() {
             let sorted = rankSortedPlayers();
             let winner = sorted[0];
+            let castLead = isRollPhone() ? 'leading-[3.9]' : 'leading-[3.4]';
+            let staffLead = isRollPhone() ? 'leading-[3.3]' : 'leading-[2.8]';
             let h = '';
             h += '<div class="text-4xl sm:text-5xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.55), 3px 3px 0 #b45309;">星めぐりに願いを</div>';
             h += '<div class="text-sm sm:text-base font-bold text-purple-200 mt-3 tracking-[.25em]">〜 A Wish Upon the Celestial Journey 〜</div>';
             h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-2 tracking-[.4em]">〜 スタッフロール 〜</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
-            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + c.name + '</div>'; });
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">学園長</div>';
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + c.name + '</div>'; });
+            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">学園長</div>';
             let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
-            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
+            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
@@ -4374,7 +4377,7 @@
             staffRollWatchTimer = setInterval(() => {
                 if (staffRollPhase !== 'scroll') { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; return; }
                 let r = inner.getBoundingClientRect();
-                if (r.height > 0 && r.bottom <= 0) startFinaleRise();
+                if (r.height > 0 && r.bottom <= -(isRollPhone() ? staffRollVh * 0.12 : 0)) startFinaleRise();
             }, 120);
             staffRollTimer = setTimeout(startFinaleRise, ((vh + staffRollTextH) / 60) * 1000 + 6000); // 保険：実測で拾えない場合も、本文が抜ける頃には必ず出す
         }
