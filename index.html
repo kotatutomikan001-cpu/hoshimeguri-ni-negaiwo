@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-106 ・ 379,800 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-108 ・ 384,559 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -417,6 +417,20 @@
         </div>
     </div>
 
+    <div id="rulesOverlay" class="fixed inset-0 z-[100003] hidden items-center justify-center p-3" style="background: linear-gradient(180deg,#0b1030 0%,#131a3a 55%,#0a0f2a 100%);">
+        <div class="w-full max-w-2xl max-h-[92dvh] overflow-y-auto rounded-2xl border border-indigo-300/30 bg-slate-900/85 p-4 sm:p-6 text-indigo-50 shadow-2xl">
+            <div class="text-center text-2xl sm:text-3xl font-black tracking-widest text-yellow-200">📖 ゲームのルール</div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎲 進み方</div><div class="text-sm sm:text-base leading-relaxed mt-1">自分の番にサイコロを振って、出た目の数だけマスを進みます。1ターン＝1日です。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">⭐ 星のカケラ</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のマスに止まると「星のカケラ」が1個もらえます。誰かが拾うと、星のマスはマップの別の場所へ移動します（星のマスはいつも6つあります）。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分が止められた時は、逆に奪われてしまいます。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目 × マスの数字 の分、リスナーが増える<br>🔴 マイナスマス（赤）： （7 − サイコロの目）× マスの数字 の分、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとに金額の倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果（名前で決まります）</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人／ ASMR用マイク： 次のサイコロで＋2マス進む／ 星のカケラ： カケラ＋1個／ 魔法のサイコロ： 次の出目＋3／ 守りのシールド： 次のマイナスを1回防ぐ／ 横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
+            <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">わかった！</button></div>
+        </div>
+    </div>
     <div id="startModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-50 overflow-hidden">
             <!-- ⭐ ダミー装飾（デバッグ入口のカモフラージュ。本物は左上の1つだけ） -->
             <div class="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
@@ -1587,7 +1601,7 @@
             }
             return lines;
         }
-        const OFFICIAL_STORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/13X7w6WxNa000UIxzEWsw1OdftvsCUbpnKjhWILZHT-Y/edit?gid=1649632949#gid=1649632949';
+        const OFFICIAL_STORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R3RXVVPrByjAS93cO7IbkcV60KE-frnRYAUAcpIxLOw/edit?gid=521756110#gid=521756110';
         function getPersonalStorySheetUrl() {
             try { return localStorage.getItem('utsuro_story_sheet_url') || ''; } catch (e) { return ''; }
         }
@@ -3848,24 +3862,25 @@
         // 🎬 タイトル画面＆オープニング会話
         // ★ストーリー会話のセリフはこの OPENING_SCRIPT を編集すれば差し替えられます（who は utsuro / gengo / tomoko / narration）。シート連携時はシートが最優先
         const OPENING_SCRIPT = [
-            { who: 'narration', text: 'ここは日本のどこかにある星めぐり学園、今日は学園長をはじめ所属のライバーたちが集まってパーティが開催されていた。' },
-            { who: 'hikari', text: 'わぁ、すごいごちそう！学園長、今日は太っ腹だね！' },
-            { who: 'mirine', text: 'ふふ、パーティーなんて久しぶり。みんなで集まれるの、やっぱり楽しいね♪' },
-            { who: 'utsuro', text: 'うん、たまにはこういう穏やかな日もいいよね。このまま平和に終わりますように…' },
-            { who: 'narration', fx: 'shake', text: 'その時だった。――ゴゴゴゴッ…！ 突然の大きな地震が学園を襲い、シャンデリアが激しく揺れ、食器の割れる音が響いた。' },
-            { who: 'utsuro', text: 'きゃあっ…！ みんな、頭を守って…！' },
-            { who: 'narration', text: '揺れが収まる頃、彼女たちの意識は深い闇の中へと落ちていった――。' },
-            { who: 'narration', text: '――ここは、星明かりだけが頼りの未知の空間。目覚めた彼女たちは、帰り道を見失っていた。' },
-            { who: 'utsuro', text: 'みんな、落ち着いて。ここは…知らない場所みたい。さっきまで配信の準備をしてたはずなのに…' },
-            { who: 'hikari', text: 'うぅ、真っ暗でこわいよ…。あたしたち、どうやって帰ればいいの？' },
-            { who: 'shano', text: '…見て。あの丘の上に、祭壇がある。あれは「星の祭壇」…星のカケラを捧げれば、願いが叶うという言い伝えの…' },
-            { who: 'utsuro', text: 'そうだね。星のカケラを5個集めて祭壇まで持って行けば、願いが叶って元の世界に帰れるはずだよ。' },
-            { who: 'narration', text: 'ルールは単純。盤面に散らばる「星のカケラ」を5個集め、星の祭壇まで持って帰ること。それが、この空間からの脱出条件。' },
-            { who: 'hikari', text: 'カケラは星のマスに止まると拾えるんだね！でも数が少ないから、みんなで取り合いだぁ…' },
-            { who: 'utsuro', text: 'それと、誰かと同じマスに止まると、その人からカケラを1個奪えるよ。逆に奪われないように気をつけてね。' },
-            { who: 'utsuro', text: '道中には、リスナーが増えるプラスマス、減っちゃうマイナスマス、アイテムが拾えるマスがあるよ。' },
-            { who: 'hikari', text: 'よーし、がんばる！あたしが一番にカケラを集めて、みんなで帰ろう！' },
-            { who: 'utsuro', text: 'うん、行こう。――星めぐりの旅、スタート！' }
+            { who: 'narration', text: "ここは日本のどこかにある星めぐり学園" },
+            { who: 'narration', text: "今日は学園長をはじめ、所属のライバーたちが集まって\n出前のピザパーティが開催されていた。" },
+            { who: 'hikari', text: "やっぱりピザ美味しいよね～、\nみんなで集まってると更にって感じもして…" },
+            { who: 'mirine', text: "ふふ、ピザパーティーなんて久しぶり。\nみんなで集まれるの、やっぱり楽しいね♪" },
+            { who: 'utsuro', text: "ええ、たまにはこういう穏やかな日もいいですね。\nこのまま平和に終わりますように…" },
+            { who: 'hikari', text: "ちょっと！うつろちゃん…それフラグ…" },
+            { who: 'narration', fx: 'shake', text: "その時だった。――ゴゴゴゴッ…！ 突然の大きな地震が学園を襲い、\n家具が激しく揺れ、紙コップや飲み物が床に飛び散った。" },
+            { who: 'hikari', text: "ほら～っ！やっぱり～！" },
+            { who: 'utsuro', text: "きゃあっ…！ みんな、頭を守ってください！" },
+            { who: 'narration', text: "揺れが収まる頃、彼女たちの意識は深い闇の中へと落ちていった――。" },
+            { who: 'narration', text: "――ここは、星明かりだけが頼りの未知の空間。\n目覚めた彼女たちは、帰り道を見失っていた。" },
+            { who: 'hikari', text: "うぅ、真っ暗だねぇ…。\nあたしたち、どうやったら帰れるんだろう？" },
+            { who: 'shano', text: "…見て。あの真ん中の空間…何かある…。\nちょっと行ってみない？" },
+            { who: 'narration', text: "一行がそれに近づくと頭の中に声が響いてくる。" },
+            { who: '???', text: "（星めぐ…りの継承…者たちよ…――わたし…の声が聞…こえま…すか？）" },
+            { who: 'hikari', text: "誰？" },
+            { who: 'megami', text: "（わ…たしは星…めぐりの女…神――\nみなさ…んにお願…いがありま…す。\n『星のカケラ』を…集め、星の…祭壇まで持って…きてほしいの…です）" },
+            { who: 'megami', text: "（はや…く、わた…しのチカ…ラが消えて…しまう前に…）" },
+            { who: 'hikari', text: "よーし、よくわかんないけど元の所に帰るためならがんばる！\nあたしが一番に『星のカケラ』を集めちゃうからね！\nみんなで帰るよ！" }
         ];
         const OPENING_SPEAKER_IDS = [...CHARACTERS.map(c => c.id), '???', 'gakuencho', 'megami', 'goshu', 'utsuro_haha', 'narration'];
         const OPENING_CHAR_NAMES = {};
@@ -4494,10 +4509,12 @@
 
         function previewOpeningFromEditor() {
             closeDebugMenu();
+            openingFromTitle = false;
             playOpening(true);
         }
         let openingIndex = 0;
         let openingActive = false;
+        let openingFromTitle = false;
 
         function closeTitleScreen() {
             let t = document.getElementById('titleScreen');
@@ -4505,7 +4522,9 @@
             let dbgBtn = document.getElementById('debugEntryBtn');
             if (dbgBtn) dbgBtn.classList.remove('hidden');
             try { playSelectBgm(); } catch (e) {}
+            openingFromTitle = true;
             try { playOpening(true); } catch (e) {}
+            if (!openingActive) { openingFromTitle = false; showRulesPanel(); }
         }
 
         function drawTitlePreviews() {
@@ -4710,7 +4729,10 @@
             openingActive = false;
             let ov = document.getElementById('openingOverlay');
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            if (openingFromTitle) { openingFromTitle = false; showRulesPanel(); }
         }
+        function showRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.remove('hidden'); r.classList.add('flex'); } }
+        function hideRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.add('hidden'); r.classList.remove('flex'); } }
 
         // 🖼️ PNG差し替え: 登録済みPNGがあればそれを描き、なければドット絵にフォールバック
         let charImageData = {}; // target -> dataURL（localStorage保存用）
