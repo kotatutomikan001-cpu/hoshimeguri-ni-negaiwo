@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-108 ・ 384,559 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-111 ・ 384,559 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -422,9 +422,9 @@
             <div class="text-center text-2xl sm:text-3xl font-black tracking-widest text-yellow-200">📖 ゲームのルール</div>
             <div class="mt-4"><div class="font-black text-yellow-100">🎲 進み方</div><div class="text-sm sm:text-base leading-relaxed mt-1">自分の番にサイコロを振って、出た目の数だけマスを進みます。1ターン＝1日です。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⭐ 星のカケラ</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のマスに止まると「星のカケラ」が1個もらえます。誰かが拾うと、星のマスはマップの別の場所へ移動します（星のマスはいつも6つあります）。</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分が止められた時は、逆に奪われてしまいます。</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目 × マスの数字 の分、リスナーが増える<br>🔴 マイナスマス（赤）： （7 − サイコロの目）× マスの数字 の分、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとに金額の倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果（名前で決まります）</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人／ ASMR用マイク： 次のサイコロで＋2マス進む／ 星のカケラ： カケラ＋1個／ 魔法のサイコロ： 次の出目＋3／ 守りのシールド： 次のマイナスを1回防ぐ／ 横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が大きいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果（名前で決まります）</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>星のカケラ： カケラ＋1個<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
@@ -5549,7 +5549,7 @@
 
             let baseVal = Math.abs(Number(event.val) || 0);
             if (!baseVal) baseVal = 100; // 基準値が設定されていないイベントは従来通り100を基準にする
-            let val = (type === 'plus' ? diceRoll * baseVal : -( (7 - diceRoll) * baseVal )) * tileAmountMultiplier();
+            let val = (type === 'plus' ? diceRoll * baseVal : -( diceRoll * baseVal )) * tileAmountMultiplier();
 
             let shielded = false;
             if (type === 'minus' && (p.shield || 0) > 0) {
