@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-99 ・ 377,609 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-101 ・ 378,348 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -2111,24 +2111,24 @@
                 const gameAudio = document.getElementById('gameBgmAudio');
 
                 if (!bgmMutedByFx) {
-                    if (selectAudio && activeBgm === 'select') {
+                    if (selectAudio && activeBgm === 'select' && selectAudio.paused) {
                         selectAudio.volume = currentBgmVolume;
                         selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
-                    } else if (gameAudio && activeBgm === 'game') {
+                    } else if (gameAudio && activeBgm === 'game' && gameAudio.paused) {
                         gameAudio.volume = currentBgmVolume;
                         gameAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
                     } else if (activeBgm === 'ending') {
                         const endingAudio = document.getElementById('endingBgmAudio');
-                        if (endingAudio) { endingAudio.volume = currentBgmVolume; endingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingAudio && endingAudio.paused) { endingAudio.volume = currentBgmVolume; endingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingUtsuro') {
                         const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
-                        if (endingUtsuroAudio) { endingUtsuroAudio.volume = currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingUtsuroAudio && endingUtsuroAudio.paused) { endingUtsuroAudio.volume = currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingKataru') {
                         const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
-                        if (endingKataruAudio) { endingKataruAudio.volume = currentBgmVolume; endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingKataruAudio && endingKataruAudio.paused) { endingKataruAudio.volume = currentBgmVolume; endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingTalk') {
                         const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
-                        if (endingTalkAudio) { endingTalkAudio.volume = currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingTalkAudio && endingTalkAudio.paused) { endingTalkAudio.volume = currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     }
                 }
             };
@@ -2335,7 +2335,11 @@
             else if (activeBgm === 'endingKataru' && endingKataruAudio) target = endingKataruAudio;
             else if (activeBgm === 'endingTalk' && endingTalkAudio) target = endingTalkAudio;
             if (bgmRouted && bgmGains[target.id]) { try { bgmGains[target.id].gain.value = currentBgmVolume; } catch (e) {} }
-            [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTalkAudio].forEach(a => { if (a && a !== target) { a.pause(); a.currentTime = 0; } });
+            let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTalkAudio].filter(a => a && a !== target);
+            others.forEach(a => { a.pause(); a.currentTime = 0; });
+            // スマホ対策：タップで保留になっていた play() が遅れて効くと、止めたはずの前のBGMが被って再生されることがある。
+            // 少し置いてから「今鳴らすべき曲以外」をもう一度止め直す（その間に曲が切り替わっていたら、新しい対象は止めない）
+            setTimeout(() => { try { let cur = bgmElementFor(activeBgm); others.forEach(a => { if (a !== cur) a.pause(); }); } catch (e) {} }, 80);
             let p = target.play();
             if (p !== undefined) {
                 p.then(() => { audioUnlocked = true; }).catch(() => { audioUnlocked = false; });
@@ -4279,7 +4283,7 @@
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
-            [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
+            [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
             if (winner) {
