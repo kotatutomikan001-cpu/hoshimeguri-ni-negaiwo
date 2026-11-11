@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-104 ・ 378,493 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-105 ・ 378,493 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -4265,12 +4265,12 @@
             h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-2 tracking-[.4em]">〜 スタッフロール 〜</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
-            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + c.name + '</div>'; });
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">学園長</div>';
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + c.name + '</div>'; });
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">学園長</div>';
             let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[3.4]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
