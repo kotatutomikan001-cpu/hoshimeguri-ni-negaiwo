@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-102 ・ 378,444 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-103 ・ 378,493 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -2105,30 +2105,28 @@
                 } else if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
-                ensureBgmRouting();
-
                 const selectAudio = document.getElementById('selectBgmAudio');
                 const gameAudio = document.getElementById('gameBgmAudio');
 
                 if (!bgmMutedByFx) {
                     if (selectAudio && activeBgm === 'select' && selectAudio.paused) {
-                        selectAudio.volume = bgmRouted ? 1 : currentBgmVolume;
+                        selectAudio.volume = bgmGains[selectAudio.id] ? 1 : currentBgmVolume;
                         selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
                     } else if (gameAudio && activeBgm === 'game' && gameAudio.paused) {
-                        gameAudio.volume = bgmRouted ? 1 : currentBgmVolume;
+                        gameAudio.volume = bgmGains[gameAudio.id] ? 1 : currentBgmVolume;
                         gameAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
                     } else if (activeBgm === 'ending') {
                         const endingAudio = document.getElementById('endingBgmAudio');
-                        if (endingAudio && endingAudio.paused) { endingAudio.volume = bgmRouted ? 1 : currentBgmVolume; endingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingAudio && endingAudio.paused) { endingAudio.volume = bgmGains[endingAudio.id] ? 1 : currentBgmVolume; endingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingUtsuro') {
                         const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
-                        if (endingUtsuroAudio && endingUtsuroAudio.paused) { endingUtsuroAudio.volume = bgmRouted ? 1 : currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingUtsuroAudio && endingUtsuroAudio.paused) { endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingKataru') {
                         const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
-                        if (endingKataruAudio && endingKataruAudio.paused) { endingKataruAudio.volume = bgmRouted ? 1 : currentBgmVolume; endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingKataruAudio && endingKataruAudio.paused) { endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : currentBgmVolume; endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingTalk') {
                         const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
-                        if (endingTalkAudio && endingTalkAudio.paused) { endingTalkAudio.volume = bgmRouted ? 1 : currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingTalkAudio && endingTalkAudio.paused) { endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     }
                 }
             };
@@ -2226,26 +2224,21 @@
         let bgmMutedByFx = false;
         let bgmFadeTimer = null;
         // iPhoneのSafariは audio 要素の volume をプログラムから変更できない（フェードが効かず最後にブツッと切れる）。
-        // そのため https 配信時はBGMを WebAudio のゲイン経由にして、音量をこちらで絞れるようにする。
-        // file:// ではブラウザ制限で音が出なくなる恐れがあるため、今まで通り要素の volume で制御する。
+        // そのため https 配信時は、フェードが必要になった要素だけをその場で WebAudio のゲイン経由にして音量を絞る。
+        // 【重要】全曲を常時経由にすると、iPhoneで曲の切り替え時に音が乱れる（実機報告）ため、経由化はフェード時のみに限定する。
+        // file:// ではブラウザ制限で音が出なくなる恐れがあるため経由化しない（要素の volume で制御する）。
         let bgmGains = {};
-        let bgmRouted = false;
-        function ensureBgmRouting() {
-            if (bgmRouted) return;
+        function ensureBgmRoutingFor(el) {
+            if (!el || bgmGains[el.id]) return;
             try {
                 if (!/^https?:$/.test(location.protocol)) return;
                 if (!audioCtx) return;
-                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTalkBgmAudio'].forEach(id => {
-                    if (bgmGains[id]) return;
-                    let el = document.getElementById(id);
-                    if (!el) return;
-                    let src = audioCtx.createMediaElementSource(el);
-                    let g = audioCtx.createGain();
-                    g.gain.value = currentBgmVolume;
-                    src.connect(g); g.connect(audioCtx.destination);
-                    bgmGains[id] = g;
-                });
-                bgmRouted = Object.keys(bgmGains).length > 0;
+                let src = audioCtx.createMediaElementSource(el);
+                let g = audioCtx.createGain();
+                g.gain.value = currentBgmVolume;
+                src.connect(g); g.connect(audioCtx.destination);
+                bgmGains[el.id] = g;
+                el.volume = 1;
             } catch (e) { /* 経由できない環境では従来の volume 制御のまま */ }
         }
         function bgmElementFor(kind) {
@@ -2257,8 +2250,8 @@
             const el = bgmElementFor(activeBgm);
             if (!el) return;
             if (bgmFadeTimer) { clearInterval(bgmFadeTimer); bgmFadeTimer = null; }
-            ensureBgmRouting();
-            let gain = bgmRouted ? bgmGains[el.id] : null;
+            ensureBgmRoutingFor(el);
+            let gain = bgmGains[el.id] || null;
             const startVol = gain ? gain.gain.value : el.volume;
             if (el.paused || startVol <= 0) { if (gain) gain.gain.value = 0; else el.volume = 0; return; }
             // 約4秒かけて指数的に（dB一定の割合で）下げていく。一気に消えず、耳に自然なフェードにする
@@ -2319,14 +2312,12 @@
             if (!selectAudio || !gameAudio) return;
             if (bgmMutedByFx) return; // fxで消音中は再開しない（曲の切り替え時は playSelectBgm/playGameBgm/playEndingBgm が解除してから来る）
 
-            ensureBgmRouting();
-            let elemVol = bgmRouted ? 1 : currentBgmVolume;
-            selectAudio.volume = elemVol;
-            gameAudio.volume = elemVol;
-            if (endingAudio) endingAudio.volume = elemVol;
-            if (endingUtsuroAudio) endingUtsuroAudio.volume = elemVol;
-            if (endingKataruAudio) endingKataruAudio.volume = elemVol;
-            if (endingTalkAudio) endingTalkAudio.volume = elemVol;
+            selectAudio.volume = bgmGains[selectAudio.id] ? 1 : currentBgmVolume;
+            gameAudio.volume = bgmGains[gameAudio.id] ? 1 : currentBgmVolume;
+            if (endingAudio) endingAudio.volume = bgmGains[endingAudio.id] ? 1 : currentBgmVolume;
+            if (endingUtsuroAudio) endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume;
+            if (endingKataruAudio) endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : currentBgmVolume;
+            if (endingTalkAudio) endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume;
 
             let target = gameAudio;
             if (activeBgm === 'select') target = selectAudio;
@@ -2334,7 +2325,7 @@
             else if (activeBgm === 'endingUtsuro' && endingUtsuroAudio) target = endingUtsuroAudio;
             else if (activeBgm === 'endingKataru' && endingKataruAudio) target = endingKataruAudio;
             else if (activeBgm === 'endingTalk' && endingTalkAudio) target = endingTalkAudio;
-            if (bgmRouted && bgmGains[target.id]) { try { bgmGains[target.id].gain.value = currentBgmVolume; } catch (e) {} }
+            if (bgmGains[target.id]) { try { bgmGains[target.id].gain.value = currentBgmVolume; } catch (e) {} }
             let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTalkAudio].filter(a => a && a !== target);
             others.forEach(a => { a.pause(); a.currentTime = 0; });
             // スマホ対策：タップで保留になっていた play() が遅れて効くと、止めたはずの前のBGMが被って再生されることがある。
