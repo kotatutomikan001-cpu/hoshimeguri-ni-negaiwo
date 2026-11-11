@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-103 ・ 378,493 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-104 ・ 378,493 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -4265,27 +4265,27 @@
             h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-2 tracking-[.4em]">〜 スタッフロール 〜</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
-            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + c.name + '</div>'; });
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">学園長</div>';
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + c.name + '</div>'; });
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">学園長</div>';
             let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
-            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
+            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
-            players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
+            players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
             if (winner) {
                 h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 優勝 ✦</div>';
                 h += '<div class="text-2xl sm:text-3xl font-black text-yellow-300 leading-snug mt-2">👑 ' + winner.name + '</div>';
             }
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 制作 ✦</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">hiro-pon</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">hiro-pon</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スペシャルサンクス ✦</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">星めぐり学園のみなさん</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">遊んでくれた あなた</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">星めぐり学園のみなさん</div>';
+            h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">遊んでくれた あなた</div>';
             h += '<div class="mt-20 text-xl sm:text-2xl font-black text-purple-100">遊んでくれてありがとうございました！</div>';
             return h;
         }
