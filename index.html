@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-116 ・ 384,898 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-119 ・ 385,906 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -424,7 +424,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⭐ 星のカケラ</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のマスに止まると「星のカケラ」が1個もらえます。誰かが拾うと、星のマスはマップの別の場所へ移動します（星のマスはいつも6つあります）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が大きいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>星のカケラ： カケラ＋1個<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
@@ -4285,6 +4285,7 @@
         let staffRollTimer = null;
         let staffRollWatchTimer = null;
         let staffRollFast = false;
+        let staffRollFastSeg = null;
         let staffRollMotionAt = 0;
         let staffRollPhase = 'idle';
         let staffRollStartedAt = 0;
@@ -4346,8 +4347,18 @@
                 Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 600))]).then(begin).catch(begin);
             } else begin();
         }
+        // ロールの現在位置を「経過時間×速度」の計算だけで推定する（実測 rect が端末によって当てにならないため、スマホではこちらで おしまい の開始を決める）
+        function staffRollModelY() {
+            if (staffRollFastSeg) {
+                let e = (Date.now() - staffRollFastSeg.at) / 1000;
+                return Math.max(staffRollTextTargetY, staffRollFastSeg.fromY - staffRollFastSeg.speed * e);
+            }
+            let e = (Date.now() - staffRollMotionAt) / 1000;
+            return Math.max(staffRollTextTargetY, staffRollVh - 60 * e);
+        }
         function runStaffRollMotion() {
             staffRollFast = false;
+            staffRollFastSeg = null;
             staffRollMotionAt = Date.now();
             let inner = document.getElementById('staffRollInner');
             let finale = document.getElementById('staffRollFinale');
@@ -4376,8 +4387,14 @@
             // おしまいの登場は実測で決める：本文の末尾が実際に画面の上端を抜けたら開始する（フォントの遅延読み込み等で高さが後から変わっても追随できる）
             staffRollWatchTimer = setInterval(() => {
                 if (staffRollPhase !== 'scroll') { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; return; }
-                let r = inner.getBoundingClientRect();
-                if (r.height > 0 && r.bottom <= -(isRollPhone() ? staffRollVh * 0.12 : 0)) startFinaleRise();
+                if (isRollPhone()) {
+                    // スマホ（特に iPhone）はアニメーション中要素の実測位置がずれる事があるため、時刻と速度からの推定位置＋実測の高さで判定する
+                    let h = inner.offsetHeight || staffRollTextH;
+                    if (staffRollModelY() + h <= -(staffRollVh * 0.12)) startFinaleRise();
+                } else {
+                    let r = inner.getBoundingClientRect();
+                    if (r.height > 0 && r.bottom <= 0) startFinaleRise();
+                }
             }, 120);
             staffRollTimer = setTimeout(startFinaleRise, ((vh + staffRollTextH) / 60) * 1000 + 6000); // 保険：実測で拾えない場合も、本文が抜ける頃には必ず出す
         }
@@ -4418,6 +4435,7 @@
                     if (inner) {
                         let elapsed = (Date.now() - staffRollMotionAt) / 1000;
                         let curY = Math.max(staffRollTextTargetY, staffRollVh - 60 * elapsed);
+                        staffRollFastSeg = { at: Date.now(), fromY: curY, speed: 900 };
                         let remain = curY - staffRollTextTargetY;
                         let fastDur = Math.max(0.3, remain / 900);
                         inner.style.transition = 'none';
@@ -4449,8 +4467,8 @@
             }
         }
         function onStaffRollTap() {
+            // 画面タップではロールを加速しない（加速・スキップは右上の「スキップ ≫」ボタンだけ）
             if (staffRollPhase === 'hold') finishStaffRoll();
-            else if (staffRollPhase === 'scroll' && Date.now() - staffRollStartedAt > 1500) skipStaffRoll();
         }
 
         function showEndingResults() {
@@ -5707,7 +5725,6 @@
         const DEFAULT_ITEM_POOL = [
             { itemName: '⚡ スパチャブースター', title: '【🎁 アイテムゲット！】', desc: 'スパチャブースターを手に入れた！使うとリスナーが+500人増える。' },
             { itemName: '🎤 ASMR用マイク', title: '【🎁 アイテムゲット！】', desc: 'ASMR用マイクを手に入れた！使うと次のサイコロが+2マスになる。' },
-            { itemName: '⭐ 星のカケラ', title: '【🎁 アイテムゲット！】', desc: '星のカケラを手に入れた！使うと星のカケラが+1個増える。' },
             { itemName: '🎲 魔法のサイコロ', title: '【🎁 アイテムゲット！】', desc: '魔法のサイコロを手に入れた！使うと次のサイコロが+3マスになる。' },
             { itemName: '🛡️ 守りのシールド', title: '【🎁 アイテムゲット！】', desc: '守りのシールドを手に入れた！使うと次に受けるマイナスを1回防げる。' },
             { itemName: '🌀 横取りチャーム', title: '【🎁 アイテムゲット！】', desc: '横取りチャームを手に入れた！使うと一番リスナーが多い相手から300人を奪える。' },
