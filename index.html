@@ -404,7 +404,7 @@
     <!-- 🎬 タイトル画面 -->
     <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-136 ・ 411,721 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-142 ・ 419,520 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -415,13 +415,15 @@
                 <div id="titleFruitUtsuro" class="hidden absolute" style="left:20px;top:20px;font-size:22px;line-height:1;color:#4fc3f7;text-shadow:0 0 6px #b3e5fc,0 1px 2px rgba(0,0,0,.3);" title="仮の実（うつろ）">★</div>
                 <div id="titleFruitKataru" class="hidden absolute" style="left:50%;top:5px;transform:translateX(-50%);font-size:20px;line-height:1;color:#a78bfa;text-shadow:0 0 6px #ddd6fe,0 1px 2px rgba(0,0,0,.3);" title="仮の実（かたる）">●</div>
                 <div id="titleFruitTomoko" class="hidden absolute" style="right:20px;top:20px;font-size:22px;line-height:1;color:#f472b6;text-shadow:0 0 6px #fbcfe8,0 1px 2px rgba(0,0,0,.3);" title="仮の実（トモコ）">♥</div>
-                <div class="absolute inset-x-0 top-[88px] text-center text-[10px] font-black text-purple-950/60">🌳 仮の樹 <span id="titleTreeCount"></span></div>
             </div>
             <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
                 TAP TO START
             </button>
             <div id="trueEndBtnWrap" class="hidden mt-3">
                 <button onclick="playTrueEnding()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-700 to-purple-800 shadow-lg cursor-pointer">？？？</button>
+            </div>
+            <div id="endingListBtnWrap" class="hidden mt-3">
+                <button onclick="openEndingList()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-amber-500 to-yellow-600 shadow-lg cursor-pointer">エンディングリスト</button>
             </div>
             <div class="mt-3">
                 <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">中断したゲームから再開</button>
@@ -442,6 +444,20 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
             <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">わかった！</button></div>
+        </div>
+    </div>
+    <div id="endingListOverlay" class="hidden fixed inset-0 z-[100005] items-center justify-center p-4" style="background:linear-gradient(180deg,#1e1b4b,#312e81 55%,#4c1d95);">
+        <div class="text-center max-w-md w-full">
+            <div class="text-2xl sm:text-3xl font-black text-amber-200 tracking-widest">エンディングリスト</div>
+            <div class="text-xs font-bold text-purple-200/80 mt-2 mb-6">見たいエンディングを選んでください</div>
+            <div class="flex flex-col gap-2.5">
+                <button onclick="playEndingReplay('generic')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">汎用エンド</button>
+                <button id="endingListHikariBtn" onclick="playEndingReplay('hikari')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">ひかりエンド</button>
+                <button onclick="playEndingReplay('utsuro')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うつろエンド</button>
+                <button onclick="playEndingReplay('kataru')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">かたるエンド</button>
+                <button onclick="playEndingReplay('tomoko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">トモコエンド</button>
+            </div>
+            <button onclick="closeEndingList()" class="pixel-btn mt-7 py-2.5 px-8 font-black text-white rounded-lg text-sm bg-gradient-to-r from-slate-600 to-slate-700 shadow cursor-pointer">タイトルへ戻る</button>
         </div>
     </div>
     <div id="startModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-50 overflow-hidden">
@@ -1001,7 +1017,8 @@
 
         let currentBgmVolume = 0.3;
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
-        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); return v; }
+        const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
+        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST); return v; }
         let audioUnlocked = false;
         let activeBgm = 'select';
         let audioCtx = null;
@@ -2189,7 +2206,7 @@
             if (gameAudio) gameAudio.volume = currentBgmVolume;
             if (endingAudio) endingAudio.volume = currentBgmVolume;
             if (endingUtsuroAudio) endingUtsuroAudio.volume = currentBgmVolume;
-            if (endingKataruAudio) endingKataruAudio.volume = currentBgmVolume;
+            if (endingKataruAudio) endingKataruAudio.volume = bgmVolFor(endingKataruAudio.id);
             if (endingTomokoAudio) endingTomokoAudio.volume = bgmVolFor(endingTomokoAudio.id);
             if (endingTalkAudio) endingTalkAudio.volume = currentBgmVolume;
             if (titleGoldAudio) titleGoldAudio.volume = currentBgmVolume;
@@ -2209,11 +2226,19 @@
         }
 
         function setupAudioUnlockers() {
-            const unlockAudio = () => {
-                // タイトル表示中はBGMを鳴らさない設計（初回の再生は TAP TO START / ？？？ の処理側がジェスチャ内で始める）。
-                // ここで解錠ついでに select を再生してしまうと、？？？を押した時にタイトル曲が割り込んでしまうため、タイトルが見えている間は何もしない
+            const unlockAudio = (ev) => {
+                // タイトル表示中のタップでは、そのタイトルに合ったBGM（通常／金色）だけを始める。
+                // ？？？ボタンへのタップは会話側（playTrueEnding）が専用BGMを始めるので、ここでは触らない（タイトル曲の割り込み防止）
                 let tsEl = document.getElementById('titleScreen');
-                if (tsEl && !tsEl.classList.contains('hidden')) return;
+                if (tsEl && !tsEl.classList.contains('hidden')) {
+                    let tgt = ev && ev.target;
+                    if (tgt && tgt.closest && tgt.closest('#trueEndBtnWrap')) return;
+                    let aEl0 = null;
+                    try { aEl0 = bgmElementFor(activeBgm); } catch (e) {}
+                    if (audioUnlocked && aEl0 && !aEl0.paused) return;
+                    try { playSelectBgm(); } catch (e) {}
+                    return;
+                }
                 // 再生中にタップされても音声まわりには一切触らない。iOSでは AudioContext の生成・resume をタップのたびに繰り返すと、
                 // 再生中のBGMの音量が急に上下して聞こえる事があるため（ctxはSE再生やフェードが必要になった時にだけ作る）
                 let activeEl0 = null;
@@ -2240,7 +2265,7 @@
                         if (endingUtsuroAudio && endingUtsuroAudio.paused) { endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume; endingUtsuroAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingKataru') {
                         const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
-                        if (endingKataruAudio && endingKataruAudio.paused) { endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : currentBgmVolume; endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                        if (endingKataruAudio && endingKataruAudio.paused) { endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : bgmVolFor(endingKataruAudio.id); endingKataruAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingTomoko') {
                         const endingTomokoAudio = document.getElementById('endingTomokoBgmAudio');
                         if (endingTomokoAudio && endingTomokoAudio.paused) { endingTomokoAudio.volume = bgmGains[endingTomokoAudio.id] ? 1 : bgmVolFor(endingTomokoAudio.id); endingTomokoAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
@@ -2255,7 +2280,7 @@
             };
 
             ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
-                window.addEventListener(evt, unlockAudio, { passive: true });
+                window.addEventListener(evt, (e) => unlockAudio(e), { passive: true });
             });
         }
 
@@ -2464,7 +2489,7 @@
             gameAudio.volume = bgmGains[gameAudio.id] ? 1 : currentBgmVolume;
             if (endingAudio) endingAudio.volume = bgmGains[endingAudio.id] ? 1 : currentBgmVolume;
             if (endingUtsuroAudio) endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume;
-            if (endingKataruAudio) endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : currentBgmVolume;
+            if (endingKataruAudio) endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : bgmVolFor(endingKataruAudio.id);
             if (endingTomokoAudio) endingTomokoAudio.volume = bgmGains[endingTomokoAudio.id] ? 1 : bgmVolFor(endingTomokoAudio.id);
             if (endingTalkAudio) endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume;
             if (titleGoldAudio) titleGoldAudio.volume = bgmGains[titleGoldAudio.id] ? 1 : currentBgmVolume;
@@ -2783,7 +2808,7 @@
                 players[i].color = charColor(csCpuPicks[i]);
             }
             applyHudNames();
-            document.getElementById('charSelectModal').classList.add('hidden');
+            // 選択画面は startCpuGame 側で閉じる（上書き確認で「いいえ」の時は閉じない）
             startCpuGame();
         }
 
@@ -4424,6 +4449,7 @@
                 if (sheetEndingKataruScript && endScript === sheetEndingKataruScript) prog.kataru = true;
                 if (sheetEndingTomokoScript && endScript === sheetEndingTomokoScript) prog.tomoko = true;
                 localStorage.setItem('utsuro_true_progress', JSON.stringify(prog));
+                if (sheetEndingHikariScript && endScript === sheetEndingHikariScript) localStorage.setItem('utsuro_hikari_seen', '1'); // リストで「？？？」→「ひかりエンド」に開くため
             } catch (e) {}
             // 💬 エンディング会話の間は専用BGM（ending_talk_bgm.mp3）を流す。全エンディング共通。スタッフロールの曲へは playEndingBgm で切り替わる
             clearBgmFxMute();
@@ -4446,6 +4472,75 @@
         }
 
 
+        // 🎬 エンディングリスト（金色タイトル限定）：各エンディングを「会話→スタッフロール→おしまい」まで再生し、終わったらリストに戻る
+        let endingReplayActive = false;
+        const ENDING_REPLAY_DEFS = {
+            generic: { lineup: ['hikari', 'utsuro', 'shano', 'mirine'] },
+            hikari: { lineup: ['hikari', 'utsuro', 'shano', 'mirine'] },
+            utsuro: { lineup: ['utsuro', 'hikari', 'shano', 'mirine'] },
+            kataru: { lineup: ['kataru', 'hikari', 'shano', 'mirine'] }, // うつろは器なので同席しない
+            tomoko: { lineup: ['tomoko', 'utsuro', 'hikari', 'shano'] }  // かたるがいる編成にはしない（本編のガードと整合）
+        };
+        function isHikariEndingSeen() { try { return localStorage.getItem('utsuro_hikari_seen') === '1'; } catch (e) { return false; } }
+        function openEndingList() {
+            let ov = document.getElementById('endingListOverlay');
+            if (!ov) return;
+            let hb = document.getElementById('endingListHikariBtn');
+            if (hb) hb.textContent = isHikariEndingSeen() ? 'ひかりエンド' : '？？？';
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+        }
+        function closeEndingList() {
+            let ov = document.getElementById('endingListOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+        }
+        function returnToEndingList() {
+            let ts = document.getElementById('titleScreen');
+            if (ts) ts.classList.remove('hidden');
+            refreshTitleTree();
+            refreshTitleTheme();
+            try { playSelectBgm(); } catch (e) {} // 金色タイトルの曲へ戻す
+            openEndingList();
+        }
+        async function playEndingReplay(kind) {
+            let def = ENDING_REPLAY_DEFS[kind];
+            if (!def) return;
+            // 対象の専用シートがまだ読み込めていない場合は、少しだけ待つ（トゥルー再生と同じ方式。失敗時は playEndingDialogue が汎用へフォールバック）
+            try {
+                if (kind === 'hikari' && !sheetEndingHikariScript) await Promise.race([loadEndingHikariFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'utsuro' && !sheetEndingUtsuroScript) await Promise.race([loadEndingUtsuroFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'kataru' && !sheetEndingKataruScript) await Promise.race([loadEndingKataruFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'tomoko' && !sheetEndingTomokoScript) await Promise.race([loadEndingTomokoFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+            } catch (e) {}
+            // 疑似メンバーを組む：1位＝そのエンドの主役（{winner}置換・ロールの出演/優勝表示・専用分岐の条件を満たすため）
+            def.lineup.forEach((cid, i) => {
+                let pl = players[i];
+                if (!pl) return;
+                pl.char = cid;
+                pl.name = charName(cid);
+                pl.color = charColor(cid);
+                pl.isHuman = i === 0;
+                pl.fragments = i === 0 ? 6 : Math.max(0, 3 - i);
+                pl.listeners = i === 0 ? 5000 : 3000 - i * 500;
+                pl.finished = i === 0;
+                pl.rank = i === 0 ? 1 : 0;
+                pl.items = [];
+            });
+            applyHudNames();
+            closeEndingList();
+            let ts = document.getElementById('titleScreen');
+            if (ts) ts.classList.add('hidden');
+            endingReplayActive = true;
+            if (kind === 'generic') {
+                // 汎用は優勝者で分岐させない：専用シートを一時的に外してから再生し、終わったら戻す
+                let saved = [sheetEndingHikariScript, sheetEndingUtsuroScript, sheetEndingKataruScript, sheetEndingTomokoScript];
+                sheetEndingHikariScript = null; sheetEndingUtsuroScript = null; sheetEndingKataruScript = null; sheetEndingTomokoScript = null;
+                try { playEndingDialogue(); } finally { sheetEndingHikariScript = saved[0]; sheetEndingUtsuroScript = saved[1]; sheetEndingKataruScript = saved[2]; sheetEndingTomokoScript = saved[3]; }
+            } else {
+                playEndingDialogue();
+            }
+        }
+
         // 🌳 トゥルーエンドへの道：タイトル画面の樹と実、？？？ボタン
         let trueEndActive = false;
         function readTrueProgress() { try { return JSON.parse(localStorage.getItem('utsuro_true_progress') || '{}') || {}; } catch (e) { return {}; } }
@@ -4456,8 +4551,6 @@
             set('titleFruitKataru', !!prog.kataru);
             set('titleFruitTomoko', !!prog.tomoko);
             let n = (prog.utsuro ? 1 : 0) + (prog.kataru ? 1 : 0) + (prog.tomoko ? 1 : 0);
-            let cnt = document.getElementById('titleTreeCount');
-            if (cnt) cnt.textContent = '（実 ' + n + '/3）';
             set('trueEndBtnWrap', n >= 3);
         }
         function isTrueSeen() { try { return localStorage.getItem('utsuro_true_seen') === '1'; } catch (e) { return false; } }
@@ -4467,6 +4560,8 @@
             let seen = isTrueSeen();
             let gc = document.getElementById('titleGoldCredit');
             if (gc) gc.classList.toggle('hidden', !seen);
+            let elw = document.getElementById('endingListBtnWrap');
+            if (elw) elw.classList.toggle('hidden', !seen);
             ts.classList.toggle('from-purple-300', !seen);
             ts.classList.toggle('via-purple-200', !seen);
             ts.classList.toggle('to-indigo-100', !seen);
@@ -4703,6 +4798,11 @@
             if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             let ov = document.getElementById('staffRollOverlay');
             if (ov) ov.classList.add('hidden');
+            if (endingReplayActive) {
+                endingReplayActive = false;
+                returnToEndingList();
+                return;
+            }
             showEndingResults();
         }
         function skipStaffRoll() {
@@ -4751,6 +4851,7 @@
         }
 
         function showEndingResults() {
+            endingReplayActive = false; // ポーディウムを出す経路ではリスト再生フラグを必ず落とす
             let ov = document.getElementById('endingResultOverlay');
             let podium = document.getElementById('endingPodium');
             if (!ov || !podium) return;
