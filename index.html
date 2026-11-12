@@ -403,13 +403,24 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-126 ・ 389,188 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-128 ・ 399,794 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
+            <div id="titleTreeWrap" class="relative mx-auto select-none" style="width:150px;height:112px;">
+                <div class="absolute left-1/2 top-[54px] -translate-x-1/2 w-3 h-[46px] rounded" style="background:#8a5a2b;"></div>
+                <div class="absolute left-1/2 top-0 -translate-x-1/2 w-[118px] h-[72px] rounded-full" style="background:radial-gradient(circle at 50% 35%, #b5ecae, #5cab52);"></div>
+                <div id="titleFruitUtsuro" class="hidden absolute" style="left:20px;top:20px;font-size:22px;line-height:1;color:#4fc3f7;text-shadow:0 0 6px #b3e5fc,0 1px 2px rgba(0,0,0,.3);" title="仮の実（うつろ）">★</div>
+                <div id="titleFruitKataru" class="hidden absolute" style="left:50%;top:5px;transform:translateX(-50%);font-size:20px;line-height:1;color:#a78bfa;text-shadow:0 0 6px #ddd6fe,0 1px 2px rgba(0,0,0,.3);" title="仮の実（かたる）">●</div>
+                <div id="titleFruitTomoko" class="hidden absolute" style="right:20px;top:20px;font-size:22px;line-height:1;color:#f472b6;text-shadow:0 0 6px #fbcfe8,0 1px 2px rgba(0,0,0,.3);" title="仮の実（トモコ）">♥</div>
+                <div class="absolute inset-x-0 top-[88px] text-center text-[10px] font-black text-purple-950/60">🌳 仮の樹 <span id="titleTreeCount"></span></div>
+            </div>
             <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
                 TAP TO START
             </button>
+            <div id="trueEndBtnWrap" class="hidden mt-3">
+                <button onclick="playTrueEnding()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-700 to-purple-800 shadow-lg cursor-pointer">？？？</button>
+            </div>
             <div class="mt-3">
                 <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">中断したゲームから再開</button>
                 <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
@@ -805,6 +816,7 @@
                 <button onclick="resetDebugDefaults()" class="px-2.5 py-1 text-xs text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-gray-600 cursor-pointer">
                     初期リセット
                 </button>
+                <button onclick="resetTrueProgress()" class="px-2.5 py-1 text-xs font-black text-white rounded bg-emerald-700 hover:bg-emerald-600 shadow cursor-pointer">🌳 実をリセット</button>
                 <button onclick="forceShowEnding()" class="pixel-btn px-3 py-1 text-xs font-black text-white rounded bg-amber-600 hover:bg-amber-500 shadow cursor-pointer">🎬 エンディング確認</button>
                 <button onclick="saveDebugSettings()" class="pixel-btn px-4 py-1 text-xs font-black text-white rounded bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">
                     💾 設定・変更を適用
@@ -4257,6 +4269,48 @@
             // 順位は「星のカケラの数 → リスナー数」の順で決める（優勝者判定・スタッフロールの優勝表示・順位発表で共通）
             return [...players].sort((a, b) => ((b.fragments || 0) - (a.fragments || 0)) || (b.listeners - a.listeners));
         }
+        // 🌳 トゥルーエンド（仮組み込み：下書き39行。正式版はシート連携に差し替える）
+        const TRUE_END_SCRIPT = [
+            { who: "narration", text: "――これは、すべての物語が終わったあとの、お話。", fx: "black slow" },
+            { who: "megami", text: "……あら。あなたは、まだいてくださいましたのね。", fx: "" },
+            { who: "megami", text: "わたくしは、たくさんの世界を見てきました。数えきれないほどの、星めぐりの物語を。", fx: "" },
+            { who: "megami", text: "祭壇に願いが届いた世界。婚礼の朝に目覚めた世界。名前を呼んでもらえた世界。そして――お別れの世界も。", fx: "" },
+            { who: "megami", text: "どの世界でも、みなさんは一生懸命で、まぶしくて。わたくしは、その全部を覚えています。", fx: "" },
+            { who: "megami", text: "だから、ずっと考えていました。全ての世界のみなさんに、改めてお礼が言いたい、と。", fx: "" },
+            { who: "megami", text: "……でも、お礼よりも先に。どうしても、果たしたい約束がありました。", fx: "" },
+            { who: "megami", text: "繰言かたるさん。うつろさんの体を借りて、みなさんと過ごした、あの子。", fx: "" },
+            { who: "megami", text: "一つの世界の力だけでは、あの子を「再構成」することはできませんでした。あの子は元の世界へ帰り、みなさんの記憶から、静かに消えていきました。", fx: "" },
+            { who: "megami", text: "けれど――たくさんの世界で、たくさんの願いと気持ちが集まって。わたくしの力は、少しずつ満ちていきました。", fx: "" },
+            { who: "megami", text: "だから今度は、あの子がどこかの世界で目覚めるのではなく――あの子のために、世界そのものを、一から作ることにしました。", fx: "gold" },
+            { who: "megami", text: "憑依でも、借り物でもない。あの子自身の体で、あの子自身の人生を生きられる世界を。", fx: "" },
+            { who: "megami", text: "さあ、目覚めの時です。……いってらっしゃい、かたるさん。", fx: "white" },
+            { who: "narration", text: "――現実の世界。とある病院の、一室。", fx: "normal" },
+            { who: "narration", text: "「奇跡だ……！　かたる様の意識が戻られたぞ！」", fx: "" },
+            { who: "narration", text: "「早く、旦那様と奥様にご連絡を！　屋敷の皆様にも！」", fx: "" },
+            { who: "narration", text: "医者と看護師、そして屋敷の者たちが、慌ただしく駆けていく。", fx: "" },
+            { who: "kataru", text: "……ん……。ここは……？", fx: "" },
+            { who: "kataru", text: "わたくし……交通事故に遭って……それから、ずっと眠っていた、と……？", fx: "" },
+            { who: "kataru", text: "変な夢を、見ていましたわ。星の学園で、みんなと笑って……サイコロを振って……。", fx: "" },
+            { who: "kataru", text: "それから、誰かにお願いをして……お別れをして……。大事な夢だったはずなのに、思い出せませんわ……。", fx: "" },
+            { who: "narration", text: "目覚めたばかりの彼女の頬を、一筋の涙が伝った。", fx: "" },
+            { who: "kataru", text: "あら……わたくし、泣いていますの？　変ですわね。悲しくないのに……なんだか、胸が温かいのですわ。", fx: "" },
+            { who: "kataru", text: "……まあ、思い出せないのなら、仕方ありませんわ。今は、生きている事を喜びましょう。", fx: "" },
+            { who: "kataru", text: "今日のわたくしは絶好調ですわ！　――あら、今の言葉……どこかで言った事があるような……。", fx: "gold" },
+            { who: "megami", text: "その世界では、星めぐり学園のみなさんは、かたるさんの事を知りません。かたるさんも、みなさんの事を覚えていません。", fx: "" },
+            { who: "megami", text: "それで、いいのです。これは罰でも、試練でもありません。ただ新しい、始まりの世界です。", fx: "" },
+            { who: "narration", text: "数日後。病室のテレビから、明るいニュースが流れてきた。", fx: "" },
+            { who: "narration", text: "「急成長中のVTuber事務所『星めぐり学園』が、新社屋への移転を発表しました――」", fx: "" },
+            { who: "kataru", text: "星めぐり、学園……？", fx: "" },
+            { who: "kataru", text: "知らないはずなのに……なんだか、懐かしい響きですわ。", fx: "" },
+            { who: "kataru", text: "退院したら、一度見てみようかしら。……ふふ、なんだか、応援したくなりますわ。", fx: "" },
+            { who: "megami", text: "……繋がりは、ほんの少しで十分です。心は、頭よりも正直ですから。", fx: "" },
+            { who: "megami", text: "さて。これで、わたくしの約束は果たせました。", fx: "" },
+            { who: "megami", text: "そして――あなたへ。全ての世界で、みなさんを見守り、導いてくださって、ありがとうございました。", fx: "" },
+            { who: "megami", text: "祭壇の世界も、夢の世界も、現実の世界も。全部、あなたがいたから生まれた物語です。", fx: "" },
+            { who: "megami", text: "わたくしからのお礼は、この新しい世界そのもの。かたるさんの、笑顔の毎日です。", fx: "" },
+            { who: "megami", text: "どうかこれからも――星めぐりの物語を、見守ってくださいね。", fx: "" },
+            { who: "narration", text: "――世界は今日も、静かに回り続ける。誰かの願いと、誰かのお礼を乗せて。", fx: "gold slow" },
+        ];
         function playEndingDialogue() {
             let sorted = rankSortedPlayers();
             let winnerChar = sorted.length ? sorted[0].char : 'utsuro';
@@ -4268,7 +4322,7 @@
             if (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) endScript = sheetEndingHikariScript;
             else if (winnerChar === 'utsuro' && winnerIsHuman && sheetEndingUtsuroScript && sheetEndingUtsuroScript.length) endScript = sheetEndingUtsuroScript;
             else if (winnerChar === 'kataru' && winnerIsHuman && sheetEndingKataruScript && sheetEndingKataruScript.length) endScript = sheetEndingKataruScript;
-            else if (winnerChar === 'tomoko' && winnerIsHuman && sheetEndingTomokoScript && sheetEndingTomokoScript.length) endScript = sheetEndingTomokoScript;
+            else if (winnerChar === 'tomoko' && winnerIsHuman && !players.some(p => p && p.char === 'kataru') && sheetEndingTomokoScript && sheetEndingTomokoScript.length) endScript = sheetEndingTomokoScript; // かたる参加時はうつろが夢世界にいない矛盾を避け、汎用へ
             utsuroEndingSong = !!(sheetEndingUtsuroScript && endScript === sheetEndingUtsuroScript);
             kataruEndingSong = !!(sheetEndingKataruScript && endScript === sheetEndingKataruScript);
             tomokoEndingSong = !!(sheetEndingTomokoScript && endScript === sheetEndingTomokoScript);
@@ -4301,7 +4355,54 @@
             renderOpeningLine();
         }
 
+
+        // 🌳 トゥルーエンドへの道：タイトル画面の樹と実、？？？ボタン
+        let trueEndActive = false;
+        function readTrueProgress() { try { return JSON.parse(localStorage.getItem('utsuro_true_progress') || '{}') || {}; } catch (e) { return {}; } }
+        function refreshTitleTree() {
+            let prog = readTrueProgress();
+            let set = (id, on) => { let el = document.getElementById(id); if (el) el.classList.toggle('hidden', !on); };
+            set('titleFruitUtsuro', !!prog.utsuro);
+            set('titleFruitKataru', !!prog.kataru);
+            set('titleFruitTomoko', !!prog.tomoko);
+            let n = (prog.utsuro ? 1 : 0) + (prog.kataru ? 1 : 0) + (prog.tomoko ? 1 : 0);
+            let cnt = document.getElementById('titleTreeCount');
+            if (cnt) cnt.textContent = '（実 ' + n + '/3）';
+            set('trueEndBtnWrap', n >= 3);
+        }
+        function resetTrueProgress() {
+            try { localStorage.removeItem('utsuro_true_progress'); } catch (e) {}
+            refreshTitleTree();
+            alert('🌳 トゥルーエンドの実をリセットしました（0/3）');
+        }
+        function playTrueEnding() {
+            trueEndActive = true;
+            clearBgmFxMute();
+            activeBgm = 'endingTalk';
+            attemptPlayBgm();
+            endingPlayLines = TRUE_END_SCRIPT.map(l => ({ who: l.who, fx: l.fx, text: l.text }));
+            try { preloadDialogueSe(endingPlayLines); } catch (e) {}
+            dialogueMode = 'ending';
+            openingIndex = 0;
+            openingActive = true;
+            let ov = document.getElementById('openingOverlay');
+            if (!ov) { trueEndActive = false; return; }
+            ov.classList.remove('hidden');
+            clearOpeningBg(ov);
+            ov.classList.add('flex');
+            renderOpeningLine();
+        }
+        refreshTitleTree();
         function endEndingDialogue() {
+            if (trueEndActive) {
+                trueEndActive = false;
+                openingActive = false;
+                dialogueMode = 'opening';
+                let ovT = document.getElementById('openingOverlay');
+                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
+                location.reload();
+                return;
+            }
             openingActive = false;
             dialogueMode = 'opening';
             let ov = document.getElementById('openingOverlay');
