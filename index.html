@@ -403,7 +403,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-128 ・ 399,794 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-129 ・ 406,115 bytes</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -807,6 +807,17 @@
                             <button onclick="loadEndingTomokoFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
                             <button onclick="unlinkEndingTomokoSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
                             <span id="endingTomokoSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/90 p-2 rounded-lg border border-emerald-400 flex flex-col gap-1.5">
+                        <span class="text-xs text-emerald-300 font-bold">🌳 Googleスプレッドシート連携（トゥルーエンド）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">タイトル画面の樹に実が3つ揃った時に出る「？？？」ボタンから、このシートの会話が流れます。形式は speaker / text / fx 列で同じです。未連携・読み込み失敗の時は内蔵の下書き会話になります。シートは「リンクを知っている全員が閲覧可」にしてね。</span>
+                        <input type="text" id="endingTrueSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-emerald-400 rounded px-2 py-1 text-xs text-white focus:outline-none">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="saveEndingTrueSheetUrlAndLoad()" class="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold shadow">🔗 連携して読み込む</button>
+                            <button onclick="loadEndingTrueFromSheet(true)" class="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded font-bold shadow">🔄 今すぐ再読み込み</button>
+                            <button onclick="unlinkEndingTrueSheet()" class="px-2 py-1 text-xs bg-red-900/80 hover:bg-red-700 text-white rounded font-bold shadow">連携を解除</button>
+                            <span id="endingTrueSheetStatusText" class="text-[11px] text-gray-300 font-bold"></span>
                         </div>
                     </div>
                 </div>
@@ -1540,6 +1551,7 @@
         let sheetEndingUtsuroScript = null; // シートから読み込んだ「うつろ優勝時（プレイヤー操作）」専用エンディング会話
         let sheetEndingKataruScript = null; // シートから読み込んだ「かたる優勝時」専用エンディング会話
         let sheetEndingTomokoScript = null; // シートから読み込んだ「トモコ優勝時」専用エンディング会話
+        let sheetTrueEndScript = null; // シートから読み込んだ「トゥルーエンド」会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
             if (!s) return null;
@@ -1914,6 +1926,61 @@
                 setEndingTomokoSheetStatus('連携を解除しました（トモコ優勝時も通常のエンディング会話になります）');
             }
         }
+        const OFFICIAL_TRUE_END_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1phE8SRGh6zNXNYo6hOAO4AUXN8Ofi3OK5_6rjhdmPVs/edit?gid=427128988#gid=427128988'; // トゥルーエンドの公式シート
+        function getPersonalEndingTrueSheetUrl() {
+            try { return localStorage.getItem('utsuro_ending_true_sheet_url') || ''; } catch (e) { return ''; }
+        }
+        function getEffectiveEndingTrueSheetUrl() {
+            return getPersonalEndingTrueSheetUrl() || OFFICIAL_TRUE_END_SHEET_URL;
+        }
+        function setEndingTrueSheetStatus(msg) {
+            let el = document.getElementById('endingTrueSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingTrueFromSheet(manual) {
+            let savedUrl = getEffectiveEndingTrueSheetUrl();
+            if (!savedUrl) { if (manual) setEndingTrueSheetStatus('未連携です（内蔵の下書き会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingTrueSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingTrueSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetTrueEndScript = lines;
+                try { localStorage.setItem('utsuro_ending_true_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingTrueSheetStatus(`✅ ${lines.length}行の「トゥルーエンド」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('トゥルーエンドシート読み込み失敗:', e);
+                setEndingTrueSheetStatus('⚠️ 読み込み失敗（内蔵の下書き会話で継続します）');
+                return false;
+            }
+        }
+        function saveEndingTrueSheetUrlAndLoad() {
+            let input = document.getElementById('endingTrueSheetUrlInput');
+            let url = input ? input.value.trim() : '';
+            if (!url) { setEndingTrueSheetStatus('⚠️ URLを入力してください'); return; }
+            if (!extractSheetCsvUrl(url)) { setEndingTrueSheetStatus('⚠️ スプレッドシートのURLではないようです'); return; }
+            try { localStorage.setItem('utsuro_ending_true_sheet_url', url); } catch (e) {}
+            loadEndingTrueFromSheet(true);
+        }
+        function unlinkEndingTrueSheet() {
+            try { localStorage.removeItem('utsuro_ending_true_sheet_url'); localStorage.removeItem('utsuro_ending_true_sheet_cache'); } catch (e) {}
+            sheetTrueEndScript = null;
+            let input = document.getElementById('endingTrueSheetUrlInput');
+            if (OFFICIAL_TRUE_END_SHEET_URL) {
+                if (input) input.value = OFFICIAL_TRUE_END_SHEET_URL;
+                loadEndingTrueFromSheet(false);
+                setEndingTrueSheetStatus('個人の連携を解除しました（公式シートに戻ります）');
+            } else {
+                if (input) input.value = '';
+                setEndingTrueSheetStatus('連携を解除しました（内蔵の下書き会話になります）');
+            }
+        }
         function unlinkEndingHikariSheet() {
             try { localStorage.removeItem('utsuro_ending_hikari_sheet_url'); localStorage.removeItem('utsuro_ending_hikari_sheet_cache'); } catch (e) {}
             sheetEndingHikariScript = null;
@@ -2026,6 +2093,12 @@
                 let cachedTomokoEnding = localStorage.getItem('tomoko_ending_tomoko_sheet_cache');
                 if (cachedTomokoEnding) { try { sheetEndingTomokoScript = sanitizeOpeningLines(JSON.parse(cachedTomokoEnding)); } catch (e) { sheetEndingTomokoScript = null; } }
                 if (personalTomokoUrl || OFFICIAL_ENDING_TOMOKO_SHEET_URL) loadEndingTomokoFromSheet(false); // トモコ優勝時シートがあれば起動時に自動読み込み
+                let trueEndingInput = document.getElementById('endingTrueSheetUrlInput');
+                let personalTrueUrl = localStorage.getItem('utsuro_ending_true_sheet_url');
+                if (trueEndingInput) trueEndingInput.value = personalTrueUrl || OFFICIAL_TRUE_END_SHEET_URL;
+                let cachedTrueEnding = localStorage.getItem('utsuro_ending_true_sheet_cache');
+                if (cachedTrueEnding) { try { sheetTrueEndScript = sanitizeOpeningLines(JSON.parse(cachedTrueEnding)); } catch (e) { sheetTrueEndScript = null; } }
+                if (personalTrueUrl || OFFICIAL_TRUE_END_SHEET_URL) loadEndingTrueFromSheet(false); // トゥルーエンドシートがあれば起動時に自動読み込み
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -4269,7 +4342,7 @@
             // 順位は「星のカケラの数 → リスナー数」の順で決める（優勝者判定・スタッフロールの優勝表示・順位発表で共通）
             return [...players].sort((a, b) => ((b.fragments || 0) - (a.fragments || 0)) || (b.listeners - a.listeners));
         }
-        // 🌳 トゥルーエンド（仮組み込み：下書き39行。正式版はシート連携に差し替える）
+        // 🌳 トゥルーエンド内蔵フォールバック（下書き39行。シート読み込み時はそちらが優先）
         const TRUE_END_SCRIPT = [
             { who: "narration", text: "――これは、すべての物語が終わったあとの、お話。", fx: "black slow" },
             { who: "megami", text: "……あら。あなたは、まだいてくださいましたのね。", fx: "" },
@@ -4380,7 +4453,7 @@
             clearBgmFxMute();
             activeBgm = 'endingTalk';
             attemptPlayBgm();
-            endingPlayLines = TRUE_END_SCRIPT.map(l => ({ who: l.who, fx: l.fx, text: l.text }));
+            endingPlayLines = ((sheetTrueEndScript && sheetTrueEndScript.length) ? sheetTrueEndScript : TRUE_END_SCRIPT).map(l => ({ who: l.who, fx: l.fx, text: l.text }));
             try { preloadDialogueSe(endingPlayLines); } catch (e) {}
             dialogueMode = 'ending';
             openingIndex = 0;
