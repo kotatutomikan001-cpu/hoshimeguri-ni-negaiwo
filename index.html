@@ -402,8 +402,9 @@
 
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
+    <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-135 ・ 410,519 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-136 ・ 411,721 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -4514,20 +4515,43 @@
         }
         refreshTitleTree();
         refreshTitleTheme();
+        // 🌳 トゥルーエンドの余韻：暗転して少し間を置き、金色タイトルをゆっくり出す
+        function returnToTitleWithLinger() {
+            let fade = document.getElementById('trueEndFade');
+            let ovT = document.getElementById('openingOverlay');
+            try { fadeOutBgmByFx(); } catch (e) {} // 会話BGMをゆっくり消す
+            if (!fade) {
+                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
+                let ts0 = document.getElementById('titleScreen');
+                if (ts0) ts0.classList.remove('hidden');
+                try { playSelectBgm(); } catch (e) {}
+                refreshTitleTree();
+                refreshTitleTheme();
+                return;
+            }
+            fade.classList.remove('hidden');
+            fade.style.transition = 'opacity 1.6s ease';
+            requestAnimationFrame(() => { requestAnimationFrame(() => { fade.style.opacity = '1'; }); });
+            setTimeout(() => {
+                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
+                let tsR = document.getElementById('titleScreen');
+                if (tsR) tsR.classList.remove('hidden');
+                refreshTitleTree();
+                refreshTitleTheme();
+                try { playSelectBgm(); } catch (e) {} // 金色タイトルのBGMへ
+                fade.style.transition = 'opacity 1.8s ease';
+                fade.style.opacity = '0';
+                setTimeout(() => { fade.classList.add('hidden'); }, 1900);
+            }, 2300);
+        }
+
         function endEndingDialogue() {
             if (trueEndActive) {
                 trueEndActive = false;
                 openingActive = false;
                 dialogueMode = 'opening';
-                let ovT = document.getElementById('openingOverlay');
-                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
-                // リロードせずタイトルへ直接戻す（裏の選択画面が一瞬見えるのを防ぐ）
                 try { localStorage.setItem('utsuro_true_seen', '1'); } catch (e) {}
-                try { playSelectBgm(); } catch (e) {} // 金色タイトルに戻るので専用BGMへ（playSelectBgm が seen を見て titleGold を選ぶ）
-                let tsR = document.getElementById('titleScreen');
-                if (tsR) tsR.classList.remove('hidden');
-                refreshTitleTree();
-                refreshTitleTheme();
+                returnToTitleWithLinger(); // 余韻を持たせてタイトルへ（即座に戻らない）
                 return;
             }
             openingActive = false;
