@@ -405,7 +405,7 @@
     <!-- 🎬 タイトル画面 -->
     <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-143 ・ 425,487 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-144 ・ 425,182 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -4669,6 +4669,10 @@
         let staffRollTextH = 0;
         let staffRollVh = 800;
         let staffRollTextTargetY = 0;
+        let staffRollY = 0; // JSが保持する本文の現在位置（transformと常時一致させる）
+        let staffRollSpeed = 60; // 現在のスクロール速度 px/s（スキップ1回目で900）
+        let staffRollRaf = null;
+        let staffRollLastTs = 0;
         function isRollPhone() { try { return Math.min(window.innerWidth || 9999, window.innerHeight || 9999) < 500; } catch (e) { return false; } }
         function buildStaffRollHtml() {
             let sorted = rankSortedPlayers();
@@ -4713,6 +4717,7 @@
             inner.innerHTML = buildStaffRollHtml();
             inner.style.transition = 'none';
             inner.style.transform = 'translateY(' + (window.innerHeight || 800) + 'px)';
+            staffRollY = window.innerHeight || 800;
             inner.style.visibility = 'hidden';
             let finalePre = document.getElementById('staffRollFinale');
             if (finalePre) { finalePre.style.transition = 'none'; finalePre.style.transform = 'translateY(55vh)'; finalePre.style.visibility = 'hidden'; }
@@ -4724,18 +4729,13 @@
                 Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 600))]).then(begin).catch(begin);
             } else begin();
         }
-        // ロールの現在位置を「経過時間×速度」の計算だけで推定する（実測 rect が端末によって当てにならないため、スマホではこちらで おしまい の開始を決める）
-        function staffRollModelY() {
-            if (staffRollFastSeg) {
-                let e = (Date.now() - staffRollFastSeg.at) / 1000;
-                return Math.max(staffRollTextTargetY, staffRollFastSeg.fromY - staffRollFastSeg.speed * e);
-            }
-            let e = (Date.now() - staffRollMotionAt) / 1000;
-            return Math.max(staffRollTextTargetY, staffRollVh - 60 * e);
-        }
+        // ロールは CSS トランジション任せにせず、JS が位置(staffRollY)を保持して毎フレーム transform を書く。
+        // トランジション任せだと iPhone で開始位置がずれて「見た目の位置」と「おしまい判定の位置」が食い違い、途中で出てしまう事があったため。
+        // 判定も同じ staffRollY と実測の高さで決めるので、端末によらず一致する。フレームが詰まっても位置が先行する事はない（最大で遅れる側）。
         function runStaffRollMotion() {
             staffRollFast = false;
             staffRollFastSeg = null;
+            staffRollSpeed = 60;
             staffRollMotionAt = Date.now();
             let inner = document.getElementById('staffRollInner');
             let finale = document.getElementById('staffRollFinale');
@@ -4746,13 +4746,10 @@
             // 余分な移動量はたっぷり取る：フォントの遅延読み込みで実際の高さが計測値より伸びても、本文が途中で止まらず画面外まで流れ切るように
             let over = Math.round(vh + staffRollTextH);
             staffRollTextTargetY = -(staffRollTextH + over);
-            let textDur = (vh + staffRollTextH + over) / 60;
+            staffRollY = vh;
             inner.style.transition = 'none';
-            inner.style.transform = 'translateY(' + vh + 'px)';
-            void inner.offsetWidth;
+            inner.style.transform = 'translateY(' + staffRollY + 'px)';
             inner.style.visibility = 'visible';
-            inner.style.transition = 'transform ' + textDur + 's linear';
-            inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
             if (finale) {
                 finale.classList.remove('finale-pop');
                 finale.style.visibility = 'hidden';
@@ -4761,22 +4758,30 @@
             }
             if (staffRollTimer) clearTimeout(staffRollTimer);
             if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
-            // おしまいの登場は実測で決める：本文の末尾が実際に画面の上端を抜けたら開始する（フォントの遅延読み込み等で高さが後から変わっても追随できる）
-            staffRollWatchTimer = setInterval(() => {
-                if (staffRollPhase !== 'scroll') { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; return; }
-                if (isRollPhone()) {
-                    // スマホ（特に iPhone）はアニメーション中要素の実測位置がずれる事があるため、時刻と速度からの推定位置＋実測の高さで判定する
-                    let h = inner.offsetHeight || staffRollTextH;
-                    if (staffRollModelY() + h <= -(staffRollVh * 0.12)) startFinaleRise();
-                } else {
-                    let r = inner.getBoundingClientRect();
-                    if (r.height > 0 && r.bottom <= 0) startFinaleRise();
-                }
-            }, 120);
-            staffRollTimer = setTimeout(startFinaleRise, ((vh + staffRollTextH) / 60) * 1000 + 6000); // 保険：実測で拾えない場合も、本文が抜ける頃には必ず出す
+            if (staffRollRaf) { cancelAnimationFrame(staffRollRaf); staffRollRaf = null; }
+            staffRollLastTs = 0;
+            staffRollRaf = requestAnimationFrame(tickStaffRoll);
+            staffRollTimer = setTimeout(startFinaleRise, ((vh + staffRollTextH) / 60) * 1000 + 6000); // 保険：万一フレームが止まっても、本文が抜ける頃には必ず出す
+        }
+        function tickStaffRoll(ts) {
+            staffRollRaf = null;
+            if (staffRollPhase !== 'scroll') return;
+            let inner = document.getElementById('staffRollInner');
+            if (!inner) return;
+            if (!staffRollLastTs) staffRollLastTs = ts;
+            let dt = Math.min(0.05, Math.max(0, (ts - staffRollLastTs) / 1000));
+            staffRollLastTs = ts;
+            staffRollY -= staffRollSpeed * dt;
+            let h = inner.offsetHeight || staffRollTextH;
+            let floorY = -(h + staffRollVh); // 末尾が画面の上端を十分に抜けた先（高さが後から伸びたら床も下がる）
+            if (staffRollY < floorY) staffRollY = floorY;
+            inner.style.transform = 'translateY(' + staffRollY + 'px)';
+            if (staffRollY + h <= -(staffRollVh * 0.12)) { startFinaleRise(); return; }
+            staffRollRaf = requestAnimationFrame(tickStaffRoll);
         }
         function startFinaleRise() {
             if (staffRollPhase !== 'scroll') return;
+            if (staffRollRaf) { cancelAnimationFrame(staffRollRaf); staffRollRaf = null; }
             if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             let finale = document.getElementById('staffRollFinale');
             if (!finale) { arriveStaffRollFinale(); return; }
@@ -4797,6 +4802,7 @@
         function finishStaffRoll() {
             if (staffRollPhase === 'idle') return;
             staffRollPhase = 'idle';
+            if (staffRollRaf) { cancelAnimationFrame(staffRollRaf); staffRollRaf = null; }
             if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
             if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             let ov = document.getElementById('staffRollOverlay');
@@ -4813,28 +4819,18 @@
                 if (!staffRollFast) {
                     // 1回目のスキップ: 瞬間移動ではなく、ロールを一気にスピードアップして流し切る（流し終わったら通常通りおしまいが出る）
                     staffRollFast = true;
-                    let inner = document.getElementById('staffRollInner');
-                    if (inner) {
-                        let elapsed = (Date.now() - staffRollMotionAt) / 1000;
-                        let curY = Math.max(staffRollTextTargetY, staffRollVh - 60 * elapsed);
-                        staffRollFastSeg = { at: Date.now(), fromY: curY, speed: 900 };
-                        let remain = curY - staffRollTextTargetY;
-                        let fastDur = Math.max(0.3, remain / 900);
-                        inner.style.transition = 'none';
-                        inner.style.transform = 'translateY(' + curY + 'px)';
-                        void inner.offsetWidth;
-                        inner.style.transition = 'transform ' + fastDur + 's linear';
-                        inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
-                    }
+                    staffRollSpeed = 900;
                     return;
                 }
                 // 2回目のスキップ: そのまま最後まで飛ばす
+                if (staffRollRaf) { cancelAnimationFrame(staffRollRaf); staffRollRaf = null; }
                 if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
                 if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
                 let inner = document.getElementById('staffRollInner');
                 if (inner) {
                     inner.style.visibility = 'visible';
                     inner.style.transition = 'transform 0.5s ease';
+                    staffRollY = staffRollTextTargetY;
                     inner.style.transform = 'translateY(' + staffRollTextTargetY + 'px)';
                 }
                 let finale = document.getElementById('staffRollFinale');
