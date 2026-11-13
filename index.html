@@ -179,6 +179,11 @@
             </div>
 
             <!-- リスナー数比較 -->
+            <div class="flex items-center gap-1.5 flex-none self-center select-none" title="BGM音量">
+                <span class="text-xs sm:text-sm">🔊</span>
+                <input type="range" min="0" max="100" step="1" value="30" class="bgm-vol-slider w-20 sm:w-28 cursor-pointer accent-purple-400" oninput="changeBgmVolume(this.value / 100)">
+                <span class="bgm-vol-percent text-[10px] sm:text-xs font-bold text-yellow-200 w-8">30%</span>
+            </div>
             <div class="hud-cards text-xs sm:text-sm font-bold">
                 <div class="hud-card bg-purple-900/80 border border-purple-400">
                     <div class="hud-top">
@@ -483,7 +488,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-152 ・ 440,004 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-154 ・ 441,166 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -500,6 +505,11 @@
             <div class="mt-3">
                 <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">中断したゲームから再開</button>
                 <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
+            </div>
+            <div class="mt-4 flex items-center justify-center gap-2 select-none" title="BGM音量">
+                <span class="text-sm">🔊</span>
+                <input type="range" min="0" max="100" step="1" value="30" class="bgm-vol-slider w-44 cursor-pointer accent-purple-600" oninput="changeBgmVolume(this.value / 100)">
+                <span class="bgm-vol-percent text-xs font-bold text-purple-950/70 w-9 text-left">30%</span>
             </div>
         </div>
     </div>
@@ -1160,6 +1170,7 @@
             } else {
                 currentBgmVolume = 0.3;
             }
+            updateVolumeControlsUI(currentBgmVolume);
 
             let savedBonuses = localStorage.getItem('utsuro_goal_bonuses');
             if (savedBonuses) {
@@ -2294,37 +2305,35 @@
         function changeBgmVolume(val) {
             currentBgmVolume = parseFloat(val);
             if (isNaN(currentBgmVolume)) currentBgmVolume = 0.3;
+            currentBgmVolume = Math.min(1, Math.max(0, currentBgmVolume));
 
-            const selectAudio = document.getElementById('selectBgmAudio');
-            const gameAudio = document.getElementById('gameBgmAudio');
-            const endingAudio = document.getElementById('endingBgmAudio');
-            const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
-            const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
-            const endingTomokoAudio = document.getElementById('endingTomokoBgmAudio');
-            const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
-            const titleGoldAudio = document.getElementById('titleGoldBgmAudio');
-
-            if (selectAudio) selectAudio.volume = currentBgmVolume;
-            if (gameAudio) gameAudio.volume = currentBgmVolume;
-            if (endingAudio) endingAudio.volume = currentBgmVolume;
-            if (endingUtsuroAudio) endingUtsuroAudio.volume = currentBgmVolume;
-            if (endingKataruAudio) endingKataruAudio.volume = bgmVolFor(endingKataruAudio.id);
-            if (endingTomokoAudio) endingTomokoAudio.volume = bgmVolFor(endingTomokoAudio.id);
-            if (endingTalkAudio) endingTalkAudio.volume = currentBgmVolume;
-            if (titleGoldAudio) titleGoldAudio.volume = currentBgmVolume;
+            if (!bgmMutedByFx) {
+                // 🔊 スライダー操作は明示的なジェスチャなので、iPhoneでも音量が効くよう再生中のBGMをミキサー（ゲイン）経由に切り替える。
+                //    経由済みの曲は要素 volume ではなくゲイン側で音量を持つ（二重減衰を避けるため要素は 1 に保つ）。
+                try {
+                    if (/^https?:$/.test(location.protocol)) {
+                        if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+                        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                        let activeEl = bgmElementFor(activeBgm);
+                        if (activeEl && !activeEl.paused) ensureBgmRoutingFor(activeEl);
+                    }
+                } catch (e) {}
+                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
+                    let el = document.getElementById(id);
+                    if (!el) return;
+                    let g = bgmGains[id];
+                    if (g) { try { g.gain.value = bgmVolFor(id); } catch (e) {} el.volume = 1; }
+                    else el.volume = bgmVolFor(id);
+                });
+            }
 
             updateVolumeControlsUI(currentBgmVolume);
             try { localStorage.setItem('utsuro_bgm_volume', currentBgmVolume); } catch (e) {}
         }
 
         function updateVolumeControlsUI(vol) {
-            let headerSlider = document.getElementById('headerBgmVolume');
-            let modalSlider = document.getElementById('modalBgmVolume');
-            let percentText = document.getElementById('bgmVolPercent');
-
-            if (headerSlider) headerSlider.value = vol;
-            if (modalSlider) modalSlider.value = vol;
-            if (percentText) percentText.innerText = `${Math.round(vol * 100)}%`;
+            document.querySelectorAll('.bgm-vol-slider').forEach(sl => { sl.value = Math.round(vol * 100); });
+            document.querySelectorAll('.bgm-vol-percent').forEach(tx => { tx.textContent = Math.round(vol * 100) + '%'; });
         }
 
         function setupAudioUnlockers() {
@@ -4832,7 +4841,7 @@
             h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
             h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
-            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
+            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['ロゴデザイナー', 'hiro-pon'], ['タイトルイラスト', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
@@ -6785,7 +6794,7 @@
                         if (destTile) {
                             ctx.save();
                             ctx.globalAlpha = 0.55;
-                            drawPlayerDotModel(ctx, cand.playerChar, destTile.x, destTile.y - 10, 32);
+                            drawPlayerDotModel(ctx, cand.playerChar, destTile.x, destTile.y - 10, 40);
 
                             ctx.beginPath();
                             ctx.arc(destTile.x, destTile.y, 20, 0, Math.PI * 2);
@@ -6822,7 +6831,7 @@
                         let drawX = (p.renderX !== undefined ? p.renderX : tile.x) + offset;
                         let drawY = (p.renderY !== undefined ? p.renderY : tile.y) - 6 + (p.jumpY || 0);
 
-                        drawPlayerDotModel(ctx, p.char, drawX, drawY, 40);
+                        drawPlayerDotModel(ctx, p.char, drawX, drawY, 50); // 駒の立ち絵は少し大きめに（2026-11-13 ユーザー要望）
 
                         if (GOSHU_ENABLED) {
                             if (p.goshuX === undefined) p.goshuX = tile.x;
