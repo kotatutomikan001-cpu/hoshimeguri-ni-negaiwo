@@ -405,32 +405,33 @@
     <!-- 🎬 タイトル画面 -->
     <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
-        <div id="titleTreeTrunk" class="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none" style="bottom:0;width:52px;height:68vh;background:linear-gradient(to bottom, rgba(122,79,43,0) 0%, rgba(122,79,43,.85) 26%, #6f4525 58%, #59371d 100%);border-radius:26px 26px 0 0;"></div>
-        <div class="absolute left-1/2 pointer-events-none select-none" style="bottom:-2px;width:74px;height:17px;transform:translateX(-104%) rotate(13deg);background:#59371d;border-radius:50%;"></div>
-        <div class="absolute left-1/2 pointer-events-none select-none" style="bottom:-2px;width:74px;height:17px;transform:translateX(4%) rotate(-13deg);background:#59371d;border-radius:50%;"></div>
-        <div class="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none" style="bottom:-12px;width:360px;height:46px;background:radial-gradient(ellipse at center, rgba(43,84,40,.55), rgba(43,84,40,0) 70%);border-radius:50%;"></div>
+        <div id="titleTreeFallback" class="absolute inset-0 pointer-events-none select-none">
+        <div id="titleTreeTrunk" class="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none" style="bottom:0;width:52px;height:68vh;border-radius:26px 26px 0 0;"></div>
+        <div class="tree-root absolute left-1/2 pointer-events-none select-none" style="bottom:-2px;width:74px;height:17px;transform:translateX(-104%) rotate(13deg);background:#59371d;border-radius:50%;"></div>
+        <div class="tree-root absolute left-1/2 pointer-events-none select-none" style="bottom:-2px;width:74px;height:17px;transform:translateX(4%) rotate(-13deg);background:#59371d;border-radius:50%;"></div>
+        <div class="tree-ground absolute left-1/2 -translate-x-1/2 pointer-events-none select-none" style="bottom:-12px;width:360px;height:46px;background:radial-gradient(ellipse at center, rgba(43,84,40,.55), rgba(43,84,40,0) 70%);border-radius:50%;"></div>
         <svg id="titleTreeWrap" class="absolute inset-x-0 top-0 w-full pointer-events-none select-none" style="height:60vh;" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
             <defs>
                 <radialGradient id="canopyGrad" cx="50%" cy="38%" r="75%">
-                    <stop offset="0%" stop-color="#d3f5c8"/><stop offset="45%" stop-color="#8fd07f"/><stop offset="78%" stop-color="#57a75c"/><stop offset="100%" stop-color="#3f8a4c"/>
+                    <stop offset="0%" class="cs-1" stop-color="#d3f5c8"/><stop offset="45%" class="cs-2" stop-color="#8fd07f"/><stop offset="78%" class="cs-3" stop-color="#57a75c"/><stop offset="100%" class="cs-4" stop-color="#3f8a4c"/>
                 </radialGradient>
                 <radialGradient id="canopyGrad2" cx="50%" cy="40%" r="75%">
-                    <stop offset="0%" stop-color="#b9ecab"/><stop offset="60%" stop-color="#74bd68"/><stop offset="100%" stop-color="#4c9953"/>
+                    <stop offset="0%" class="cs-1" stop-color="#b9ecab"/><stop offset="60%" class="cs-2" stop-color="#74bd68"/><stop offset="100%" class="cs-3" stop-color="#4c9953"/>
                 </radialGradient>
                 <path id="treeStar" d="M0,-7 L2,-2 L7,0 L2,2 L0,7 L-2,2 L-7,0 L-2,-2 Z"/>
             </defs>
-            <g stroke="#6f4525" fill="none" stroke-linecap="round">
+            <g class="tree-branches" stroke="#6f4525" fill="none" stroke-linecap="round">
                 <path d="M500,478 C470,405 400,352 318,322" stroke-width="15"/>
                 <path d="M500,478 C530,405 600,352 682,322" stroke-width="15"/>
                 <path d="M500,468 C500,395 495,332 468,272" stroke-width="12"/>
             </g>
-            <ellipse cx="190" cy="300" rx="230" ry="125" fill="url(#canopyGrad2)"/>
-            <ellipse cx="810" cy="300" rx="230" ry="125" fill="url(#canopyGrad2)"/>
-            <ellipse cx="500" cy="205" rx="440" ry="200" fill="url(#canopyGrad)"/>
-            <ellipse cx="320" cy="150" rx="200" ry="100" fill="url(#canopyGrad2)" opacity="0.8"/>
-            <ellipse cx="680" cy="150" rx="200" ry="100" fill="url(#canopyGrad2)" opacity="0.8"/>
-            <ellipse cx="500" cy="95" rx="270" ry="110" fill="url(#canopyGrad)"/>
-            <g fill="#fffbe8">
+            <ellipse class="canopy-blob" cx="190" cy="300" rx="230" ry="125" fill="url(#canopyGrad2)"/>
+            <ellipse class="canopy-blob" cx="810" cy="300" rx="230" ry="125" fill="url(#canopyGrad2)"/>
+            <ellipse class="canopy-blob" cx="500" cy="205" rx="440" ry="200" fill="url(#canopyGrad)"/>
+            <ellipse class="canopy-blob" cx="320" cy="150" rx="200" ry="100" fill="url(#canopyGrad2)" opacity="0.8"/>
+            <ellipse class="canopy-blob" cx="680" cy="150" rx="200" ry="100" fill="url(#canopyGrad2)" opacity="0.8"/>
+            <ellipse class="canopy-blob" cx="500" cy="95" rx="270" ry="110" fill="url(#canopyGrad)"/>
+            <g class="canopy-stars" fill="#fffbe8">
                 <use href="#treeStar" transform="translate(150,120) scale(1.1)" class="tree-twinkle"/>
                 <use href="#treeStar" transform="translate(255,215) scale(0.8)" class="tree-twinkle" style="animation-delay:.5s"/>
                 <use href="#treeStar" transform="translate(340,80) scale(1.3)" class="tree-twinkle" style="animation-delay:1.1s"/>
@@ -447,7 +448,7 @@
                 <use href="#treeStar" transform="translate(705,355) scale(1.0)" class="tree-twinkle" style="animation-delay:.4s"/>
                 <use href="#treeStar" transform="translate(290,330) scale(1.15)" class="tree-twinkle" style="animation-delay:1.6s"/>
             </g>
-            <g fill="#fef9c3">
+            <g class="canopy-stars" fill="#fef9c3">
                 <circle cx="205" cy="170" r="3" class="tree-twinkle" style="animation-delay:.8s"/>
                 <circle cx="385" cy="240" r="2.4" class="tree-twinkle" style="animation-delay:1.9s"/>
                 <circle cx="520" cy="225" r="3" class="tree-twinkle" style="animation-delay:.1s"/>
@@ -478,7 +479,15 @@
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full" style="width:5px;height:5px;background:#f472b6;"></div>
             </div>
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-148 ・ 434,276 bytes</div>
+        </div>
+        <div id="titleTreeArt" class="hidden absolute pointer-events-none select-none" style="left:50%;transform:translateX(-50%);bottom:0;width:min(100vw,159dvh);aspect-ratio:2048/1288;">
+            <img id="titleTreeDryImg" src="title_tree_dry.png" alt="" class="absolute inset-0 w-full h-full" draggable="false">
+            <img id="titleTreeGreenImg" src="title_tree_green.png" alt="" class="absolute inset-0 w-full h-full" draggable="false">
+            <img id="titleLightImgUtsuro" src="title_light_utsuro.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
+            <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
+            <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
+        </div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-150 ・ 439,253 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -621,6 +630,21 @@
         .tree-twinkle { animation: treeTwinkle 2.8s ease-in-out infinite; }
         @keyframes treeLightPulse { 0%, 100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.22); opacity: 1; } }
         .tree-light-halo { animation: treeLightPulse 3.2s ease-in-out infinite; }
+        #titleTreeTrunk { background: linear-gradient(to bottom, rgba(122,79,43,0) 0%, rgba(122,79,43,.85) 26%, #6f4525 58%, #59371d 100%); }
+        /* 🌳 樹の段階：エンディングをまだ見ていない間は、女神のチカラと連動して枯れかけた姿になる */
+        #titleScreen.tree-withered .cs-1 { stop-color: #e8dfca; }
+        #titleScreen.tree-withered .cs-2 { stop-color: #c4b294; }
+        #titleScreen.tree-withered .cs-3 { stop-color: #8f7a54; }
+        #titleScreen.tree-withered .cs-4 { stop-color: #77643f; }
+        #titleScreen.tree-withered .canopy-blob { transform: scale(.84); transform-box: fill-box; transform-origin: center; opacity: .88; }
+        #titleScreen.tree-withered .canopy-stars { display: none; }
+        #titleScreen.tree-withered .tree-branches path { stroke: #7d6c50; }
+        #titleScreen.tree-withered #titleTreeTrunk { background: linear-gradient(to bottom, rgba(140,124,96,0) 0%, rgba(140,124,96,.85) 26%, #77664a 58%, #5d4c33 100%); }
+        #titleScreen.tree-withered .tree-root { background: #5d4c33 !important; }
+        #titleScreen.tree-withered .tree-ground { background: radial-gradient(ellipse at center, rgba(122,102,66,.5), rgba(122,102,66,0) 70%) !important; }
+        /* 🌳 清書アートの段階切り替え（枯れ=乾いた樹／緑=生い茂った樹） */
+        #titleScreen.tree-withered #titleTreeGreenImg { display: none; }
+        #titleScreen:not(.tree-withered) #titleTreeDryImg { display: none; }
         @media (max-height: 520px) {
             #endingListOverlay .el-sub { margin-bottom: 0.75rem; }
             #endingListOverlay .el-back { margin-top: 1rem; }
@@ -4527,6 +4551,7 @@
             tomokoEndingSong = !!(sheetEndingTomokoScript && endScript === sheetEndingTomokoScript);
             // 🌳 トゥルーエンド解放の記録: この端末で個別エンドを見たら実が1つなる（タイトル画面の樹で使う）
             try {
+                localStorage.setItem('utsuro_any_ending_seen', '1'); // どのエンディングでも、見たら樹が枯れた姿から甦る
                 let prog = {};
                 try { prog = JSON.parse(localStorage.getItem('utsuro_true_progress') || '{}') || {}; } catch (e) { prog = {}; }
                 if (sheetEndingUtsuroScript && endScript === sheetEndingUtsuroScript) prog.utsuro = true;
@@ -4628,14 +4653,48 @@
         // 🌳 トゥルーエンドへの道：タイトル画面の樹と実、？？？ボタン
         let trueEndActive = false;
         function readTrueProgress() { try { return JSON.parse(localStorage.getItem('utsuro_true_progress') || '{}') || {}; } catch (e) { return {}; } }
+        // 🌳 タイトル樹の清書アート：樹の2枚とも読み込めたら仮の樹と差し替える（読み込めない環境では仮の樹のまま）
+        let treeArtLoadedCount = 0;
+        function treeArtLoaded() {
+            treeArtLoadedCount++;
+            if (treeArtLoadedCount < 2) return;
+            let art = document.getElementById('titleTreeArt');
+            let fb = document.getElementById('titleTreeFallback');
+            if (art) art.classList.remove('hidden');
+            if (fb) fb.classList.add('hidden');
+            refreshTitleTree();
+        }
+        ['titleTreeDryImg', 'titleTreeGreenImg'].forEach(id => {
+            let el = document.getElementById(id);
+            if (!el) return;
+            if (el.complete && el.naturalWidth > 0) treeArtLoaded();
+            else el.addEventListener('load', treeArtLoaded);
+        });
+        ['titleLightImgUtsuro', 'titleLightImgKataru', 'titleLightImgTomoko'].forEach(id => {
+            let el = document.getElementById(id);
+            if (!el) return;
+            const mark = () => { el.dataset.ok = (el.naturalWidth > 0) ? '1' : '0'; refreshTitleTree(); };
+            if (el.complete) mark();
+            else { el.addEventListener('load', mark); el.addEventListener('error', mark); }
+        });
         function refreshTitleTree() {
             let prog = readTrueProgress();
             let set = (id, on) => { let el = document.getElementById(id); if (el) el.classList.toggle('hidden', !on); };
-            set('titleFruitUtsuro', !!prog.utsuro);
-            set('titleFruitKataru', !!prog.kataru);
-            set('titleFruitTomoko', !!prog.tomoko);
+            const setFruit = (divId, imgId, on) => {
+                set(divId, on);
+                let im = document.getElementById(imgId);
+                if (im) im.classList.toggle('hidden', !(on && im.dataset.ok === '1'));
+            };
+            setFruit('titleFruitUtsuro', 'titleLightImgUtsuro', !!prog.utsuro);
+            setFruit('titleFruitKataru', 'titleLightImgKataru', !!prog.kataru);
+            setFruit('titleFruitTomoko', 'titleLightImgTomoko', !!prog.tomoko);
             let n = (prog.utsuro ? 1 : 0) + (prog.kataru ? 1 : 0) + (prog.tomoko ? 1 : 0);
             set('trueEndBtnWrap', n >= 3);
+            // 🌳 樹の段階：エンディングを1つも見ていない間は枯れかけた姿、見た後は緑が生い茂り樹に光が灯る
+            let anyEnding = n >= 1;
+            if (!anyEnding) { try { anyEnding = localStorage.getItem('utsuro_any_ending_seen') === '1'; } catch (e) {} }
+            let tsTree = document.getElementById('titleScreen');
+            if (tsTree) tsTree.classList.toggle('tree-withered', !anyEnding);
         }
         function isTrueSeen() { try { return localStorage.getItem('utsuro_true_seen') === '1'; } catch (e) { return false; } }
         function refreshTitleTheme() {
@@ -4663,7 +4722,7 @@
             }
         }
         function resetTrueProgress() {
-            try { localStorage.removeItem('utsuro_true_progress'); localStorage.removeItem('utsuro_true_seen'); } catch (e) {}
+            try { localStorage.removeItem('utsuro_true_progress'); localStorage.removeItem('utsuro_true_seen'); localStorage.removeItem('utsuro_any_ending_seen'); } catch (e) {}
             refreshTitleTree();
             refreshTitleTheme();
             alert('🌳 トゥルーエンドの実をリセットしました（0/3）');
