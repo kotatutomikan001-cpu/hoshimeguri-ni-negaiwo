@@ -76,7 +76,6 @@
                 padding-top: max(12px, env(safe-area-inset-top));
             }
         }
-        #debugEntryBtn { margin-left: env(safe-area-inset-left); margin-top: env(safe-area-inset-top); }
         /* 📱 縦画面・狭い画面では選択画面の下部ボタンを縦積みにして、ボタン内の文字が途中で割れないようにする */
         @media (max-width: 640px), (orientation: portrait) {
             #csFooterBtns { flex-direction: column; }
@@ -168,7 +167,7 @@
         <header class="flex-none flex flex-col sm:flex-row items-stretch sm:items-center justify-between pixel-box p-1.5 sm:p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500 gap-1.5">
             <div class="flex items-center justify-between sm:justify-start gap-2">
                 <div class="flex items-center gap-1.5">
-                    <div class="w-7 h-7 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs sm:text-lg flex-none select-none">
+                    <div id="debugEntryStar" onclick="openDebugMenu()" class="w-7 h-7 sm:w-10 sm:h-10 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs sm:text-lg flex-none select-none cursor-pointer">
                         ⭐
                     </div>
                     <div>
@@ -396,10 +395,7 @@
         </div>
     </div>
 
-    <!-- 🌟 デバッグ用隠し起動ボタン (画面左上の⭐マーク) -->
-    <button type="button" id="debugEntryBtn" onclick="openDebugMenu()" class="hidden fixed top-0 left-0 w-12 h-12 z-[999999] cursor-pointer flex items-start justify-start p-2 select-none pointer-events-auto bg-transparent border-0 outline-none" title="">
-        <span class="text-sm sm:text-base opacity-70 hover:opacity-100 font-bold select-none">⭐</span>
-    </button>
+    <!-- 🌟 デバッグ入口はヘッダーとモード選択パネルの「枠の中の⭐」へ移設（2026-11-13） -->
 
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
@@ -487,7 +483,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-150 ・ 439,253 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-152 ・ 440,004 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -537,7 +533,7 @@
         </div>
     </div>
     <div id="startModal" class="fixed inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-3 z-50 overflow-hidden">
-            <!-- ⭐ ダミー装飾（デバッグ入口のカモフラージュ。本物は左上の1つだけ） -->
+            <!-- ⭐ ダミー装飾（デバッグ入口のカモフラージュ。本物は枠の中の⭐だけ） -->
             <div class="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
                 <span class="absolute text-amber-200 select-none deco-star" style="top:3%;left:16%;font-size:15px;opacity:0.37;transform:rotate(-22deg);animation-duration:2.6s;animation-delay:-0.0s">✦</span>
                 <span class="absolute text-white select-none deco-star" style="top:9%;left:6%;font-size:20px;opacity:0.35;transform:rotate(24deg);animation-duration:3.4s;animation-delay:-0.7s">⭐</span>
@@ -575,6 +571,7 @@
                 <span class="absolute text-amber-200 select-none deco-star" style="top:92%;left:55.4%;font-size:8px;opacity:0.42;animation-duration:4.5s;animation-delay:-3.5s">★</span>
             </div>
         <div class="relative z-20 pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-500 shadow-2xl text-center">
+            <button type="button" id="debugEntryStarModal" onclick="openDebugMenu()" class="absolute top-2 left-2 w-7 h-7 bg-purple-900 border-2 border-purple-400 rounded flex items-center justify-center font-bold text-yellow-300 text-xs select-none cursor-pointer" title="">⭐</button>
             <p class="text-xs text-purple-200 mb-4 font-bold">プレイモードを選択してください</p>
 
             <div class="flex flex-col gap-3">
@@ -4813,7 +4810,9 @@
         let staffRollY = 0; // JSが保持する本文の現在位置（transformと常時一致させる）
         let staffRollSpeed = 60; // 現在のスクロール速度 px/s（スキップ1回目で900）
         let staffRollRaf = null;
-        let staffRollLastTs = 0;
+        let staffRollAnchorTs = 0; // 位置の基準時刻（rAF のタイムスタンプと同じ時計）
+        let staffRollAnchorY = 0; // 基準時刻における本文位置
+        let staffRollLastTickAt = 0; // 最後にフレーム処理が走った時刻（ウォッチドッグ用）
         function isRollPhone() { try { return Math.min(window.innerWidth || 9999, window.innerHeight || 9999) < 500; } catch (e) { return false; } }
         function buildStaffRollHtml() {
             let sorted = rankSortedPlayers();
@@ -4871,8 +4870,10 @@
             } else begin();
         }
         // ロールは CSS トランジション任せにせず、JS が位置(staffRollY)を保持して毎フレーム transform を書く。
-        // トランジション任せだと iPhone で開始位置がずれて「見た目の位置」と「おしまい判定の位置」が食い違い、途中で出てしまう事があったため。
-        // 判定も同じ staffRollY と実測の高さで決めるので、端末によらず一致する。フレームが詰まっても位置が先行する事はない（最大で遅れる側）。
+        // 位置は「基準時刻からの経過時間 × 速度」で決める（フレーム毎の dt 蓄積はしない）。
+        // dt 蓄積だと、重いフレームでクランプされた分だけ実時間より遅れ続け、時間式の保険タイマーが
+        // 本文の途中なのに先に発火してロールを止めてしまう事があった（実機報告 2026-11-13）。
+        // おしまいの判定は位置（staffRollY＋実測の高さ）だけで行い、時間で直接出すタイマーは置かない。
         function runStaffRollMotion() {
             staffRollFast = false;
             staffRollFastSeg = null;
@@ -4900,21 +4901,25 @@
             if (staffRollTimer) clearTimeout(staffRollTimer);
             if (staffRollWatchTimer) { clearInterval(staffRollWatchTimer); staffRollWatchTimer = null; }
             if (staffRollRaf) { cancelAnimationFrame(staffRollRaf); staffRollRaf = null; }
-            staffRollLastTs = 0;
+            staffRollAnchorTs = 0;
+            staffRollAnchorY = staffRollY;
+            staffRollLastTickAt = performance.now();
             staffRollRaf = requestAnimationFrame(tickStaffRoll);
-            staffRollTimer = setTimeout(startFinaleRise, ((vh + staffRollTextH) / 60) * 1000 + 6000); // 保険：万一フレームが止まっても、本文が抜ける頃には必ず出す
+            // ウォッチドッグ：フレーム処理が1.5秒以上止まったら、時刻から位置を再計算して再開する（おしまい自体は位置判定でしか出ない）
+            staffRollWatchTimer = setInterval(() => {
+                if (staffRollPhase === 'scroll' && performance.now() - staffRollLastTickAt > 1500) tickStaffRoll(performance.now());
+            }, 1000);
         }
         function tickStaffRoll(ts) {
             staffRollRaf = null;
             if (staffRollPhase !== 'scroll') return;
             let inner = document.getElementById('staffRollInner');
             if (!inner) return;
-            if (!staffRollLastTs) staffRollLastTs = ts;
-            let dt = Math.min(0.05, Math.max(0, (ts - staffRollLastTs) / 1000));
-            staffRollLastTs = ts;
-            staffRollY -= staffRollSpeed * dt;
+            staffRollLastTickAt = ts;
+            if (!staffRollAnchorTs) { staffRollAnchorTs = ts; staffRollAnchorY = staffRollY; }
             let h = inner.offsetHeight || staffRollTextH;
             let floorY = -(h + staffRollVh); // 末尾が画面の上端を十分に抜けた先（高さが後から伸びたら床も下がる）
+            staffRollY = staffRollAnchorY - staffRollSpeed * (ts - staffRollAnchorTs) / 1000;
             if (staffRollY < floorY) staffRollY = floorY;
             inner.style.transform = 'translateY(' + staffRollY + 'px)';
             if (staffRollY + h <= -(staffRollVh * 0.12)) { startFinaleRise(); return; }
@@ -4960,6 +4965,8 @@
                 if (!staffRollFast) {
                     // 1回目のスキップ: 瞬間移動ではなく、ロールを一気にスピードアップして流し切る（流し終わったら通常通りおしまいが出る）
                     staffRollFast = true;
+                    staffRollAnchorY = staffRollY;
+                    staffRollAnchorTs = performance.now();
                     staffRollSpeed = 900;
                     return;
                 }
