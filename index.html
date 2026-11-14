@@ -161,7 +161,7 @@
 <body class="flex flex-col min-h-screen sm:h-screen w-screen overflow-x-hidden sm:overflow-hidden text-white bg-slate-950">
 
     <!-- メインコンテナ -->
-    <main id="gameMain" class="flex flex-col h-full w-full max-w-5xl mx-auto p-1.5 sm:p-3 gap-1.5 sm:gap-2 overflow-y-auto sm:overflow-hidden pb-12 sm:pb-3">
+    <main id="gameMain" class="flex flex-col h-full w-full max-w-5xl xl:max-w-[1500px] mx-auto p-1.5 sm:p-3 gap-1.5 sm:gap-2 overflow-y-auto sm:overflow-hidden pb-12 sm:pb-3">
         
         <!-- ヘッダー：タイトル＆スコア -->
         <header class="flex-none flex flex-col sm:flex-row items-stretch sm:items-center justify-between pixel-box p-1.5 sm:p-2 rounded-lg bg-indigo-950/90 border-2 border-purple-500 gap-1.5">
@@ -351,8 +351,8 @@
                     <div class="text-[11px] sm:text-xs font-bold text-purple-700 mt-1 tracking-widest">〜 星めぐりに願いを 〜</div>
                 </div>
             </div>
-            <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl flex-none"></div>
-            <div id="endingScoreTable" class="w-full max-w-3xl flex-none"></div>
+            <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl lg:max-w-5xl flex-none"></div>
+            <div id="endingScoreTable" class="w-full max-w-3xl lg:max-w-5xl flex-none"></div>
             <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
         </div>
     </div>
@@ -488,7 +488,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-160 ・ 444,635 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-161 ・ 444,726 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -686,7 +686,7 @@
         }
     </style>
     <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
-        <div class="h-full flex flex-col max-w-3xl mx-auto p-2 sm:p-3">
+        <div class="h-full flex flex-col max-w-3xl lg:max-w-6xl mx-auto p-2 sm:p-3">
             <div class="flex items-end justify-between mb-1 px-1">
                 <div class="text-yellow-300 font-black tracking-widest text-xl sm:text-3xl" style="text-shadow: 2px 2px 0 #b91c1c;">PLAYER SELECT</div>
                 <div id="csModeLabel" class="text-[11px] sm:text-xs font-black text-cyan-200"></div>
@@ -700,7 +700,7 @@
             <div id="csStatus" class="text-center text-[11px] sm:text-xs font-black text-yellow-200 mt-1.5 min-h-[1.2em] flex-none"></div>
             <div id="csSeqCounter" class="text-center text-[10px] sm:text-[11px] font-mono font-bold mt-0.5 flex-none"></div>
             <div class="flex gap-2 mt-1 flex-1 min-h-0">
-                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] flex-none min-h-0">
+                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] lg:max-w-[190px] flex-none min-h-0">
                     <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
                         <div class="flex items-center justify-between px-0.5">
                             <span class="text-[11px] font-black text-yellow-300">1P</span>
@@ -734,7 +734,7 @@
                         <button onclick="closeCharSelect()" class="whitespace-nowrap pixel-btn py-2 px-3 font-bold text-xs text-gray-200 rounded-lg bg-slate-700/80 hover:bg-slate-600 cursor-pointer">← もどる</button>
                     </div>
                 </div>
-                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] flex-none min-h-0">
+                <div class="flex flex-col gap-1.5 w-[17%] sm:w-[24%] max-w-[150px] lg:max-w-[190px] flex-none min-h-0">
                     <div class="rounded-lg bg-black/40 border border-indigo-300/40 p-1 flex flex-col flex-1 min-h-0">
                         <div class="flex items-center justify-between px-0.5">
                             <span class="text-[11px] font-black text-yellow-300">3P</span>
