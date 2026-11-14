@@ -488,23 +488,25 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-157 ・ 441,748 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-158 ・ 444,533 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
-            <button onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
-                TAP TO START
-            </button>
-            <div id="trueEndBtnWrap" class="hidden mt-3">
-                <button onclick="playTrueEnding()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-700 to-purple-800 shadow-lg cursor-pointer">？？？</button>
-            </div>
-            <div id="endingListBtnWrap" class="hidden mt-3">
-                <button onclick="openEndingList()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-amber-500 to-yellow-600 shadow-lg cursor-pointer">エンディングリスト</button>
-            </div>
-            <div class="mt-3">
-                <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">中断したゲームから再開</button>
-                <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
+            <div id="titleBtns">
+                <button id="titleStartBtn" onclick="closeTitleScreen()" class="pixel-btn py-3 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
+                    TAP TO START
+                </button>
+                <div id="trueEndBtnWrap" class="hidden mt-3">
+                    <button onclick="playTrueEnding()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-700 to-purple-800 shadow-lg cursor-pointer">？？？</button>
+                </div>
+                <div id="endingListBtnWrap" class="hidden mt-3">
+                    <button onclick="openEndingList()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-amber-500 to-yellow-600 shadow-lg cursor-pointer">エンディングリスト</button>
+                </div>
+                <div id="resumeBtnWrap" class="mt-3">
+                    <button id="resumeGameBtn" onclick="resumeSuspendedGame()" class="hidden pixel-btn py-2.5 px-6 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg cursor-pointer">中断したゲームから再開</button>
+                    <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
+                </div>
             </div>
             <div class="bgm-vol-control mt-4 flex items-center justify-center gap-2 select-none" title="BGM音量">
                 <span class="text-sm">🔊</span>
@@ -665,6 +667,23 @@
         .opening-bg-black { background: #000000 !important; }
         .opening-bg-rainbow { background: linear-gradient(120deg, #fecaca, #fde68a, #bbf7d0, #bfdbfe, #ddd6fe, #fbcfe8, #fecaca) !important; background-size: 300% 300% !important; animation: openingRainbow 6s ease infinite; }
         @keyframes openingRainbow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        /* 🏷️ タイトル画面のボタン配置（2026-11-14 ユーザー指定）
+           縦画面：1〜2個は縦並び／3個は上2＋下中央1／4個は2×2（個数の判定は refreshTitleButtons）
+           横画面（背の低い画面）：ボタン群を左端に縦並びにして、樹や根元の光にできるだけ被せない */
+        @media (orientation: portrait) {
+            #titleBtns { display: grid; grid-template-columns: 1fr; gap: 10px; justify-items: center; }
+            #titleBtns > * { margin-top: 0; }
+            #titleBtns.tb-multi { grid-template-columns: 1fr 1fr; }
+            #titleBtns.tb-multi > * { width: 100%; }
+            #titleBtns.tb-multi button { width: 100%; }
+            #titleBtns.tb-multi .tb-span { grid-column: 1 / -1; justify-self: center; width: auto; }
+            #titleBtns.tb-multi .tb-span button { width: auto; }
+        }
+        @media (orientation: landscape) and (max-height: 520px) {
+            #titleBtns { position: fixed; left: 10px; top: 50%; transform: translateY(-50%); width: 232px; display: flex; flex-direction: column; gap: 8px; z-index: 6; }
+            #titleBtns > * { margin-top: 0; width: 100%; }
+            #titleBtns button { width: 100%; }
+        }
     </style>
     <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
         <div class="h-full flex flex-col max-w-3xl mx-auto p-2 sm:p-3">
@@ -3085,6 +3104,7 @@
                 btn.classList.add('hidden');
                 info.classList.add('hidden');
             }
+            refreshTitleButtons();
         }
         function suspendGameToTitle() {
             if (isOnlineMode) { alert('オンライン対戦では中断できません'); return; }
@@ -4684,6 +4704,26 @@
             if (el.complete) mark();
             else { el.addEventListener('load', mark); el.addEventListener('error', mark); }
         });
+        function refreshTitleButtons() {
+            // 🏷️ タイトルのボタン個数に応じて段組みクラスを切り替える（レイアウト自体はCSSのメディアクエリ側）
+            let wrap = document.getElementById('titleBtns');
+            if (!wrap) return;
+            let startEl = document.getElementById('titleStartBtn');
+            let trueEl = document.getElementById('trueEndBtnWrap');
+            let listEl = document.getElementById('endingListBtnWrap');
+            let resumeEl = document.getElementById('resumeBtnWrap');
+            let resumeBtn = document.getElementById('resumeGameBtn');
+            let defs = [
+                { el: startEl, on: !!startEl },
+                { el: trueEl, on: !!(trueEl && !trueEl.classList.contains('hidden')) },
+                { el: listEl, on: !!(listEl && !listEl.classList.contains('hidden')) },
+                { el: resumeEl, on: !!(resumeBtn && !resumeBtn.classList.contains('hidden')) }
+            ];
+            let vis = defs.filter(d => d.el && d.on);
+            wrap.classList.toggle('tb-multi', vis.length >= 3);
+            defs.forEach(d => { if (d.el) d.el.classList.remove('tb-span'); });
+            if (vis.length === 3) vis[2].el.classList.add('tb-span');
+        }
         function refreshTitleTree() {
             let prog = readTrueProgress();
             let set = (id, on) => { let el = document.getElementById(id); if (el) el.classList.toggle('hidden', !on); };
@@ -4702,6 +4742,7 @@
             if (!anyEnding) { try { anyEnding = localStorage.getItem('utsuro_any_ending_seen') === '1'; } catch (e) {} }
             let tsTree = document.getElementById('titleScreen');
             if (tsTree) tsTree.classList.toggle('tree-withered', !anyEnding);
+            refreshTitleButtons();
         }
         function isTrueSeen() { try { return localStorage.getItem('utsuro_true_seen') === '1'; } catch (e) { return false; } }
         function refreshTitleTheme() {
@@ -4727,6 +4768,7 @@
                 fb.classList.toggle('via-orange-500', seen);
                 fb.classList.toggle('to-yellow-500', seen);
             }
+            refreshTitleButtons();
         }
         function resetTrueProgress() {
             try { localStorage.removeItem('utsuro_true_progress'); localStorage.removeItem('utsuro_true_seen'); localStorage.removeItem('utsuro_any_ending_seen'); } catch (e) {}
