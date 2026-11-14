@@ -488,7 +488,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-156 ・ 441,722 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-157 ・ 441,748 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -4833,7 +4833,7 @@
         function buildStaffRollHtml() {
             let sorted = rankSortedPlayers();
             let winner = sorted[0];
-            let castLead = isRollPhone() ? 'leading-[3.9]' : 'leading-[3.4]';
+            let castLead = isRollPhone() ? 'leading-[3.7]' : 'leading-[3.4]';
             let staffLead = isRollPhone() ? 'leading-[3.3]' : 'leading-[2.8]';
             let h = '';
             h += '<div class="text-4xl sm:text-5xl font-black text-yellow-300 tracking-widest" style="text-shadow: 0 0 24px rgba(250,204,21,.55), 3px 3px 0 #b45309;">星めぐりに願いを</div>';
@@ -4850,7 +4850,7 @@
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
-            [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['Lover&amp;Lover', 'Losstime Life 龍崎一・Mai (Vo)'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
+            [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + pl.name + (pl.isHuman ? '' : '（CPU）') + '</div>'; });
             if (winner) {
