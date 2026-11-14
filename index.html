@@ -313,6 +313,16 @@
         </div>
     </div>
 
+    <!-- 🎲 イカサマダイスの目選択パネル -->
+    <div id="cheatDiceOverlay" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-[100004]">
+        <div class="pixel-box p-5 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center flex flex-col gap-3">
+            <div class="text-lg font-black text-yellow-300">🎲 イカサマダイス</div>
+            <p class="text-sm text-white font-bold">出したい目を選んでください</p>
+            <div id="cheatDiceButtons" class="grid grid-cols-3 gap-2"></div>
+            <button onclick="closeCheatDicePicker()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-full border border-gray-500 font-bold shadow cursor-pointer">キャンセル</button>
+        </div>
+    </div>
+
     <!-- 🎬 スタッフロール（エンディング会話の後・順位発表の前） -->
     <div id="deadlineBanner" class="fixed inset-0 z-[90000] hidden items-center justify-center pointer-events-none p-4">
         <div class="border-4 border-yellow-300 rounded-2xl px-6 py-5 shadow-2xl text-center max-w-lg w-full" style="background: rgba(30, 27, 75, 0.95);">
@@ -488,7 +498,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-163 ・ 448,780 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-165 ・ 454,763 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -523,7 +533,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⭐ 星のカケラ</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のマスに止まると「星のカケラ」が1個もらえます。誰かが拾うと、星のマスはマップの別の場所へ移動します（星のマスはいつも6つあります）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が大きいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>魔法のサイコロ： 次の出目＋3<br>イカサマダイス： 使うと好きな目を選んで進める<br>例のワープする土管： 使うとマップ上のどこかへワープする<br>守りのシールド： 次のマイナスを1回防ぐ<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
@@ -1121,6 +1131,7 @@
         let goalDeadlineDay = null;
         let deadlineEndTriggered = false;
         let currentDiceVal = 1; // 🎲 同期用出目変数
+        let forcedRollValue = null; // 🎲 イカサマダイスで指定された出目（次の自分の出目決定に1回だけ使う）
         let isMoving = false;
         let isRolling = false;
         let isSubRollPending = false;
@@ -3376,7 +3387,8 @@
                     } else if (data.type === 'ACTION_USE_ITEM') {
                         let senderIndex = peerConnections.indexOf(conn) + 1;
                         if (senderIndex === currentPlayerIndex) {
-                            applyUseItem(senderIndex, data.itemIndex, data.itemName);
+                            if (data.cheatValue) applyCheatDice(senderIndex, data.itemName, data.cheatValue);
+                            else applyUseItem(senderIndex, data.itemIndex, data.itemName);
                         } else {
                             broadcastGameState(true);
                         }
@@ -5690,6 +5702,7 @@
             if (turnPhase !== 'idle') return; // 🔒 フェーズがサイコロ待ちのときだけ開始できる（二重ロール防止）
             turnPhase = 'rolling';
             isRolling = true;
+            let forced = forcedRollValue; forcedRollValue = null;
             updateItemUI();
             lastProgressAt = Date.now();
             let btnRoll = document.getElementById('btnRoll');
@@ -5708,6 +5721,7 @@
                 }
 
                 if (count > 12) {
+                    if (forced && !isSubRollPending) { roll = forced; currentDiceVal = roll; drawDice(roll); }
                     clearInterval(interval);
                     isRolling = false;
                     playSe('dice_stop');
@@ -6434,6 +6448,8 @@
             { itemName: '⚡ スパチャブースター', title: '【🎁 アイテムゲット！】', desc: 'スパチャブースターを手に入れた！使うとリスナーが+500人増える。' },
             { itemName: '🎤 ASMR用マイク', title: '【🎁 アイテムゲット！】', desc: 'ASMR用マイクを手に入れた！使うと次のサイコロが+2マスになる。' },
             { itemName: '🎲 魔法のサイコロ', title: '【🎁 アイテムゲット！】', desc: '魔法のサイコロを手に入れた！使うと次のサイコロが+3マスになる。' },
+            { itemName: '🎲 イカサマダイス', title: '【🎁 アイテムゲット！】', desc: 'イカサマダイスを手に入れた！使うと好きな目を選んで進める。' },
+            { itemName: '🟢 例のワープする土管', title: '【🎁 アイテムゲット！】', desc: '例のワープする土管を手に入れた！使うとマップ上のどこかへワープする。' },
             { itemName: '🛡️ 守りのシールド', title: '【🎁 アイテムゲット！】', desc: '守りのシールドを手に入れた！使うと次に受けるマイナスを1回防げる。' },
             { itemName: '✨ 金盾', title: '【🎁 アイテムゲット！】', desc: '金盾を手に入れた！持っているだけで、星のカケラを奪われるのを3回守ってくれる。' },
             { itemName: '🛡️ 銀盾', title: '【🎁 アイテムゲット！】', desc: '銀盾を手に入れた！持っているだけで、星のカケラを奪われるのを1回守ってくれる。' },
@@ -6465,10 +6481,12 @@
             if (n.includes('スパチャ') || n.includes('ブースター')) return { kind: 'listeners', val: 500, label: 'リスナー +500人' };
             if (n.includes('マイク') || n.includes('ASMR')) return { kind: 'dice', val: 2, label: '次のサイコロ +2マス' };
             if (n.includes('カケラ') || n.includes('星')) return { kind: 'fragment', val: 1, label: '星のカケラ +1個' };
+            if (n.includes('イカサマ')) return { kind: 'cheatDice', val: 0, label: '好きな目を出して進める' };
             if (n.includes('サイコロ') || n.includes('ダイス')) return { kind: 'dice', val: 3, label: '次のサイコロ +3マス' };
             if (n.includes('金盾')) return { kind: 'stealGuard', val: 3, label: '持っているだけでカケラを奪われるのを3回防ぐ' };
             if (n.includes('銀盾')) return { kind: 'stealGuard', val: 1, label: '持っているだけでカケラを奪われるのを1回防ぐ' };
             if (n.includes('シールド') || n.includes('ガード') || n.includes('守')) return { kind: 'shield', val: 1, label: '次のマイナスを1回無効' };
+            if (n.includes('土管') || n.includes('ワープ')) return { kind: 'warp', val: 0, label: 'マップ上のどこかへワープする' };
             if (n.includes('奪') || n.includes('横取り')) return { kind: 'steal', val: 300, label: '一番多い相手からリスナー300人を奪う' };
             return { kind: 'listeners', val: 200, label: 'リスナー +200人' };
         }
@@ -6482,10 +6500,68 @@
             return isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : !!p.isHuman;
         }
 
+        let pendingCheatItem = null; // イカサマダイスの目選択待ち { pIndex, itemIndex, itemName }
+        function openCheatDicePicker() {
+            let ov = document.getElementById('cheatDiceOverlay');
+            let box = document.getElementById('cheatDiceButtons');
+            if (!ov || !box) return;
+            const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            box.innerHTML = '';
+            for (let n = 1; n <= 6; n++) {
+                let b = document.createElement('button');
+                b.className = 'px-3 py-3 text-2xl bg-indigo-800 hover:bg-indigo-600 border border-indigo-300 text-white rounded-xl font-black shadow cursor-pointer';
+                b.textContent = faces[n - 1] + ' ' + n;
+                b.onclick = () => chooseCheatDice(n);
+                box.appendChild(b);
+            }
+            ov.classList.remove('hidden'); ov.classList.add('flex');
+        }
+        function closeCheatDicePicker() {
+            let ov = document.getElementById('cheatDiceOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            pendingCheatItem = null;
+        }
+        function chooseCheatDice(n) {
+            let ctx = pendingCheatItem;
+            closeCheatDicePicker();
+            if (!ctx) return;
+            if (isOnlineMode && !isHost) {
+                if (peerConnections[0] && peerConnections[0].open) {
+                    peerConnections[0].send({ type: 'ACTION_USE_ITEM', playerIndex: myPlayerIndex, itemIndex: ctx.itemIndex, itemName: ctx.itemName, cheatValue: n });
+                }
+                return;
+            }
+            applyCheatDice(ctx.pIndex, ctx.itemName, n);
+        }
+        function applyCheatDice(pIndex, itemName, n) {
+            let p = players[pIndex];
+            if (!p || !p.items) return;
+            if (pIndex !== currentPlayerIndex) return;
+            if (turnPhase !== 'idle' || isSubRollPending || isEventResolving || isRolling || isMoving || isWaitingForBranchChoice) return;
+            let idx = p.items.indexOf(itemName);
+            if (idx < 0) return;
+            if (itemEffectInfo(itemName).kind !== 'cheatDice') return;
+            n = parseInt(n, 10);
+            if (!(n >= 1 && n <= 6)) return;
+            p.items.splice(idx, 1);
+            forcedRollValue = n;
+            updateItemUI();
+            let titleEl = document.getElementById('currentEventTitle');
+            if (titleEl) titleEl.innerText = `【🎲 イカサマダイス: ${itemName}】`;
+            let descEl = document.getElementById('currentEventDesc');
+            if (descEl) descEl.innerText = `${p.name}さんはイカサマダイスで「${n}」の目を出した！（ターン消費なし）`;
+            executeRollForCurrentPlayer();
+            if (turnPhase === 'idle') forcedRollValue = null; // ロールが始まらなかった場合は指定を取り消す
+        }
         function useItem(itemIndex) {
             if (!canUseItemNow()) return;
             let p = players[currentPlayerIndex];
             if (!p || !p.items || !p.items[itemIndex]) return;
+            if (itemEffectInfo(p.items[itemIndex]).kind === 'cheatDice') {
+                pendingCheatItem = { pIndex: currentPlayerIndex, itemIndex: itemIndex, itemName: p.items[itemIndex] };
+                openCheatDicePicker();
+                return;
+            }
             if (isOnlineMode && !isHost) {
                 if (peerConnections[0] && peerConnections[0].open) {
                     peerConnections[0].send({ type: 'ACTION_USE_ITEM', playerIndex: myPlayerIndex, itemIndex: itemIndex, itemName: p.items[itemIndex] });
@@ -6510,7 +6586,7 @@
             if (useKey === lastItemUseKey && nowUse - lastItemUseAt < 800) return;
             lastItemUseKey = useKey; lastItemUseAt = nowUse;
             let info = itemEffectInfo(itemName);
-            if (info.kind === 'stealGuard') return; // 金盾・銀盾は持っているだけで自動発動する（使用しない）
+            if (info.kind === 'stealGuard' || info.kind === 'cheatDice') return; // 金盾・銀盾は自動発動、イカサマダイスは専用フロー（目を選んでから）で使う
             p.items.splice(itemIndex, 1);
             let effectText = '';
             if (info.kind === 'listeners') {
@@ -6538,6 +6614,16 @@
                 } else {
                     effectText = '奪える相手がいなかった…';
                 }
+            } else if (info.kind === 'warp') {
+                let dest = p.pos;
+                if (tileCoords.length > 1) {
+                    do { dest = Math.floor(Math.random() * tileCoords.length); } while (dest === p.pos);
+                }
+                p.pos = dest;
+                let dt = tileCoords[dest];
+                if (dt) { p.renderX = dt.x; p.renderY = dt.y; p.goshuX = dt.x; p.goshuY = dt.y; }
+                p.lastVisitedTileIndex = (dest + tileCoords.length - 1) % tileCoords.length;
+                effectText = '土管に入って、どこかのマスへワープした！';
             }
             let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
             if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
