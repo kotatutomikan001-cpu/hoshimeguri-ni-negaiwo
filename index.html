@@ -488,7 +488,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-161 ・ 444,726 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-163 ・ 448,780 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -523,7 +523,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⭐ 星のカケラ</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のマスに止まると「星のカケラ」が1個もらえます。誰かが拾うと、星のマスはマップの別の場所へ移動します（星のマスはいつも6つあります）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が大きいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">スパチャブースター： リスナー＋500人<br>ASMR用マイク： 次のサイコロで＋2マス進む<br>魔法のサイコロ： 次の出目＋3<br>守りのシールド： 次のマイナスを1回防ぐ<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）<br>横取りチャーム： 一番リスナーの多い相手から300人奪う</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
@@ -1064,6 +1064,10 @@
         let userDragOffsetX = 0;
         let userDragOffsetY = 0;
         let userZoomScale = 1.8;
+        // 近接表示の倍率：手番プレイヤーを中心に、横方向に約7マス（前後3マスずつ＋自分のマス）が見えるように画面幅から決める
+        function computeFollowZoom(canvasW) {
+            return Math.min(4.2, Math.max(1.8, canvasW / (64 * 7)));
+        }
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0;
 
@@ -2287,6 +2291,7 @@
             if (!canvas) return;
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
+            userZoomScale = computeFollowZoom(canvas.width);
         }
 
         function setupCanvasDragAndTouch() {
@@ -6168,11 +6173,20 @@
             let victim = players.filter(q => q !== p && !q.finished && q.pos === p.pos && (q.fragments || 0) > 0)
                                 .sort((a, b) => (b.fragments || 0) - (a.fragments || 0))[0];
             if (victim) {
-                victim.fragments--;
-                p.fragments = (p.fragments || 0) + 1;
-                updateFragmentUI();
-                let stealDesc = `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`;
-                preDesc = preDesc ? (preDesc + ' ' + stealDesc) : stealDesc;
+                let guard = consumeStealGuard(victim);
+                if (guard) {
+                    updateItemUI();
+                    let guardDesc = guard.left > 0
+                        ? `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを奪おうとしたが、${guard.name}がカケラを守った！（${guard.name}はあと${guard.left}回）`
+                        : `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを奪おうとしたが、${guard.name}がカケラを守った！（${guard.name}は役目を終えて消えた）`;
+                    preDesc = preDesc ? (preDesc + ' ' + guardDesc) : guardDesc;
+                } else {
+                    victim.fragments--;
+                    p.fragments = (p.fragments || 0) + 1;
+                    updateFragmentUI();
+                    let stealDesc = `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`;
+                    preDesc = preDesc ? (preDesc + ' ' + stealDesc) : stealDesc;
+                }
             }
 
             turnPhase = (tile.type === 'plus' || tile.type === 'minus') ? 'idle' : 'event';
@@ -6249,6 +6263,7 @@
         function addPlayerItem(pIndex, itemName) {
             if (players[pIndex]) {
                 if (!players[pIndex].items) players[pIndex].items = [];
+                if (String(itemName).includes('金盾') && !/あと\d+回/.test(String(itemName))) itemName = String(itemName) + '（あと3回）';
                 players[pIndex].items.push(itemName);
                 updateItemUI();
             }
@@ -6420,14 +6435,39 @@
             { itemName: '🎤 ASMR用マイク', title: '【🎁 アイテムゲット！】', desc: 'ASMR用マイクを手に入れた！使うと次のサイコロが+2マスになる。' },
             { itemName: '🎲 魔法のサイコロ', title: '【🎁 アイテムゲット！】', desc: '魔法のサイコロを手に入れた！使うと次のサイコロが+3マスになる。' },
             { itemName: '🛡️ 守りのシールド', title: '【🎁 アイテムゲット！】', desc: '守りのシールドを手に入れた！使うと次に受けるマイナスを1回防げる。' },
+            { itemName: '✨ 金盾', title: '【🎁 アイテムゲット！】', desc: '金盾を手に入れた！持っているだけで、星のカケラを奪われるのを3回守ってくれる。' },
+            { itemName: '🛡️ 銀盾', title: '【🎁 アイテムゲット！】', desc: '銀盾を手に入れた！持っているだけで、星のカケラを奪われるのを1回守ってくれる。' },
             { itemName: '🌀 横取りチャーム', title: '【🎁 アイテムゲット！】', desc: '横取りチャームを手に入れた！使うと一番リスナーが多い相手から300人を奪える。' },
         ];
+        // 🛡️ 金盾・銀盾：持っているだけでカケラ防衛が自動発動するパッシブアイテム。残り回数は金盾の名前に「（あとN回）」として持つ
+        function stealGuardRemaining(itemName) {
+            const n = String(itemName || '');
+            if (n.includes('金盾')) { let m = n.match(/あと(\d+)回/); return m ? parseInt(m[1], 10) : 3; }
+            if (n.includes('銀盾')) return 1;
+            return 0;
+        }
+        // 奪い合い時に被害者の盾を1回分消費する。消費できたら { name, left }、盾が無ければ null
+        function consumeStealGuard(victim) {
+            if (!victim || !victim.items) return null;
+            let si = victim.items.findIndex(n => String(n).includes('銀盾'));
+            if (si >= 0) { victim.items.splice(si, 1); return { name: '銀盾', left: 0 }; }
+            let gi = victim.items.findIndex(n => String(n).includes('金盾'));
+            if (gi >= 0) {
+                let left = stealGuardRemaining(victim.items[gi]) - 1;
+                if (left <= 0) victim.items.splice(gi, 1);
+                else victim.items[gi] = String(victim.items[gi]).replace(/（あと\d+回）/, '') + `（あと${left}回）`;
+                return { name: '金盾', left: Math.max(0, left) };
+            }
+            return null;
+        }
         function itemEffectInfo(itemName) {
             const n = String(itemName || '');
             if (n.includes('スパチャ') || n.includes('ブースター')) return { kind: 'listeners', val: 500, label: 'リスナー +500人' };
             if (n.includes('マイク') || n.includes('ASMR')) return { kind: 'dice', val: 2, label: '次のサイコロ +2マス' };
             if (n.includes('カケラ') || n.includes('星')) return { kind: 'fragment', val: 1, label: '星のカケラ +1個' };
             if (n.includes('サイコロ') || n.includes('ダイス')) return { kind: 'dice', val: 3, label: '次のサイコロ +3マス' };
+            if (n.includes('金盾')) return { kind: 'stealGuard', val: 3, label: '持っているだけでカケラを奪われるのを3回防ぐ' };
+            if (n.includes('銀盾')) return { kind: 'stealGuard', val: 1, label: '持っているだけでカケラを奪われるのを1回防ぐ' };
             if (n.includes('シールド') || n.includes('ガード') || n.includes('守')) return { kind: 'shield', val: 1, label: '次のマイナスを1回無効' };
             if (n.includes('奪') || n.includes('横取り')) return { kind: 'steal', val: 300, label: '一番多い相手からリスナー300人を奪う' };
             return { kind: 'listeners', val: 200, label: 'リスナー +200人' };
@@ -6470,6 +6510,7 @@
             if (useKey === lastItemUseKey && nowUse - lastItemUseAt < 800) return;
             lastItemUseKey = useKey; lastItemUseAt = nowUse;
             let info = itemEffectInfo(itemName);
+            if (info.kind === 'stealGuard') return; // 金盾・銀盾は持っているだけで自動発動する（使用しない）
             p.items.splice(itemIndex, 1);
             let effectText = '';
             if (info.kind === 'listeners') {
@@ -6527,7 +6568,7 @@
             if (p && p.items && p.items.length > 0) {
                 p.items.forEach((item, idx) => {
                     let info = itemEffectInfo(item);
-                    if (usable) {
+                    if (usable && info.kind !== 'stealGuard') {
                         let btn = document.createElement('button');
                         btn.className = 'px-2 py-0.5 text-xs bg-yellow-600/90 hover:bg-yellow-500 border border-yellow-300 text-white rounded font-bold flex-none shadow cursor-pointer animate-pulse';
                         btn.innerText = `${item} ▶使う`;
@@ -6536,8 +6577,10 @@
                         container.appendChild(btn);
                     } else {
                         let badge = document.createElement('span');
-                        badge.className = 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
-                        badge.innerText = item;
+                        badge.className = info.kind === 'stealGuard'
+                            ? 'px-2 py-0.5 text-xs bg-amber-900/80 border border-amber-400 text-amber-200 rounded font-bold flex-none shadow'
+                            : 'px-2 py-0.5 text-xs bg-yellow-900/80 border border-yellow-400 text-yellow-200 rounded font-bold flex-none shadow';
+                        if (info.kind === 'stealGuard') badge.textContent = `🛡️ ${item}（自動）`; else badge.innerText = item;
                         badge.title = `効果: ${info.label}`;
                         container.appendChild(badge);
                     }
