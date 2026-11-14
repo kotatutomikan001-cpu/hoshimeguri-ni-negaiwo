@@ -59,7 +59,8 @@
         }
         /* 🗺️ 世界地図は少し小さめにして、全体が見えるようにする（object-cover の切り取り分が減る） */
         #csMapWrap { width: 88%; margin-left: auto; margin-right: auto; }
-        .cs-code-digit { font-family: 'Courier New', ui-monospace, monospace; font-weight: 900; font-size: clamp(44px, min(13vw, 15vh), 108px); line-height: 1; color: #4dff88; text-shadow: 0 0 6px rgba(0,0,0,.85), 0 0 18px rgba(57,255,106,.9), 0 0 34px rgba(57,255,106,.55); }
+        .cs-code-digit { display: inline-block; padding: 8px 12px; border-radius: 10px; background: linear-gradient(180deg, #dfe5cc, #c3cda9); box-shadow: inset 0 2px 6px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.45); }
+        .cs-code-digit svg { display: block; height: clamp(40px, min(11vw, 12.5vh), 92px); width: auto; }
         .cs-code-digit.pop { animation: csDigitPop .45s ease-out; }
         @keyframes csDigitPop { 0% { transform: scale(2.1); opacity: 0; } 60% { transform: scale(.92); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         /* 🗺️ 横画面（背が低い時）はさらに小さくして、立ち絵スロットの高さを確保する */
@@ -501,7 +502,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-170 ・ 464,525 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-171 ・ 465,740 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -710,9 +711,9 @@
                 <div id="csMapFallback" class="absolute inset-0 hidden items-center justify-center text-4xl sm:text-5xl tracking-widest">🗺️🌏⭐</div>
                 <div class="absolute bottom-1 right-2 text-[9px] text-white/80 font-bold tracking-widest">WORLD MAP</div>
                 <div id="csCodeDigits" class="absolute inset-0 hidden" style="pointer-events:none;">
-                    <div class="absolute inset-y-0 left-0 w-1/3 flex items-center justify-center"><span id="csDigitL" class="cs-code-digit hidden">5</span></div>
-                    <div class="absolute inset-y-0 left-1/3 w-1/3 flex items-center justify-center"><span id="csDigitC" class="cs-code-digit hidden">2</span></div>
-                    <div class="absolute inset-y-0 right-0 w-1/3 flex items-center justify-center"><span id="csDigitR" class="cs-code-digit hidden">6</span></div>
+                    <div class="absolute inset-y-0 left-0 w-1/3 flex items-center justify-center"><span id="csDigitL" class="cs-code-digit hidden" data-digit="5"></span></div>
+                    <div class="absolute inset-y-0 left-1/3 w-1/3 flex items-center justify-center"><span id="csDigitC" class="cs-code-digit hidden" data-digit="2"></span></div>
+                    <div class="absolute inset-y-0 right-0 w-1/3 flex items-center justify-center"><span id="csDigitR" class="cs-code-digit hidden" data-digit="6"></span></div>
                 </div>
             </div>
             <div id="csStatus" class="text-center text-[11px] sm:text-xs font-black text-yellow-200 mt-1.5 min-h-[1.2em] flex-none"></div>
@@ -2985,6 +2986,16 @@
             if (el) { el.innerHTML = ''; el.classList.add('hidden'); }
             updateCsCodeDigits();
         }
+
+        // 電卓風7セグメント数字（必要なのは 5・2・6 だけ）。消えているセグメントも薄く見せる
+        function segDigitSvg(d) {
+            let h = (x, y, l, t) => `${x},${y + t / 2} ${x + t / 2},${y} ${x + l - t / 2},${y} ${x + l},${y + t / 2} ${x + l - t / 2},${y + t} ${x + t / 2},${y + t}`;
+            let v = (x, y, l, t) => `${x + t / 2},${y} ${x + t},${y + t / 2} ${x + t},${y + l - t / 2} ${x + t / 2},${y + l} ${x},${y + l - t / 2} ${x},${y + t / 2}`;
+            let P = { a: h(2, 0, 56, 12), g: h(2, 48, 56, 12), d: h(2, 96, 56, 12), f: v(0, 2, 46, 12), b: v(48, 2, 46, 12), e: v(0, 50, 46, 12), c: v(48, 50, 46, 12) };
+            let on = { '2': 'abged', '5': 'afgcd', '6': 'afgedc' }[d] || '';
+            return '<svg viewBox="0 0 60 108" aria-hidden="true">' + 'abcdefg'.split('').map(k => `<polygon points="${P[k]}" fill="${on.includes(k) ? '#23281e' : 'rgba(35,40,30,0.10)'}"/>`).join('') + '</svg>';
+        }
+        ['csDigitL', 'csDigitC', 'csDigitR'].forEach(id => { let el = document.getElementById(id); if (el) el.innerHTML = segDigitSvg(el.dataset.digit); });
 
         // かたる出現コマンドの数字表示：うつろ×5で左に「5」、次のうつろ×2で中央に「2」、最後のうつろ×6で右に「6」が出て反転と同時になる
         function updateCsCodeDigits() {
