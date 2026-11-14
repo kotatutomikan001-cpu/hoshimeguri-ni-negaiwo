@@ -502,7 +502,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-171 ・ 465,740 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-172 ・ 468,068 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2812,7 +2812,7 @@
         }
 
         function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.75; if (id === 'kataru') return 1.45; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
-        function charPieceScale(id) { if (id === 'tomoko' || id === 'kataru') return 1.25; return 1; } // 駒の見かけ倍率（トモコ・かたるは立ち絵が細長く小さく見える分だけ大きく）
+        // 駒の立ち絵は全員「余白を除いた見た目の高さ」がそろう描き方に統一（drawPieceImage）。倍率は全員共通の1.25（旧トモコ・かたる分）
 
         function csHover(id) {
             if (!csVisibleIds().includes(id)) return;
@@ -5599,12 +5599,50 @@
             }
         }
 
+        // 立ち絵の「中身（不透明部分）」の範囲を画像ごとに1回だけ測って覚える
+        const charStandTrimCache = new WeakMap();
+        function getCharStandTrim(img) {
+            if (charStandTrimCache.has(img)) return charStandTrimCache.get(img);
+            let trim = null;
+            try {
+                let iw = img.naturalWidth, ih = img.naturalHeight;
+                if (iw && ih) {
+                    let sc = Math.min(1, 512 / Math.max(iw, ih));
+                    let cv = document.createElement('canvas');
+                    cv.width = Math.max(1, Math.round(iw * sc)); cv.height = Math.max(1, Math.round(ih * sc));
+                    let cx = cv.getContext('2d');
+                    cx.drawImage(img, 0, 0, cv.width, cv.height);
+                    let data = cx.getImageData(0, 0, cv.width, cv.height).data;
+                    let minX = cv.width, minY = cv.height, maxX = -1, maxY = -1;
+                    for (let yy = 0; yy < cv.height; yy++) for (let xx = 0; xx < cv.width; xx++) {
+                        if (data[(yy * cv.width + xx) * 4 + 3] > 8) { if (xx < minX) minX = xx; if (xx > maxX) maxX = xx; if (yy < minY) minY = yy; if (yy > maxY) maxY = yy; }
+                    }
+                    if (maxX >= minX && maxY >= minY) trim = { sx: minX / sc, sy: minY / sc, sw: (maxX - minX + 1) / sc, sh: (maxY - minY + 1) / sc };
+                }
+            } catch (e) { trim = null; }
+            charStandTrimCache.set(img, trim);
+            return trim;
+        }
+
+        // 駒用：余白を除いた中身の高さが size になるように描く（みんなトモコくらいの大きさにそろえる）
+        function drawPieceImage(context, img, x, y, size) {
+            let iw = img.naturalWidth || img.width;
+            let ih = img.naturalHeight || img.height;
+            if (!iw || !ih) return false;
+            let trim = getCharStandTrim(img);
+            if (!trim || trim.sh <= 0) return drawCharacterImage(context, img, x, y, size);
+            let scale = Math.min(size / trim.sh, (size * 1.9) / trim.sw);
+            let w = trim.sw * scale, h = trim.sh * scale;
+            context.drawImage(img, trim.sx, trim.sy, trim.sw, trim.sh, x - w / 2, y - h / 2, w, h);
+            return true;
+        }
+
         function drawPlayerDotModel(context, charType, x, y, size = 32) {
-            size = size * charPieceScale(charType);
+            size = size * 1.25; // 全員トモコ並みの大きさに統一（2026-11-14 ユーザー要望）
             let img = charImages[charType] || charImages[legacyCharId(charType)];
-            if (img && img.complete && drawCharacterImage(context, img, x, y, size)) return;
+            if (img && img.complete && drawPieceImage(context, img, x, y, size)) return;
             let fimg = charFileStands[charType];
-            if (fimg && fimg.complete && fimg.naturalWidth && drawCharacterImage(context, fimg, x, y, size)) return;
+            if (fimg && fimg.complete && fimg.naturalWidth && drawPieceImage(context, fimg, x, y, size)) return;
             let dot = customDotData[charType] || customDotData[legacyCharId(charType)];
             if (dot) {
                 renderCustomDotGrid(context, dot, x, y, size);
