@@ -506,7 +506,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-180 ・ 478,965 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-1 ・ 479,417 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2609,10 +2609,14 @@
 
         function playSelectBgm() {
             clearBgmFxMute();
-            // トゥルーエンド未解放の間は、タイトル画面表示中は無音にする（曲はオープニングトークが始まる時に流れ始める）
             let tsEl = document.getElementById('titleScreen');
-            if (!isTrueSeen() && tsEl && !tsEl.classList.contains('hidden')) { stopAllBgm(); return; }
-            activeBgm = isTrueSeen() ? 'titleGold' : 'select'; // トゥルーエンド経験後は金色タイトル専用BGM
+            let titleVisible = !!(tsEl && !tsEl.classList.contains('hidden'));
+            // トゥルーエンド未解放の間は、タイトル画面表示中は無音にする（曲はオープニングトークが始まる時に流れ始める）
+            if (!isTrueSeen() && titleVisible) { stopAllBgm(); return; }
+            // 神無月（金色タイトル専用BGM）は「タイトル画面が表示されている間だけ」。
+            // タイトルを閉じた先（オープニング／ルール説明／キャラ選択など）では通常の選択画面BGMに切り替える。
+            // 以前は isTrueSeen() だけで決めていたため、金色タイトル後は神無月が先の画面でも流れ続けていた（2026-11-17 修正）
+            activeBgm = (isTrueSeen() && titleVisible) ? 'titleGold' : 'select';
             attemptPlayBgm();
         }
 
