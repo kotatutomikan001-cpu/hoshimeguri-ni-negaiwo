@@ -1,7 +1,11 @@
 // 『星めぐりに願いを』オフライン対応サービスワーカー
 // 一度オンラインで開くと、ゲーム本体と素材を端末に保存してオフラインでもCPU戦が遊べる。
-// ※このファイルの CACHE_NAME はゲームのバージョン（index-1108-NN）と揃えて上げること。
-const CACHE_NAME = 'hoshimeguri-v1117-3';
+// ※このファイルは固定版：ゲームのバージョンが上がっても書き換えないこと。
+//   ページ本体はオンライン時に必ず最新を取りに行き（取得できたら保存も更新）、
+//   画像などの素材は保存を優先しつつ、1日以上古ければ裏側で最新に差し替える。
+//   そのため index.html だけ差し替えれば、プレイヤー側は自動で最新版になる。
+const CACHE_NAME = 'hoshimeguri-v1';
+const REVALIDATE_AFTER_MS = 24 * 60 * 60 * 1000; // 1日
 
 const CHAR_IDS = ['mikado', 'hikari', 'sakura', 'nemea', 'rui', 'tefu', 'heru', 'shakuna', 'mirine', 'yuni', 'eru', 'utsuro', 'shano', 'ritsu', 'kataru', 'tomoko'];
 const SPEAKER_IDS = ['gakuencho', 'megami', 'goshu', 'utsuro_haha'];
@@ -64,7 +68,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // ページ本体はオンライン時に最新を取りに行き、失敗したら保存済みを使う
+  // ページ本体はオンライン時に最新を取りに行き、取得できたら保存も新しいものに差し替える。
+  // 失敗したら保存済みを使う（＝オフラインでも最後に見たバージョンで遊べる）。
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -87,7 +92,24 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       const hit = await cache.match(req, { ignoreSearch: true });
-      if (hit) return hit;
+      if (hit) {
+        // 画像など差し替わることのある素材は、保存が1日以上古ければ裏側で最新を取り直す
+        // （音楽ファイルとCDNは対象外：容量が大きく、差し替え頻度も低いため）
+        const isRevalidatable = url.origin === self.location.origin && !url.pathname.endsWith('.mp3');
+        if (isRevalidatable) {
+          const dateHdr = hit.headers.get('Date');
+          const age = dateHdr ? (Date.now() - Date.parse(dateHdr)) : Infinity;
+          if (age > REVALIDATE_AFTER_MS) {
+            event.waitUntil((async () => {
+              try {
+                const fresh = await fetch(req);
+                if (fresh && (fresh.ok || fresh.type === 'opaque')) await cache.put(req, fresh);
+              } catch (err) { /* 裏側の更新失敗は無視（今の保存で表示は続く） */ }
+            })());
+          }
+        }
+        return hit;
+      }
       const fresh = await fetch(req);
       if (fresh && (fresh.ok || fresh.type === 'opaque')) cache.put(req, fresh.clone());
       return fresh;
