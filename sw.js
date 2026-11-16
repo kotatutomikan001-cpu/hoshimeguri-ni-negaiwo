@@ -1,7 +1,7 @@
 // 『星めぐりに願いを』オフライン対応サービスワーカー
 // 一度オンラインで開くと、ゲーム本体と素材を端末に保存してオフラインでもCPU戦が遊べる。
 // ※このファイルの CACHE_NAME はゲームのバージョン（index-1108-NN）と揃えて上げること。
-const CACHE_NAME = 'hoshimeguri-v180';
+const CACHE_NAME = 'hoshimeguri-v1117-2';
 
 const CHAR_IDS = ['mikado', 'hikari', 'sakura', 'nemea', 'rui', 'tefu', 'heru', 'shakuna', 'mirine', 'yuni', 'eru', 'utsuro', 'shano', 'ritsu', 'kataru', 'tomoko'];
 const SPEAKER_IDS = ['gakuencho', 'megami', 'goshu', 'utsuro_haha'];
