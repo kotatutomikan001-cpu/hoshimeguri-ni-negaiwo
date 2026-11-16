@@ -1,7 +1,7 @@
 // 『星めぐりに願いを』オフライン対応サービスワーカー
 // 一度オンラインで開くと、ゲーム本体と素材を端末に保存してオフラインでもCPU戦が遊べる。
 // ※このファイルの CACHE_NAME はゲームのバージョン（index-1108-NN）と揃えて上げること。
-const CACHE_NAME = 'hoshimeguri-v178';
+const CACHE_NAME = 'hoshimeguri-v179';
 
 const CHAR_IDS = ['mikado', 'hikari', 'sakura', 'nemea', 'rui', 'tefu', 'heru', 'shakuna', 'mirine', 'yuni', 'eru', 'utsuro', 'shano', 'ritsu', 'kataru', 'tomoko'];
 const SPEAKER_IDS = ['gakuencho', 'megami', 'goshu', 'utsuro_haha'];
@@ -81,14 +81,15 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 自分の素材とCDN（Tailwind / PeerJS）は保存済みを優先（オフラインで動かすため）
-  const isCdn = url.href === 'https://cdn.tailwindcss.com' || url.href.startsWith('https://unpkg.com/peerjs');
+  // ※URLは末尾スラッシュ付きで正規化されるため、完全一致ではなく前方一致で判定する
+  const isCdn = url.href.startsWith('https://cdn.tailwindcss.com') || url.href.startsWith('https://unpkg.com/peerjs');
   if (url.origin === self.location.origin || isCdn) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       const hit = await cache.match(req, { ignoreSearch: true });
       if (hit) return hit;
       const fresh = await fetch(req);
-      if (fresh && fresh.ok) cache.put(req, fresh.clone());
+      if (fresh && (fresh.ok || fresh.type === 'opaque')) cache.put(req, fresh.clone());
       return fresh;
     })());
   }
