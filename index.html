@@ -506,7 +506,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-179 ・ 474,467 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1108-180 ・ 478,965 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6311,17 +6311,7 @@
                 preDesc = need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の祭壇を目指そう！`;
             }
 
-            // ⛩️ 星の祭壇にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
-            if (tile.type === 'start') {
-                let need = FRAGMENTS_REQUIRED - (p.fragments || 0);
-                resolveSpecialLanding(pIndex,
-                    '【⛩️ 星の祭壇】',
-                    need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！次の自分の番でサイコロを振ると、祭壇への道（⬇️）か周回コース（⬅️）を選べる！`,
-                    `⭐ 星のカケラ ${p.fragments || 0} / ${FRAGMENTS_REQUIRED}`);
-                return;
-            }
-
-            // ⭐ 奪い合い: 同じマスにいる相手からカケラを1個奪う
+            // ⭐ 奪い合い: 同じマスにいる相手からカケラを1個奪う（スタートマスの祭壇案内より先に処理する。以前はスタート判定が先に return して奪い合いが発動しなかった）
             let victim = players.filter(q => q !== p && !q.finished && q.pos === p.pos && (q.fragments || 0) > 0)
                                 .sort((a, b) => (b.fragments || 0) - (a.fragments || 0))[0];
             if (victim) {
@@ -6339,6 +6329,18 @@
                     let stealDesc = `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`;
                     preDesc = preDesc ? (preDesc + ' ' + stealDesc) : stealDesc;
                 }
+            }
+
+            // ⛩️ 星の祭壇（スタートマス）にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
+            // ※奪い合いを先に処理してからここに来るので、スタートマスでも同じマスの相手からカケラを奪える
+            if (tile.type === 'start') {
+                let need = FRAGMENTS_REQUIRED - (p.fragments || 0);
+                let altarDesc = need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！次の自分の番でサイコロを振ると、祭壇への道（⬇️）か周回コース（⬅️）を選べる！`;
+                resolveSpecialLanding(pIndex,
+                    '【⛩️ 星の祭壇】',
+                    preDesc ? (preDesc + ' ' + altarDesc) : altarDesc,
+                    `⭐ 星のカケラ ${p.fragments || 0} / ${FRAGMENTS_REQUIRED}`);
+                return;
             }
 
             turnPhase = (tile.type === 'plus' || tile.type === 'minus') ? 'idle' : 'event';
@@ -7070,6 +7072,76 @@
             ctx.restore();
         }
 
+        // スタートマスのオブジェクト：小さな星のゲート（鳥居型の門＋台座＋吊り星）
+        // 以前はマスに「S」の文字を描いていたが、文字ではなく置物として見える形にした（2026-11-17 ユーザー要望）
+        function drawStarShapePath(ctx, cx, cy, rOuter, rInner) {
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                let r = (i % 2 === 0) ? rOuter : rInner;
+                let a = -Math.PI / 2 + i * Math.PI / 5;
+                let px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+        }
+        function drawStartObject(ctx, x, y) {
+            let now = Date.now();
+            let bob = Math.sin(now / 600) * 1.6;
+            let pulse = 0.65 + 0.35 * Math.sin(now / 450);
+            ctx.save();
+            // 足元の影
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.ellipse(x, y + 13, 17, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 台座（2段）
+            ctx.fillStyle = '#1e1b4b';
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.rect(x - 17, y + 8, 34, 5); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#312e81';
+            ctx.beginPath(); ctx.rect(x - 13, y + 3, 26, 5); ctx.fill(); ctx.stroke();
+            // 柱（左右）
+            ctx.fillStyle = '#fbbf24';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.rect(x - 14, y - 20, 5, 24); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.rect(x + 9, y - 20, 5, 24); ctx.fill(); ctx.stroke();
+            // 上の梁（2段）
+            ctx.fillStyle = '#4c1d95';
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.rect(x - 20, y - 28, 40, 7); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#312e81';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath(); ctx.rect(x - 15, y - 18, 30, 5); ctx.fill(); ctx.stroke();
+            // 梁の上に小さな星
+            ctx.save();
+            ctx.shadowColor = 'rgba(253, 224, 71, 0.95)';
+            ctx.shadowBlur = 8 * pulse;
+            drawStarShapePath(ctx, x, y - 32 + bob * 0.5, 5.5, 2.4);
+            ctx.fillStyle = '#fde047';
+            ctx.fill();
+            ctx.restore();
+            // 門の中央に吊り下がる星のクリスタル
+            ctx.beginPath();
+            ctx.moveTo(x, y - 13); ctx.lineTo(x, y - 8 + bob);
+            ctx.strokeStyle = 'rgba(253, 230, 138, 0.9)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.save();
+            ctx.shadowColor = 'rgba(125, 211, 252, 0.95)';
+            ctx.shadowBlur = 10 * pulse;
+            drawStarShapePath(ctx, x, y - 1 + bob, 8, 3.4);
+            ctx.fillStyle = '#7dd3fc';
+            ctx.fill();
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#e0f2fe';
+            ctx.stroke();
+            ctx.restore();
+            ctx.restore();
+        }
+
         // スタート（祭壇マス）から星の祭壇までを結ぶ、光の点線
         function drawAltarPath(ctx) {
             if (!tileCoords || tileCoords.length === 0) return;
@@ -7131,9 +7203,14 @@
                 } else {
                     let currP = players[currentPlayerIndex];
                     let currTile = tileCoords[currP.pos] || { x: 0, y: 0 };
+                    // カメラは論理マスではなく「今キャラが描かれている位置」を追う。
+                    // 祭壇への移動は pos がスタートのまま render だけが盤面中央へ進むため、
+                    // マス基準だとキャラが画面外へ出て行ってしまった（2026-11-17 修正）
+                    let camX = (currP && currP.renderX !== undefined) ? currP.renderX : currTile.x;
+                    let camY = (currP && currP.renderY !== undefined) ? currP.renderY : currTile.y;
                     ctx.translate(canvas.width / 2 + userDragOffsetX, canvas.height / 2 + userDragOffsetY);
                     ctx.scale(userZoomScale, userZoomScale);
-                    ctx.translate(-currTile.x, -currTile.y);
+                    ctx.translate(-camX, -camY);
                 }
 
                 drawStarAltar(ctx);
@@ -7164,7 +7241,7 @@
 
 
                 let typeColors = { start: '#f59e0b', plus: '#3b82f6', minus: '#ef4444', item: '#eab308', white: '#ffffff', goal: '#a855f7' };
-                let markSymbols = { start: 'S', plus: '📈', minus: '📉', item: '🎁', white: '・', goal: '👑' };
+                let markSymbols = { plus: '📈', minus: '📉', item: '🎁', white: '・', goal: '👑' }; // start は文字ではなく drawStartObject で置物を描く
 
                 tileCoords.forEach(t => {
                     ctx.beginPath();
@@ -7175,12 +7252,17 @@
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
 
-                    ctx.fillStyle = (t.type === 'white' || t.type === 'start') ? '#1e293b' : '#ffffff';
-                    ctx.font = '700 13px "Zen Maru Gothic", sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
+                    if (t.type !== 'start') {
+                        ctx.fillStyle = (t.type === 'white') ? '#1e293b' : '#ffffff';
+                        ctx.font = '700 13px "Zen Maru Gothic", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(markSymbols[t.type] || '・', t.x, t.y + 1);
+                    }
                 });
+
+                // スタートマスには「S」の代わりに星のゲートの置物を描く
+                tileCoords.forEach(t => { if (t.type === 'start') drawStartObject(ctx, t.x, t.y); });
 
                 starTileIdxs.forEach(sIdx => {
                     let st = tileCoords[sIdx];
