@@ -506,7 +506,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-4 ・ 479,991 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-6 ・ 480,897 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -544,7 +544,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">デジタルフラワースタンド： テンション倍増で、次のサイコロの目×2のマス進める<br>ASMR用マイク： サイコロを振って出た目×200人のリスナーが増える（7日目から2倍、13日目から3倍と増えていく）<br>袖の下： サイコロを振って、出た目×100人を他のプレイヤー全員から自分のリスナーに移す（7日目から2倍、13日目から3倍と増えていく）<br>横取りチャーム： 一番リスナーの多い相手から300人を奪う（7日目から2倍、13日目から3倍と増えていく）<br>コラボ配信（乗っ取り）： ゴール済みの人以外の誰かとランダムで場所を入れ替わる<br>イカサマダイス： 使うと好きな目を選んで進める<br>例のワープする土管： 使うとマップ上のどこかへワープする<br>ネットサーフィン（物理）： 移動用のサイコロがそのターンだけ2つになる（合計分進む）<br>影分身（等身大スタンドポップ）： 次のマイナスを1回肩代わりする<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は ①星のカケラの数 ②リスナー数 の順で決まります。<br>評価点 ＝ 星のカケラ × 100,000 ＋ リスナー数<br>早くゴールした人にはリスナーのボーナスがあります（1位 ＋1,500人／ 2位 ＋1,000人／ 3位 ＋500人）。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は評価点で決まります。<br>評価点 ＝ 星のカケラ × 5,000 ＋ リスナー数<br>早くゴールした人にはボーナスがあります（1位は星のカケラ+1個とリスナー+1,500人／2位 リスナー+1,000人／3位 リスナー+500人）。</div></div>
             <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">わかった！</button></div>
         </div>
     </div>
@@ -4603,9 +4603,12 @@
             return dialogueMode === 'ending' ? endingPlayLines : currentOpeningScript();
         }
 
+        const FRAGMENT_SCORE = 5000; // 評価点における星のカケラ1個の重み
+        function evalScoreOf(p) { return (p.fragments || 0) * FRAGMENT_SCORE + (p.listeners || 0); }
         function rankSortedPlayers() {
-            // 順位は「星のカケラの数 → リスナー数」の順で決める（優勝者判定・スタッフロールの優勝表示・順位発表で共通）
-            return [...players].sort((a, b) => ((b.fragments || 0) - (a.fragments || 0)) || (b.listeners - a.listeners));
+            // 順位は評価点（星のカケラ×5,000＋リスナー数）で決める（優勝者判定・スタッフロールの優勝表示・順位発表で共通）
+            // 評価点が同点なら、カケラの多い方→リスナーの多い方→プレイヤー順
+            return [...players].sort((a, b) => (evalScoreOf(b) - evalScoreOf(a)) || ((b.fragments || 0) - (a.fragments || 0)) || (b.listeners - a.listeners));
         }
         // 🌳 トゥルーエンド内蔵フォールバック（下書き39行。シート読み込み時はそちらが優先）
         const TRUE_END_SCRIPT = [
@@ -5186,7 +5189,7 @@
             let scoreEl = document.getElementById('endingScoreTable');
             if (scoreEl) {
                 let rows = sorted.map((p, idx) => {
-                    let score = (p.fragments || 0) * 100000 + p.listeners;
+                    let score = evalScoreOf(p);
                     return '<tr class="border-t border-purple-300/60">'
                         + '<td class="py-1 px-2 font-black whitespace-nowrap">' + (idx + 1) + '位</td>'
                         + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + p.name + '</td>'
@@ -5195,7 +5198,7 @@
                         + '<td class="py-1 px-2 text-right font-black whitespace-nowrap">' + score.toLocaleString() + '</td></tr>';
                 }).join('');
                 scoreEl.innerHTML = '<div class="bg-white/60 rounded-lg px-2 py-2 shadow">'
-                    + '<div class="text-[11px] sm:text-xs font-black text-purple-900 text-center mb-1">📊 順位の内訳（評価点 ＝ ⭐ × 100,000 ＋ 👥 リスナー）</div>'
+                    + '<div class="text-[11px] sm:text-xs font-black text-purple-900 text-center mb-1">📊 順位の内訳（評価点 ＝ ⭐ × 5,000 ＋ 👥 リスナー）</div>'
                     + '<table class="w-full text-[11px] sm:text-sm text-purple-950"><thead><tr class="text-purple-700"><th class="py-0.5 px-2 text-left">順位</th><th class="py-0.5 px-2 text-left">プレイヤー</th><th class="py-0.5 px-2 text-right">⭐ カケラ</th><th class="py-0.5 px-2 text-right">👥 リスナー</th><th class="py-0.5 px-2 text-right">評価点</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
             }
             ov.classList.remove('hidden');
@@ -6522,6 +6525,12 @@
 
             let bonus = goalBonuses[p.rank] || 500;
             p.listeners += bonus;
+            // 1着ゴールには星のカケラ+1個のボーナス（周回して集める側に一方的に有利にならないように）
+            let fragBonus = (p.rank === 1) ? 1 : 0;
+            if (fragBonus > 0) {
+                p.fragments = (p.fragments || 0) + fragBonus;
+                if (typeof updateFragmentUI === 'function') updateFragmentUI();
+            }
             playCharVoice(p.char, 'plus');
 
             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
@@ -6529,17 +6538,17 @@
 
             if (viaAltar) {
                 document.getElementById('currentEventTitle').innerText = `【⭐ ${p.name} 願いが叶った！】`;
-                document.getElementById('currentEventDesc').innerText = `${p.name}さんが星のカケラを集めて星の祭壇に到達！ ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが星のカケラを集めて星の祭壇に到達！ ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！` + (fragBonus > 0 ? ' さらに1着ボーナスで星のカケラ+1個！' : '');
             } else {
                 document.getElementById('currentEventTitle').innerText = `【👑 ${p.name} ゴール！】`;
-                document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！`;
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！` + (fragBonus > 0 ? ' さらに1着ボーナスで星のカケラ+1個！' : '');
             }
             if (finishedRankCount === 1 && !players.every(player => player.finished)) {
                 goalDeadlineDay = currentTurnNumber + GOAL_DEADLINE_DAYS;
                 document.getElementById('currentEventDesc').innerText += ` ⌛ 最初のゴール！残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります。`;
                 showDeadlineBanner(p.name);
             }
-            document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)`;
+            document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)` + (fragBonus > 0 ? ' ＋ 星のカケラ+1個' : '');
 
             isEventResolving = true;
             broadcastGameState(true);
