@@ -373,21 +373,13 @@
     </div>
 
     <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
-    <div id="hiddenHintOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-3 z-[100005]">
-        <div class="pixel-box p-5 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-400 shadow-2xl text-center flex flex-col gap-4">
-            <h2 class="text-base sm:text-lg font-black text-purple-200 tracking-wider">🔓 隠し人物</h2>
-            <div class="text-left flex flex-col gap-4">
-                <div>
-                    <div class="text-sm sm:text-base font-black text-pink-300">隠し人物１：トモコ</div>
-                    <div class="text-xs sm:text-sm text-purple-100 font-bold mt-1 leading-relaxed">世界地図の日本を3回タップ（クリック）</div>
-                </div>
-                <div>
-                    <div class="text-sm sm:text-base font-black text-indigo-300">隠し人物２：繰言かたる</div>
-                    <div class="text-xs sm:text-sm text-purple-100 font-bold mt-1 leading-relaxed">氷室うつろを5回タップ→？を1回タップ→氷室うつろを2回タップ→？を1回タップ→氷室うつろを6回タップ</div>
-                </div>
-            </div>
-            <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">タイトルへ戻る</button>
+    <div id="hiddenHintOverlay" class="fixed inset-0 bg-black hidden z-[100005]" style="overflow:hidden; cursor:pointer;">
+        <div id="hiddenHintFx" class="absolute inset-0 pointer-events-none"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-10 sm:gap-14 px-4 select-none pointer-events-none">
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(20px, 4.6vw, 44px);" data-hint="隠し人物１：トモコ　世界地図の日本を3回タップ（クリック）"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(15px, 3.3vw, 32px);" data-hint="隠し人物２：繰言かたる　氷室うつろを5回タップ→？を1回タップ→氷室うつろを2回タップ→？を1回タップ→氷室うつろを6回タップ"></div>
         </div>
+        <div id="hiddenHintTapNote" class="absolute bottom-6 inset-x-0 text-center text-xs sm:text-sm font-bold pointer-events-none" style="color:#e8dcc0; opacity:0; transition:opacity .6s;">タップでタイトルへ</div>
     </div>
 
     <!-- 🌟 オンライン待合ロビーモーダル -->
@@ -521,7 +513,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-6 ・ 496,726 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-7 ・ 500,513 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -655,6 +647,11 @@
     <style>
         .deco-star { animation-name: decoTwinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
         @keyframes decoTwinkle { from { filter: brightness(0.65); } to { filter: brightness(1.35); } }
+        .hint-line { color: #e8dcc0; }
+        .hint-char { display: inline-block; opacity: 0; color: #e8dcc0; text-shadow: 0 0 18px rgba(232, 220, 192, .35); animation: hintIn .5s ease forwards; }
+        @keyframes hintIn { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+        .hint-char.dissolve { animation: hintOut .7s ease-in forwards; }
+        @keyframes hintOut { to { opacity: 0; filter: blur(8px); transform: translate(var(--dx, 10px), var(--dy, -14px)) scale(.55); } }
         @keyframes csCursorBlink { 0%, 100% { box-shadow: 0 0 0 3px #facc15, 0 0 16px #facc15; } 50% { box-shadow: 0 0 0 3px #ffffff, 0 0 4px #ffffff; } }
         .cs-cursor { animation: csCursorBlink 0.6s steps(2) infinite; z-index: 2; }
         @keyframes csFlipAnim { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(90deg) scale(1.06); } 100% { transform: rotateY(0deg); } }
@@ -5284,12 +5281,73 @@
             if (staffRollPhase === 'hold') finishStaffRoll();
         }
 
+        // 隠し人物ヒント：枠なし・単一色の大きな文字が、無の画面に左から右へスーッと現れる。タップで左から右へ粉になって消える
+        let hiddenHintState = 'idle';
+        function showHiddenHints() {
+            let ov = document.getElementById('hiddenHintOverlay');
+            if (!ov) { location.reload(); return; }
+            ov.classList.remove('hidden');
+            hiddenHintState = 'revealing';
+            let charDelay = 0;
+            ov.querySelectorAll('.hint-line').forEach(line => {
+                let text = line.getAttribute('data-hint') || '';
+                line.innerHTML = '';
+                [...text].forEach(ch => {
+                    let sp = document.createElement('span');
+                    sp.textContent = (ch === ' ') ? '\u00A0' : ch;
+                    sp.className = 'hint-char';
+                    sp.style.animationDelay = (charDelay * 45) + 'ms';
+                    line.appendChild(sp);
+                    charDelay++;
+                });
+                charDelay += 8;
+            });
+            setTimeout(() => {
+                if (hiddenHintState === 'revealing') {
+                    hiddenHintState = 'shown';
+                    let n = document.getElementById('hiddenHintTapNote');
+                    if (n) n.style.opacity = '0.75';
+                }
+            }, charDelay * 45 + 550);
+        }
+        function dissolveHiddenHints() {
+            if (hiddenHintState === 'dissolving' || hiddenHintState === 'idle') return;
+            hiddenHintState = 'dissolving';
+            let ov = document.getElementById('hiddenHintOverlay');
+            let fx = document.getElementById('hiddenHintFx');
+            let note = document.getElementById('hiddenHintTapNote');
+            if (note) note.style.opacity = '0';
+            let ovRect = ov.getBoundingClientRect();
+            let chars = ov.querySelectorAll('.hint-char');
+            chars.forEach((sp, i) => {
+                let r = sp.getBoundingClientRect();
+                sp.style.setProperty('--dx', (Math.random() * 36 - 18).toFixed(0) + 'px');
+                sp.style.setProperty('--dy', (-(Math.random() * 26 + 6)).toFixed(0) + 'px');
+                sp.style.animationDelay = (i * 35) + 'ms';
+                sp.classList.add('dissolve');
+                if (fx && r.width > 0 && sp.animate) {
+                    for (let k = 0; k < 3; k++) {
+                        let d = document.createElement('div');
+                        d.style.cssText = 'position:absolute;width:3px;height:3px;border-radius:9999px;background:#e8dcc0;left:' + (r.left - ovRect.left + Math.random() * r.width).toFixed(0) + 'px;top:' + (r.top - ovRect.top + Math.random() * r.height).toFixed(0) + 'px;';
+                        fx.appendChild(d);
+                        let anim = d.animate([
+                            { transform: 'translate(0,0)', opacity: 0.9 },
+                            { transform: 'translate(' + (Math.random() * 70 - 35).toFixed(0) + 'px,' + (Math.random() * 50 - 38).toFixed(0) + 'px)', opacity: 0 }
+                        ], { duration: 700 + Math.random() * 500, delay: i * 35 + Math.random() * 90, easing: 'ease-out', fill: 'forwards' });
+                        if (anim && anim.finished) anim.finished.then(() => d.remove()).catch(() => {});
+                    }
+                }
+            });
+            setTimeout(() => { location.reload(); }, chars.length * 35 + 1000);
+        }
+        (function () {
+            let ov = document.getElementById('hiddenHintOverlay');
+            if (ov) ov.addEventListener('click', () => { dissolveHiddenHints(); });
+        })();
+
         // リザルト画面を閉じる時：トモコ・かたるの個別エンディング以外の時は、先に隠し人物ヒントを出す
         function onEndingResultClose() {
-            if (!kataruEndingSong && !tomokoEndingSong) {
-                let ov = document.getElementById('hiddenHintOverlay');
-                if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); return; }
-            }
+            if (!kataruEndingSong && !tomokoEndingSong) { showHiddenHints(); return; }
             location.reload();
         }
 
