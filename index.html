@@ -270,7 +270,7 @@
             </div>
 
             <!-- イベントログ・解説表示 -->
-            <div class="pixel-box p-2.5 sm:p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[100px] sm:min-h-[125px]">
+            <div id="eventPanel" class="pixel-box p-2.5 sm:p-3 rounded-lg md:col-span-2 flex flex-col justify-between bg-slate-900/95 border-2 border-purple-400 min-h-[100px] sm:min-h-[125px]">
                 <div>
                     <div class="flex items-center justify-between border-b border-purple-700/80 pb-1 mb-1">
                         <span id="currentEventTitle" class="text-xs sm:text-base font-black text-yellow-300 tracking-wide flex items-center gap-1 text-outline">【スタート！】</span>
@@ -283,6 +283,7 @@
                 <div id="currentEventEffect" class="text-[11px] sm:text-sm font-bold text-cyan-300 mt-1 truncate bg-indigo-950/90 px-2 py-0.5 sm:py-1 rounded border border-indigo-400 shadow">
                     -
                 </div>
+                <div id="eventTapHint" class="hidden text-center text-[11px] sm:text-xs font-bold text-yellow-200 mt-1 animate-pulse">▼ この欄をタップすると進む ▼</div>
             </div>
         </section>
 
@@ -520,7 +521,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-3 ・ 484,358 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-6 ・ 496,726 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1196,6 +1197,8 @@
         let peerConnections = [];
         let isOnlineMode = false;
         let isHost = false;
+        let onlineGameStarted = false;
+        let hostDisconnectHandled = false;
         let myPlayerIndex = 0;
         let currentRoomCode = '';
         let onlineMemberChars = {};
@@ -2911,7 +2914,7 @@
                 let nm = document.getElementById('csSlotName' + i);
                 let tag = document.getElementById('csSlotTag' + i);
                 if (!img || !ph || !nm) continue;
-                if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (i <= peerConnections.length ? 'PLAYER' : 'CPU'));
+                if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (i <= liveGuestCount() ? 'PLAYER' : 'CPU'));
                 if (id) {
                     let eye = csSlotEyeMode();
                     img.dataset.csMode = eye ? 'eye' : 'stand';
@@ -3263,7 +3266,7 @@
                 document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中...`;
                 document.getElementById('currentEventEffect').innerText = '-';
                 if (btnRoll) btnRoll.disabled = true;
-                setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
+                setTimeout(() => { cpuTakeTurn(); }, 1500);
             }
             updateItemUI();
         }
@@ -3378,10 +3381,11 @@
                             onlineMemberChars: onlineMemberChars
                         });
                         
-                        document.getElementById('lobbyMemberCount').innerText = `${peerConnections.length + 1} / 4`;
+                        document.getElementById('lobbyMemberCount').innerText = `${liveGuestCount() + 1} / 4`;
                     });
 
                     setupConnectionDataHandler(conn);
+                    conn.on('close', () => { handleGuestDisconnect(conn); });
                 });
 
                 peer.on('error', (err) => {
@@ -3400,6 +3404,7 @@
 
         function connectAsGuest(hostPeerId) {
             isHost = false;
+            hostDisconnectHandled = false;
             peer = new Peer({ debug: 1 });
 
             peer.on('open', () => {
@@ -3416,21 +3421,16 @@
                     });
                 });
 
-                conn.on('close', () => {
-                    alert('ホストとの接続が切断されました');
-                    leaveOnlineLobby();
-                });
+                conn.on('close', () => { handleHostDisconnect(false); });
 
-                conn.on('error', (e) => {
-                    alert('ホストへの接続に失敗しました');
-                    leaveOnlineLobby();
-                });
+                conn.on('error', (e) => { handleHostDisconnect(true); });
             });
         }
 
         function setupConnectionDataHandler(conn) {
             conn.on('data', (data) => {
                 if (!data || !data.type) return;
+                if (!isOnlineMode) return; // 退出・切断後の遅延パケットは無視する（CPU戦への引き継ぎ後に同期で上書きされないため）
 
                 if (isHost) {
                     if (data.type === 'REGISTER_CHAR') {
@@ -3514,6 +3514,7 @@
                         }
                     } else if (data.type === 'START_GAME') {
                         if (data.mapGrid) { customMapGrid = data.mapGrid; convertCustomGridToTileCoords(); }
+                        onlineGameStarted = true;
                         isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
                         startOnlineSupportLoops();
                         document.getElementById('onlineLobbyModal').classList.add('hidden');
@@ -3565,12 +3566,13 @@
             });
         }
 
+        function liveGuestCount() { return peerConnections.filter(c => c && c.open && !c.__dead).length; }
         function broadcastLobbyState() {
             if (!isHost) return;
             let state = {
                 type: 'LOBBY_STATE',
                 onlineMemberChars: onlineMemberChars,
-                memberCount: peerConnections.length + 1
+                memberCount: liveGuestCount() + 1
             };
             peerConnections.forEach(c => {
                 if (c.open) c.send(state);
@@ -3596,7 +3598,7 @@
             }
             let list = document.getElementById('lobbyPickedList');
             if (list) {
-                let parts = [0, 1, 2, 3].map(i => (i + 1) + 'P: ' + (onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (i <= peerConnections.length ? '選択中…' : 'CPU')));
+                let parts = [0, 1, 2, 3].map(i => (i + 1) + 'P: ' + (onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (i <= liveGuestCount() ? '選択中…' : 'CPU')));
                 list.innerText = parts.join(' ／ ');
             }
         }
@@ -3688,9 +3690,10 @@
             }
 
             let usedChars = [];
+            let liveGuests = liveGuestCount();
             let playerConfigs = [0, 1, 2, 3].map(idx => {
                 let chosenChar = onlineMemberChars[idx];
-                let isHuman = idx <= peerConnections.length;
+                let isHuman = idx <= liveGuests;
 
                 if (!chosenChar || usedChars.includes(chosenChar)) {
                     let available = normalCharIds().filter(c => !usedChars.includes(c) && !usedChars.includes(csPairOf(c)));
@@ -3722,6 +3725,7 @@
             };
             peerConnections.forEach(c => { if (c.open) c.send(startPayload); });
 
+            onlineGameStarted = true;
             document.getElementById('onlineLobbyModal').classList.add('hidden');
             document.getElementById('gameStatusText').innerText = `オンライン対戦中 (部屋: ${currentRoomCode})`;
             playGameBgm();
@@ -3796,6 +3800,88 @@
             }
         }
 
+        // 📴 ゲストが切断した（ホスト側）: 対戦中ならその席をCPUが引き継ぐ。ロビー中なら登録を外す
+        function handleGuestDisconnect(conn) {
+            let connIdx = peerConnections.indexOf(conn);
+            if (connIdx === -1) return;
+            conn.__dead = true;
+            let pIdx = connIdx + 1;
+            if (!onlineGameStarted) {
+                delete onlineMemberChars[pIdx];
+                updateLobbyCharUI();
+                broadcastLobbyState();
+                let mc = document.getElementById('lobbyMemberCount');
+                if (mc) mc.innerText = `${liveGuestCount() + 1} / 4`;
+                return;
+            }
+            let p = players[pIdx];
+            if (p && p.isHuman) {
+                p.isHuman = false;
+                document.getElementById('currentEventTitle').innerText = '【📴 切断】';
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんとの接続が切れたため、CPUが引き継ぎます。`;
+                document.getElementById('currentEventEffect').innerText = '-';
+                if (pendingBranchResolver && pendingBranchInfo && pendingBranchInfo.playerIndex === pIdx) {
+                    if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
+                    let r = pendingBranchResolver;
+                    let info = pendingBranchInfo;
+                    pendingBranchResolver = null;
+                    pendingBranchInfo = null;
+                    r(info.candidateTileIdxs.includes(altarTileIndex()) ? altarTileIndex() : info.candidateTileIdxs[0]);
+                } else if (currentPlayerIndex === pIdx && turnPhase === 'idle' && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice) {
+                    setTimeout(() => { if (currentPlayerIndex === pIdx && !players[pIdx].isHuman) cpuTakeTurn(); }, 800);
+                }
+            }
+            broadcastGameState(true);
+        }
+
+        // 📴 ホストが切断した（ゲスト側）: 対戦中なら、その時点の状態からCPU戦として続行する
+        function handleHostDisconnect(wasError) {
+            if (hostDisconnectHandled) return;
+            hostDisconnectHandled = true;
+            if (onlineGameStarted && !openingActive && players && players.length && !players.every(p => p.finished)) {
+                convertToLocalCpuGame();
+            } else {
+                alert(wasError ? 'ホストへの接続に失敗しました' : 'ホストとの接続が切断されました');
+                leaveOnlineLobby();
+            }
+        }
+
+        // 📴 オンライン対戦を、その時点の状態のままローカルのCPU戦に切り替える（ホスト切断時）
+        function convertToLocalCpuGame() {
+            if (!isOnlineMode) return;
+            isOnlineMode = false;
+            isHost = false;
+            onlineGameStarted = false;
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            peerConnections = [];
+            players.forEach((p, idx) => { p.isHuman = (idx === myPlayerIndex); });
+            cpuGameActive = true;
+            isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; isWaitingForBranchChoice = false;
+            pendingBranchResolver = null; pendingBranchInfo = null;
+            if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
+            turnPhase = 'idle';
+            lastProgressAt = Date.now();
+            let lm = document.getElementById('onlineLobbyModal');
+            if (lm) lm.classList.add('hidden');
+            document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
+            document.getElementById('currentEventTitle').innerText = '【📴 ホストとの接続が切断】';
+            document.getElementById('currentEventDesc').innerText = 'ホストとの接続が切れたため、ここからはCPU戦として続行します。';
+            document.getElementById('currentEventEffect').innerText = '-';
+            let activePlayer = players[currentPlayerIndex];
+            if (!activePlayer || activePlayer.finished) { nextTurn(); return; }
+            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            let btnRoll = document.getElementById('btnRoll');
+            if (activePlayer.isHuman) {
+                if (btnRoll) { btnRoll.disabled = false; btnRoll.innerText = '🎲 移動！'; }
+            } else {
+                if (btnRoll) btnRoll.disabled = true;
+                setTimeout(() => { cpuTakeTurn(); }, 1500);
+            }
+            updateItemUI();
+            updateFragmentUI();
+            saveSuspendedGame();
+        }
+
         function leaveOnlineLobby() {
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
@@ -3804,6 +3890,7 @@
             peerConnections = [];
             isOnlineMode = false;
             isHost = false;
+            onlineGameStarted = false;
             document.getElementById('onlineLobbyModal').classList.add('hidden');
             document.getElementById('startModal').classList.remove('hidden');
         }
@@ -6349,6 +6436,42 @@
             updateFragmentUI();
         }
 
+        // 📖 イベント結果の表示時間：自分の番はタップで進む（放置対策に90秒で自動）、CPU・他人の番は長めに表示する
+        let eventAdvanceTimer = null;
+        let eventAdvanceTapFn = null;
+        function showEventTapHint(show) {
+            let h = document.getElementById('eventTapHint');
+            if (h) h.classList.toggle('hidden', !show);
+            let panel = document.getElementById('eventPanel');
+            if (panel) panel.style.cursor = show ? 'pointer' : '';
+        }
+        function clearEventAdvance() {
+            if (eventAdvanceTimer) { clearTimeout(eventAdvanceTimer); eventAdvanceTimer = null; }
+            if (eventAdvanceTapFn) { eventAdvanceTapFn = null; showEventTapHint(false); }
+        }
+        function scheduleEventAdvance(baseMs, fn) {
+            clearEventAdvance();
+            let p = players[currentPlayerIndex];
+            let mine = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : !!(p && p.isHuman);
+            let finish = () => {
+                clearEventAdvance();
+                if (typeof dialogueMode !== 'undefined' && dialogueMode === 'ending') return;
+                fn();
+            };
+            if (mine) {
+                eventAdvanceTapFn = finish;
+                showEventTapHint(true);
+                eventAdvanceTimer = setTimeout(finish, 90000);
+            } else {
+                let mult = (p && p.isHuman) ? 1.3 : 1.8;
+                eventAdvanceTimer = setTimeout(finish, Math.round(baseMs * mult));
+            }
+        }
+        (function () {
+            let panel = document.getElementById('eventPanel');
+            if (panel) panel.addEventListener('click', () => { if (eventAdvanceTapFn) eventAdvanceTapFn(); });
+        })();
+
         function resolveSpecialLanding(pIndex, title, desc, effect) {
             turnPhase = 'event';
             document.getElementById('currentEventTitle').innerText = title;
@@ -6357,7 +6480,7 @@
             isEventResolving = true;
             broadcastGameState(true);
             if (!isOnlineMode || isHost) {
-                setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
+                scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
             }
         }
 
@@ -6477,7 +6600,7 @@
                 isEventResolving = true;
                 broadcastGameState(true);
                 if (!isOnlineMode || isHost) {
-                    setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
+                    scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
                 }
             }
         }
@@ -6571,7 +6694,7 @@
             isEventResolving = true;
             broadcastGameState(true);
             if (!isOnlineMode || isHost) {
-                setTimeout(() => { isEventResolving = false; nextTurn(); }, 3000);
+                scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
             }
         }
 
@@ -6618,7 +6741,7 @@
                 setTimeout(showFinalResultModal, 3500);
             } else {
                 if (!isOnlineMode || isHost) {
-                    setTimeout(() => { isEventResolving = false; nextTurn(); }, 3500);
+                    scheduleEventAdvance(3500, () => { isEventResolving = false; nextTurn(); });
                 }
             }
         }
@@ -6690,7 +6813,7 @@
                 if (btnRoll) btnRoll.disabled = true;
 
                 if (!isOnlineMode || isHost) {
-                    setTimeout(() => { executeRollForCurrentPlayer(); }, 1500);
+                    setTimeout(() => { cpuTakeTurn(); }, 1500);
                 }
             }
 
@@ -6837,6 +6960,78 @@
                 return;
             }
             applyUseItem(currentPlayerIndex, itemIndex);
+        }
+
+        // 🤖 CPUのアイテム判断：自分の番の最初に、状況を見てアイテムを使う（ホスト／ローカルCPU戦でのみ動く）
+        function cpuDistAhead(from, target) { let n = tileCoords.length || 40; let d = (target - from + n) % n; return d === 0 ? n : d; }
+        function cpuStarDists(p) { return (starTileIdxs || []).map(t => cpuDistAhead(p.pos, t)); }
+        function cpuPickItem(p) {
+            if (!p.items || !p.items.length) return null;
+            let others = players.filter(q => q !== p && !q.finished);
+            let starDs = cpuStarDists(p);
+            let nearStar = starDs.length ? Math.min(...starDs) : 99;
+            let startD = cpuDistAhead(p.pos, 0);
+            let mult = tileAmountMultiplier();
+            for (let i = 0; i < p.items.length; i++) {
+                let name = p.items[i];
+                let kind = itemEffectInfo(name).kind;
+                // 倍率アイテム（マイク・袖の下・横取り）は倍率が上がる7日目以降に使う。倍率1の間は2個以上持っている時だけ1個使う
+                let copies = p.items.filter(nm => nm === name).length;
+                let multItemOk = mult >= 2 || copies >= 2;
+                if (kind === 'mic') { if (multItemOk) return { index: i, name }; }
+                else if (kind === 'fragment' || kind === 'listeners') return { index: i, name };
+                else if (kind === 'sode') { let tot = others.reduce((a, q) => a + (q.listeners || 0), 0); if (multItemOk && tot >= 1200) return { index: i, name }; }
+                else if (kind === 'steal') { let rich = Math.max(0, ...others.map(q => q.listeners || 0)); if (multItemOk && rich >= 1300) return { index: i, name }; }
+                else if (kind === 'shield') { if (!(p.shield > 0)) return { index: i, name }; }
+                else if (kind === 'dice') { if ((nearStar >= 4 && nearStar <= 9) || (p.fragments >= 5 && startD >= 4 && startD <= 9)) return { index: i, name }; }
+                else if (kind === 'moveDouble') { if (starDs.some(d => d >= 2 && d <= 12 && d % 2 === 0) || (p.fragments >= 5 && startD >= 2 && startD <= 12 && startD % 2 === 0)) return { index: i, name }; }
+                else if (kind === 'doubleDice') { if ((nearStar >= 2 && nearStar <= 12) || (p.fragments >= 5 && startD >= 2 && startD <= 12)) return { index: i, name }; }
+                else if (kind === 'swap') { if (nearStar >= 10 && others.some(q => { let ds = cpuStarDists(q); return ds.length && Math.min(...ds) <= 4; })) return { index: i, name }; }
+                else if (kind === 'warp') { if (nearStar >= 16) return { index: i, name }; }
+            }
+            return null;
+        }
+        function cpuPickCheat(p) {
+            if (!p.items) return null;
+            let idx = p.items.findIndex(nm => itemEffectInfo(nm).kind === 'cheatDice');
+            if (idx < 0) return null;
+            let starDs = cpuStarDists(p).filter(d => d >= 1 && d <= 6);
+            if (starDs.length) return { name: p.items[idx], value: Math.min(...starDs) };
+            let startD = cpuDistAhead(p.pos, 0);
+            if ((p.fragments || 0) >= 5 && startD >= 1 && startD <= 6) return { name: p.items[idx], value: startD };
+            return null;
+        }
+        function cpuTakeTurn() {
+            if (isOnlineMode && !isHost) return;
+            let p = players[currentPlayerIndex];
+            if (!p || p.finished || p.isHuman) return;
+            if (turnPhase !== 'idle' || isRolling || isMoving || isEventResolving || isSubRollPending || pendingMicRoll || pendingSodeRoll) return;
+            cpuItemPhase(0);
+        }
+        function cpuItemPhase(usedCount) {
+            let p = players[currentPlayerIndex];
+            if (!p || p.finished || p.isHuman || (isOnlineMode && !isHost)) return;
+            let pick = usedCount < 4 ? cpuPickItem(p) : null;
+            if (!pick) { cpuFinishItemPhase(); return; }
+            applyUseItem(currentPlayerIndex, pick.index, pick.name);
+            let waited = 0;
+            let iv = setInterval(() => {
+                waited += 400;
+                let pp = players[currentPlayerIndex];
+                if (!pp || pp.isHuman || pp.finished) { clearInterval(iv); return; }
+                if (turnPhase === 'idle' && !isRolling && !isMoving && !isEventResolving && !isSubRollPending && !pendingMicRoll && !pendingSodeRoll) {
+                    clearInterval(iv);
+                    setTimeout(() => cpuItemPhase(usedCount + 1), 600);
+                } else if (waited > 20000) { clearInterval(iv); }
+            }, 400);
+        }
+        function cpuFinishItemPhase() {
+            let p = players[currentPlayerIndex];
+            if (!p || p.finished || p.isHuman || (isOnlineMode && !isHost)) return;
+            if (turnPhase !== 'idle' || isRolling || isMoving || isEventResolving || isSubRollPending) return;
+            let cheat = cpuPickCheat(p);
+            if (cheat) { applyCheatDice(currentPlayerIndex, cheat.name, cheat.value); return; }
+            executeRollForCurrentPlayer();
         }
 
         let lastItemUseKey = '';
