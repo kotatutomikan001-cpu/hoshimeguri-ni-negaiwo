@@ -367,7 +367,25 @@
             </div>
             <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl lg:max-w-5xl flex-none"></div>
             <div id="endingScoreTable" class="w-full max-w-3xl lg:max-w-5xl flex-none"></div>
-            <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
+            <button onclick="onEndingResultClose()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
+        </div>
+    </div>
+
+    <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
+    <div id="hiddenHintOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-3 z-[100005]">
+        <div class="pixel-box p-5 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-purple-400 shadow-2xl text-center flex flex-col gap-4">
+            <h2 class="text-base sm:text-lg font-black text-purple-200 tracking-wider">🔓 隠し人物</h2>
+            <div class="text-left flex flex-col gap-4">
+                <div>
+                    <div class="text-sm sm:text-base font-black text-pink-300">隠し人物１：トモコ</div>
+                    <div class="text-xs sm:text-sm text-purple-100 font-bold mt-1 leading-relaxed">世界地図の日本を3回タップ（クリック）</div>
+                </div>
+                <div>
+                    <div class="text-sm sm:text-base font-black text-indigo-300">隠し人物２：繰言かたる</div>
+                    <div class="text-xs sm:text-sm text-purple-100 font-bold mt-1 leading-relaxed">氷室うつろを5回タップ→？を1回タップ→氷室うつろを2回タップ→？を1回タップ→氷室うつろを6回タップ</div>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">タイトルへ戻る</button>
         </div>
     </div>
 
@@ -502,7 +520,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-10 ・ 479,448 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-3 ・ 484,358 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -514,7 +532,7 @@
                 <div id="trueEndBtnWrap" class="hidden mt-3">
                     <button onclick="playTrueEnding()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-700 to-purple-800 shadow-lg cursor-pointer">？？？</button>
                 </div>
-                <div id="endingListBtnWrap" class="hidden mt-3">
+                <div id="endingListBtnWrap" class="mt-3">
                     <button onclick="openEndingList()" class="pixel-btn py-2.5 px-8 font-black text-white rounded-lg text-base bg-gradient-to-r from-amber-500 to-yellow-600 shadow-lg cursor-pointer">エンディングリスト</button>
                 </div>
                 <div id="resumeBtnWrap" class="mt-3">
@@ -547,13 +565,13 @@
     <div id="endingListOverlay" class="hidden fixed inset-0 z-[100005] p-4 overflow-y-auto" style="background:linear-gradient(180deg,#1e1b4b,#312e81 55%,#4c1d95);">
         <div class="m-auto text-center max-w-md w-full py-2">
             <div class="text-2xl sm:text-3xl font-black text-amber-200 tracking-widest">エンディングリスト</div>
-            <div class="el-sub text-xs font-bold text-purple-200/80 mt-2 mb-6">見たいエンディングを選んでください</div>
+            <div class="el-sub text-xs font-bold text-purple-200/80 mt-2 mb-6">本編で見たエンディングだけ再生できます</div>
             <div class="flex flex-col gap-2.5">
-                <button onclick="playEndingReplay('generic')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">汎用エンド</button>
+                <button id="endingListGenericBtn" onclick="playEndingReplay('generic')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">汎用エンド</button>
                 <button id="endingListHikariBtn" onclick="playEndingReplay('hikari')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">ひかりエンド</button>
-                <button onclick="playEndingReplay('utsuro')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うつろエンド</button>
-                <button onclick="playEndingReplay('kataru')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">かたるエンド</button>
-                <button onclick="playEndingReplay('tomoko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">トモコエンド</button>
+                <button id="endingListUtsuroBtn" onclick="playEndingReplay('utsuro')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うつろエンド</button>
+                <button id="endingListKataruBtn" onclick="playEndingReplay('kataru')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">かたるエンド</button>
+                <button id="endingListTomokoBtn" onclick="playEndingReplay('tomoko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">トモコエンド</button>
             </div>
             <button onclick="closeEndingList()" class="el-back pixel-btn mt-7 py-2.5 px-8 font-black text-white rounded-lg text-sm bg-gradient-to-r from-slate-600 to-slate-700 shadow cursor-pointer">タイトルへ戻る</button>
         </div>
@@ -2494,11 +2512,26 @@
             }
         }
 
-        // ===== キャラボイス（リスナー増減時の喜び・悲鳴） =====
-        // char_assets/voice/<id>_plus.mp3 / <id>_minus.mp3 があればそれを再生する。無い場合は無音。
+        // ===== キャラボイス（キャラ選択／リスナー増減／カケラを取られた時） =====
+        // char_assets/voice/<id>_<場面><番号>.mp3（場面: select/plus/minus/stolen、番号1〜4）があれば、その中からランダムで1つ再生する。無い場合は無音。
+        // 旧形式の <id>_plus.mp3 / <id>_minus.mp3 も互換として使う（番号付きが無い時だけ）。
         const charVoiceFiles = {};
+        const VOICE_KINDS = ['select', 'plus', 'minus', 'stolen'];
+        const VOICE_VARIANTS = 4;
         function preloadCharVoices() {
             CHARACTERS.forEach(c => {
+                VOICE_KINDS.forEach(kind => {
+                    for (let n = 1; n <= VOICE_VARIANTS; n++) {
+                        try {
+                            const a = new Audio();
+                            a.preload = 'auto';
+                            a.src = 'char_assets/voice/' + c.id + '_' + kind + n + '.mp3';
+                            const rec = { el: a, ok: false };
+                            a.addEventListener('canplaythrough', () => { rec.ok = true; });
+                            charVoiceFiles[c.id + '_' + kind + n] = rec;
+                        } catch (e) {}
+                    }
+                });
                 ['plus', 'minus'].forEach(kind => {
                     try {
                         const a = new Audio();
@@ -2514,15 +2547,23 @@
         function playCharVoice(charId, kind) {
             // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
             if (!charId) return;
-            const rec = charVoiceFiles[charId + '_' + kind];
-            if (rec && rec.ok) {
-                try {
-                    rec.el.volume = 0.9;
-                    rec.el.currentTime = 0;
-                    const pr = rec.el.play();
-                    if (pr && pr.catch) pr.catch(() => {});
-                } catch (e) {}
+            const avail = [];
+            for (let n = 1; n <= VOICE_VARIANTS; n++) {
+                const rec = charVoiceFiles[charId + '_' + kind + n];
+                if (rec && rec.ok) avail.push(rec);
             }
+            if (!avail.length) {
+                const legacy = charVoiceFiles[charId + '_' + kind];
+                if (legacy && legacy.ok) avail.push(legacy);
+            }
+            if (!avail.length) return;
+            const rec = avail[Math.floor(Math.random() * avail.length)];
+            try {
+                rec.el.volume = 0.9;
+                rec.el.currentTime = 0;
+                const pr = rec.el.play();
+                if (pr && pr.catch) pr.catch(() => {});
+            } catch (e) {}
         }
 
         // 🎵 セリフの fx「bgmoff」で、その場のBGMをフェードアウトして止めるための状態
@@ -2950,6 +2991,7 @@
                 setCsStatus('⚠️ ' + charName(csCursor) + ' は ' + (taken[csCursor] + 1) + 'P が使用中です');
                 return;
             }
+            playCharVoice(csCursor, 'select');
             if (csMode === 'cpu') {
                 if (csCpuPicks[0] === csCursor) { refreshCsSlots(); return; }
                 myChar = csCursor;
@@ -4698,11 +4740,32 @@
             tomoko: { lineup: ['tomoko', 'utsuro', 'hikari', 'shano'] }  // かたるがいる編成にはしない（本編のガードと整合）
         };
         function isHikariEndingSeen() { try { return localStorage.getItem('utsuro_hikari_seen') === '1'; } catch (e) { return false; } }
+        const ENDING_LIST_BUTTONS = { generic: 'endingListGenericBtn', hikari: 'endingListHikariBtn', utsuro: 'endingListUtsuroBtn', kataru: 'endingListKataruBtn', tomoko: 'endingListTomokoBtn' };
+        const ENDING_LIST_LABELS = { generic: '汎用エンド', hikari: 'ひかりエンド', utsuro: 'うつろエンド', kataru: 'かたるエンド', tomoko: 'トモコエンド' };
+        // そのエンディングを本編（または再生）で見たことがあるか＝リストで解放されているか
+        function endingUnlocked(kind) {
+            try {
+                if (kind === 'generic') return localStorage.getItem('utsuro_any_ending_seen') === '1';
+                if (kind === 'hikari') return localStorage.getItem('utsuro_hikari_seen') === '1';
+                return !!readTrueProgress()[kind];
+            } catch (e) { return false; }
+        }
+        function refreshEndingListButtons() {
+            Object.keys(ENDING_LIST_BUTTONS).forEach(kind => {
+                let b = document.getElementById(ENDING_LIST_BUTTONS[kind]);
+                if (!b) return;
+                let un = endingUnlocked(kind);
+                b.textContent = un ? ENDING_LIST_LABELS[kind] : '？？？';
+                b.disabled = !un;
+                b.classList.toggle('opacity-40', !un);
+                b.classList.toggle('cursor-not-allowed', !un);
+                b.classList.toggle('cursor-pointer', un);
+            });
+        }
         function openEndingList() {
             let ov = document.getElementById('endingListOverlay');
             if (!ov) return;
-            let hb = document.getElementById('endingListHikariBtn');
-            if (hb) hb.textContent = isHikariEndingSeen() ? 'ひかりエンド' : '？？？';
+            refreshEndingListButtons();
             ov.classList.remove('hidden');
             ov.classList.add('flex');
         }
@@ -4721,6 +4784,7 @@
         async function playEndingReplay(kind) {
             let def = ENDING_REPLAY_DEFS[kind];
             if (!def) return;
+            if (!endingUnlocked(kind)) return; // 解放していないエンディングは再生できない
             // 対象の専用シートがまだ読み込めていない場合は、少しだけ待つ（トゥルー再生と同じ方式。失敗時は playEndingDialogue が汎用へフォールバック）
             try {
                 if (kind === 'hikari' && !sheetEndingHikariScript) await Promise.race([loadEndingHikariFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
@@ -4831,8 +4895,6 @@
             let seen = isTrueSeen();
             let gc = document.getElementById('titleGoldCredit');
             if (gc) gc.classList.toggle('hidden', !seen);
-            let elw = document.getElementById('endingListBtnWrap');
-            if (elw) elw.classList.toggle('hidden', !seen);
             ts.classList.toggle('from-purple-300', !seen);
             ts.classList.toggle('via-purple-200', !seen);
             ts.classList.toggle('to-indigo-100', !seen);
@@ -5133,6 +5195,15 @@
         function onStaffRollTap() {
             // 画面タップではロールを加速しない（加速・スキップは右上の「スキップ ≫」ボタンだけ）
             if (staffRollPhase === 'hold') finishStaffRoll();
+        }
+
+        // リザルト画面を閉じる時：トモコ・かたるの個別エンディング以外の時は、先に隠し人物ヒントを出す
+        function onEndingResultClose() {
+            if (!kataruEndingSong && !tomokoEndingSong) {
+                let ov = document.getElementById('hiddenHintOverlay');
+                if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); return; }
+            }
+            location.reload();
         }
 
         function showEndingResults() {
@@ -6321,6 +6392,7 @@
                 } else {
                     victim.fragments--;
                     p.fragments = (p.fragments || 0) + 1;
+                    playCharVoice(victim.char, 'stolen');
                     updateFragmentUI();
                     let stealDesc = `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを1個奪った！`;
                     preDesc = preDesc ? (preDesc + ' ' + stealDesc) : stealDesc;
