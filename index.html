@@ -502,7 +502,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-9 ・ 477,695 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1117-10 ・ 479,448 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1134,6 +1134,7 @@
         const GOAL_DEADLINE_DAYS = 10; // ⌛ 最初のゴールから何日でゲームを締めるか
         let goalDeadlineDay = null;
         let deadlineEndTriggered = false;
+        let allFinishedEndingTriggered = false;
         let currentDiceVal = 1; // 🎲 同期用出目変数
         let currentDiceVal2 = 0; // 🎲 2個目の出目（ネットサーフィン（物理）用、0=なし）
         let forcedRollValue = null; // 🎲 イカサマダイスで指定された出目（次の自分の出目決定に1回だけ使う）
@@ -3189,6 +3190,7 @@
             finishedRankCount = data.finishedRankCount || 0;
             goalDeadlineDay = (typeof data.goalDeadlineDay === 'number') ? data.goalDeadlineDay : null;
             deadlineEndTriggered = false;
+            allFinishedEndingTriggered = false;
             isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
             let t = document.getElementById('titleScreen');
             if (t) { t.classList.add('hidden'); t.classList.remove('flex'); }
@@ -3254,7 +3256,7 @@
             broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
-            goalDeadlineDay = null; deadlineEndTriggered = false;
+            goalDeadlineDay = null; deadlineEndTriggered = false; allFinishedEndingTriggered = false;
             currentDiceVal = 1;
             drawDice(1);
             document.getElementById('turnCounter').innerText = turnCounterText();
@@ -3430,6 +3432,10 @@
                         }
                     } else if (data.type === 'REQUEST_SYNC') {
                         broadcastGameState(true);
+                    } else if (data.type === 'DEBUG_ENDING') {
+                        closeDebugMenu();
+                        playEndingDialogue();
+                        sendDebugEndingSignal(conn);
                     }
                 } else {
                     if (data.type === 'INIT_GUEST') {
@@ -3488,7 +3494,7 @@
 
                         currentPlayerIndex = 0;
                         currentTurnNumber = 1;
-                        goalDeadlineDay = null; deadlineEndTriggered = false;
+                        goalDeadlineDay = null; deadlineEndTriggered = false; allFinishedEndingTriggered = false;
                         currentDiceVal = 1;
                         drawDice(1);
                         document.getElementById('turnCounter').innerText = turnCounterText();
@@ -3506,6 +3512,9 @@
                         playOpening();
                     } else if (data.type === 'GAME_STATE_UPDATE') {
                         applySyncGameState(data);
+                    } else if (data.type === 'DEBUG_ENDING') {
+                        closeDebugMenu();
+                        playEndingDialogue();
                     } else if (data.type === 'ERROR') {
                         alert(data.message || 'エラーが発生しました');
                         leaveOnlineLobby();
@@ -3680,7 +3689,7 @@
             broadcastGameState(true);
             currentPlayerIndex = 0;
             currentTurnNumber = 1;
-            goalDeadlineDay = null; deadlineEndTriggered = false;
+            goalDeadlineDay = null; deadlineEndTriggered = false; allFinishedEndingTriggered = false;
             currentDiceVal = 1;
             drawDice(1);
             document.getElementById('turnCounter').innerText = turnCounterText();
@@ -3791,6 +3800,13 @@
                         if (listenerEl) listenerEl.innerText = `${pSync.listeners.toLocaleString()}人`;
                     }
                 });
+            }
+
+            // 全員ゴール時：ホストは handlePlayerGoal 側でエンディングへ進むが、ゲストは状態同期だけでは
+            // 進まないため、全員 finished を検知したらゲストも自分でエンディングへ進む（1回だけ）
+            if (!isHost && players.length > 0 && players.every(pl => pl.finished) && !allFinishedEndingTriggered && !deadlineEndTriggered) {
+                allFinishedEndingTriggered = true;
+                setTimeout(showFinalResultModal, 3500);
             }
 
             if (data.starTiles) { starTileIdxs = data.starTiles; updateFragmentUI(); }
@@ -4555,6 +4571,17 @@
         function forceShowEnding() {
             closeDebugMenu();
             playEndingDialogue();
+            sendDebugEndingSignal(null);
+        }
+
+        // デバッグのエンディング確認をオンライン全員へ送る（ゲストが押したらホストへ、ホストは他ゲストへ中継）
+        function sendDebugEndingSignal(exceptConn) {
+            if (!isOnlineMode) return;
+            if (isHost) {
+                peerConnections.forEach(c => { if (c && c.open && c !== exceptConn) { try { c.send({ type: 'DEBUG_ENDING' }); } catch (e) {} } });
+            } else if (peerConnections[0] && peerConnections[0].open) {
+                try { peerConnections[0].send({ type: 'DEBUG_ENDING' }); } catch (e) {}
+            }
         }
 
         // 🎬 エンディング再生（会話オーバーレイをオープニングと共用し、終了後は結果ポーディウムへ）
