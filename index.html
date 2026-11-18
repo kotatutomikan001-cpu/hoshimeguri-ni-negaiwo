@@ -398,9 +398,11 @@
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="隠し人物１：トモコ"></div>
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="世界地図の日本を3回タップ（クリック）"></div>
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px); margin-top:1.2em;" data-hint="隠し人物２：繰言かたる"></div>
-            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを5回タップ→？を1回タップ→"></div>
-            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを2回タップ→？を1回タップ→"></div>
-            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを6回タップ"></div>
+            <div class="flex flex-col items-start gap-2 sm:gap-3">
+                <div class="hint-line text-left font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを5回タップ→？を1回タップ→"></div>
+                <div class="hint-line text-left font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを2回タップ→？を1回タップ→"></div>
+                <div class="hint-line text-left font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを6回タップ"></div>
+            </div>
         </div>
         <div id="hiddenHintTapNote" class="absolute bottom-6 inset-x-0 text-center text-xs sm:text-sm font-bold pointer-events-none" style="color:#e8dcc0; opacity:0; transition:opacity .6s;">タップでタイトルへ</div>
     </div>
@@ -536,7 +538,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-13 ・ 510,955 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-14 ・ 512,537 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1205,17 +1207,26 @@
         let currentBgmVolume = 0.3;
         // 🔊 音量はBGM・ボイス・SEを個別に5段階（消・小・中・大・最大）で調整できる
         const VOL_STEPS = [0, 0.25, 0.45, 0.7, 1.0];
+        const VOL_STEPS_BGM = [0, 0.06, 0.12, 0.18, 0.25]; // BGMは旧「小」(0.25)を「最大」にして、その下に大・中・小を配分（2026-11-18 ユーザー指定）
         const VOL_LABELS = ['消', '小', '中', '大', '最大'];
-        let volLevels = { bgm: 1, voice: 4, se: 4 };
-        function volValue(kind) { let lv = volLevels[kind]; if (lv === undefined) lv = 1; return VOL_STEPS[Math.min(4, Math.max(0, lv))]; }
+        let volLevels = { bgm: 4, voice: 4, se: 4 };
+        function volStepsFor(kind) { return kind === 'bgm' ? VOL_STEPS_BGM : VOL_STEPS; }
+        function volValue(kind) { let lv = volLevels[kind]; if (lv === undefined) lv = 4; let steps = volStepsFor(kind); return steps[Math.min(4, Math.max(0, lv))]; }
         function loadVolLevels() {
             try {
                 let saved = JSON.parse(localStorage.getItem('utsuro_vol_levels') || 'null');
                 if (saved) {
                     ['bgm', 'voice', 'se'].forEach(k => { if (Number.isInteger(saved[k]) && saved[k] >= 0 && saved[k] <= 4) volLevels[k] = saved[k]; });
+                    if (!localStorage.getItem('utsuro_vol_scale_v2')) {
+                        // 旧スケール（最大1.0）で保存されたBGM段階を、新スケール（最大0.25）の近い段階へ移行する
+                        let oldVal = VOL_STEPS[volLevels.bgm];
+                        let best = 4, bd = 9; VOL_STEPS_BGM.forEach((v, i) => { let d = Math.abs(v - oldVal); if (d < bd) { bd = d; best = i; } });
+                        volLevels.bgm = best;
+                        try { localStorage.setItem('utsuro_vol_scale_v2', '1'); localStorage.setItem('utsuro_vol_levels', JSON.stringify(volLevels)); } catch (e) {}
+                    }
                 } else {
                     let old = parseFloat(localStorage.getItem('utsuro_bgm_volume'));
-                    if (!isNaN(old)) { let best = 1, bd = 9; VOL_STEPS.forEach((v, i) => { let d = Math.abs(v - old); if (d < bd) { bd = d; best = i; } }); volLevels.bgm = best; }
+                    if (!isNaN(old)) { let best = 4, bd = 9; VOL_STEPS_BGM.forEach((v, i) => { let d = Math.abs(v - old); if (d < bd) { bd = d; best = i; } }); volLevels.bgm = best; }
                 }
             } catch (e) {}
             currentBgmVolume = volValue('bgm');
@@ -5396,7 +5407,10 @@
                 let fs = parseFloat(window.getComputedStyle(line).fontSize) || 24;
                 octx.font = '900 ' + fs + 'px "Zen Maru Gothic", sans-serif';
                 let r = line.getBoundingClientRect();
-                octx.fillText(line.getAttribute('data-hint') || '', W / 2, (r.top - ovRect.top) + r.height / 2);
+                let align = window.getComputedStyle(line).textAlign;
+                let cy = (r.top - ovRect.top) + r.height / 2;
+                if (align === 'left' || align === 'start') { octx.textAlign = 'left'; octx.fillText(line.getAttribute('data-hint') || '', r.left - ovRect.left, cy); }
+                else { octx.textAlign = 'center'; octx.fillText(line.getAttribute('data-hint') || '', (r.left - ovRect.left) + r.width / 2, cy); }
             });
             let img;
             try { img = octx.getImageData(0, 0, off.width, off.height); } catch (e) { return false; }
@@ -5413,10 +5427,10 @@
             for (let i = 0; i < pts.length; i += stride) {
                 particles.push({
                     x: pts[i][0], y: pts[i][1],
-                    delay: (pts[i][0] / W) * 2200 + Math.random() * 200,
+                    delay: (pts[i][0] / W) * 3600 + Math.random() * 300,
                     vx: (Math.random() - 0.3) * 0.25,
                     vy: -(0.25 + Math.random() * 0.75),
-                    life: 1100 + Math.random() * 1100,
+                    life: 1700 + Math.random() * 1500,
                     size: 1 + Math.random() * 1.8,
                     ph: Math.random() * Math.PI * 2
                 });
@@ -5431,7 +5445,7 @@
             let t0 = performance.now();
             function frame(now) {
                 let t = now - t0;
-                let front = W * Math.min(1, Math.max(0, (t - 200) / 2200));
+                let front = W * Math.min(1, Math.max(0, (t - 300) / 3600));
                 wrap.style.clipPath = 'inset(0px 0px 0px ' + front.toFixed(1) + 'px)';
                 ctx.clearRect(0, 0, W, H);
                 ctx.fillStyle = '#e8dcc0';
@@ -5448,7 +5462,7 @@
                     }
                 }
                 ctx.globalAlpha = 1;
-                if (t < 4800) requestAnimationFrame(frame);
+                if (t < 7200) requestAnimationFrame(frame);
                 else location.reload();
             }
             requestAnimationFrame(frame);
@@ -6182,6 +6196,7 @@
             if (turnPhase !== 'idle') return; // 🔒 フェーズがサイコロ待ちのときだけ開始できる（二重ロール防止）
             turnPhase = 'rolling';
             isRolling = true;
+            userDragOffsetX = 0; userDragOffsetY = 0; // ダイスを振る時は、ドラッグでずらした画面を手番プレイヤー中心の元の位置へ強制的に戻す
             let forced = forcedRollValue; forcedRollValue = null;
             let rollPlayer = players[currentPlayerIndex];
             let useDouble = false;
