@@ -96,6 +96,8 @@
         #titleScreen, #startModal, #roomCodeModal, #onlineLobbyModal, #charSelectModal, #openingOverlay, #resultModal, #debugModal, #endingResultOverlay {
             height: 100dvh; max-height: 100dvh;
         }
+        /* 📱 iPhoneのステータスバー裏（安全領域）の帯：表示中の画面の色に追従させ、前の画面の色が残らないようにする */
+        #topSafeStrip { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); z-index: 100008; pointer-events: none; background: #d8b4fe; }
         .text-outline {
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
         }
@@ -460,6 +462,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
+    <div id="topSafeStrip" aria-hidden="true"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
         <div id="titleTreeFallback" class="absolute inset-0 pointer-events-none select-none">
         <div id="titleTreeTrunk" class="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none" style="bottom:0;width:52px;height:68vh;border-radius:26px 26px 0 0;"></div>
@@ -543,7 +546,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-18 ・ 518,010 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-4 ・ 535,344 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -577,7 +580,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が小さいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">デジタルフラワースタンド： テンション倍増で、次のサイコロの目×2のマス進める<br>ASMR用マイク： サイコロを振って出た目×200人のリスナーが増える（7日目から2倍、13日目から3倍と増えていく）<br>袖の下： サイコロを振って、出た目×100人を他のプレイヤー全員から自分のリスナーに移す（7日目から2倍、13日目から3倍と増えていく）<br>横取りチャーム： 一番リスナーの多い相手から300人を奪う（7日目から2倍、13日目から3倍と増えていく）<br>コラボ配信（乗っ取り）： ゴール済みの人以外の誰かとランダムで場所を入れ替わる<br>イカサマダイス： 使うと好きな目を選んで進める<br>例のワープする土管： 使うとマップ上のどこかへワープする<br>ネットサーフィン（物理）： 移動用のサイコロがそのターンだけ2つになる（合計分進む）<br>影分身（等身大スタンドポップ）： 次のマイナスを1回肩代わりする<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）</div></div>
-            <div class="mt-4"><div class="font-black text-yellow-100">⛪ ゴール（星の祭壇）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、祭壇への道が選べます。⬇️ 祭壇へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">🌳 ゴール（星の大樹）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、大樹への道が選べます。⬇️ 大樹へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は評価点で決まります。<br>評価点 ＝ 星のカケラ × 5,000 ＋ リスナー数<br>早くゴールした人にはボーナスがあります（1位は星のカケラ+1個とリスナー+1,500人／2位 リスナー+1,000人／3位 リスナー+500人）。</div></div>
             <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">わかった！</button></div>
@@ -663,6 +666,11 @@
                 <button onclick="startOnlineGame()" class="pixel-btn py-2 px-4 font-bold text-sm text-white rounded bg-cyan-600 hover:bg-cyan-500 cursor-pointer">
                     部屋に入る / 作成する
                 </button>
+                <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500"><span class="flex-1 border-t border-slate-700"></span>または<span class="flex-1 border-t border-slate-700"></span></div>
+                <button onclick="startRandomMatch()" class="pixel-btn py-2 px-4 font-bold text-sm text-white rounded bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 cursor-pointer">
+                    🎲 ランダムマッチ
+                </button>
+                <p class="text-[10px] text-gray-400 font-bold -mt-1">部屋コードなしで、今オンラインで待っている誰かと対戦します</p>
                 <button onclick="closeRoomCodeModal()" class="text-xs text-gray-400 hover:text-white mt-1">
                     ← キャンセルして戻る
                 </button>
@@ -1150,11 +1158,11 @@
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 1500, 2: 1000, 3: 500 };
-        // ⭐ 星のカケラ＆星の祭壇ルール
+        // ⭐ 星のカケラ＆星の大樹ルール
         const FRAGMENTS_REQUIRED = 5;
         const STEP_JUMP_HEIGHT = 7; // 移動時ジャンプの高さ（px）。大きくすると跳ねる、小さくすると滑らか   // ゴールに必要な星のカケラの数
         const STAR_TILE_COUNT = 6;      // マップ上に同時に出る星マスの数
-        const LAP_BONUS_LISTENERS = 300; // カケラ不足で祭壇を通過した時の周回ボーナス
+        const LAP_BONUS_LISTENERS = 300; // カケラ不足で大樹を通過した時の周回ボーナス
         let starTileIdxs = [];          // 現在 星マスになっている tileCoords のインデックス
         // 📅 ターン経過は「日」で数える（1ターン＝1日）。表示は累積しても「○日目」のみ（月・年へは繰り上げない）。リスナー倍率は従来どおり6ターンごとに上がる
         function formatElapsedDate(turnNo) {
@@ -2301,7 +2309,7 @@
                             customMapGrid = parsedMap;
                         }
                     } else {
-                        // 旧サイズ(12x12等)の保存マップはスタートと祭壇の位置が合わないため破棄し、現行デフォルトを使う
+                        // 旧サイズ(12x12等)の保存マップはスタートと大樹の位置が合わないため破棄し、現行デフォルトを使う
                         try { localStorage.removeItem('utsuro_custom_map'); } catch (e) {}
                     }
                 }
@@ -2372,6 +2380,7 @@
         }
 
         function resetAllPlayerPositions() {
+            treeBloomed = false;
             let startTile = tileCoords[0] || { x: 100, y: 100 };
             players.forEach(p => {
                 p.pos = 0;
@@ -3568,6 +3577,203 @@
             });
         }
 
+        // 🎲 ランダムマッチ：部屋コードなしで、今オンラインで対戦相手を探している人同士をつなぐ。
+        // 仕組み：待ち合わせ場所（スロット）を4つ用意し、①まず各スロットに待っている人がいないか探しに行き、
+        // ②いなければ空いているスロットで自分が待つ。待つ人が2人になってしまう行き違いは、25秒ごとの再探索で解消する。
+        const MATCH_SLOT_COUNT = 4;
+        const MATCH_PEER_PREFIX = 'utsuro-sugoroku-match-';
+        let randomMatchActive = false;
+        let matchGen = 0; // 探索フェーズの世代。古い非同期コールバックを無効化する
+        let matchReprobeTimer = null;
+        let matchElapsedTimer = null;
+        let matchStatusBase = '';
+
+        function setMatchStatus(base) {
+            matchStatusBase = base;
+            let el = document.getElementById('lobbyStatusText');
+            if (el) el.innerText = base;
+        }
+        function startMatchElapsed() {
+            if (matchElapsedTimer) clearInterval(matchElapsedTimer);
+            let started = Date.now();
+            matchElapsedTimer = setInterval(() => {
+                if (!randomMatchActive) { clearInterval(matchElapsedTimer); matchElapsedTimer = null; return; }
+                let el = document.getElementById('lobbyStatusText');
+                if (el && matchStatusBase) el.innerText = matchStatusBase + '（' + Math.floor((Date.now() - started) / 1000) + '秒）';
+            }, 1000);
+        }
+        function cancelRandomMatch() {
+            randomMatchActive = false;
+            matchGen++;
+            if (matchReprobeTimer) { clearTimeout(matchReprobeTimer); matchReprobeTimer = null; }
+            if (matchElapsedTimer) { clearInterval(matchElapsedTimer); matchElapsedTimer = null; }
+        }
+
+        function startRandomMatch() {
+            if (!tileCoords || tileCoords.length === 0) convertCustomGridToTileCoords();
+            currentRoomCode = '';
+            isOnlineMode = true;
+            isHost = false;
+            randomMatchActive = true;
+            document.getElementById('roomCodeModal').classList.add('hidden');
+            document.getElementById('onlineLobbyModal').classList.remove('hidden');
+            document.getElementById('lobbyRoomCode').innerText = 'ランダム';
+            document.getElementById('lobbyMemberCount').innerText = '1 / 4';
+            drawLobbyCharPreviews();
+            setMatchStatus('対戦相手を探しています…');
+            startMatchElapsed();
+            probeMatchSlots(0);
+        }
+
+        // ① 待っている人を探す：スロット順に接続を試みる
+        function probeMatchSlots(slot) {
+            if (!randomMatchActive) return;
+            if (slot >= MATCH_SLOT_COUNT) { claimMatchSlot(0); return; }
+            let gen = ++matchGen;
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            isHost = false;
+            hostDisconnectHandled = false;
+            try {
+                peer = new Peer({ debug: 1 });
+            } catch (e) { setMatchStatus('接続エラーが発生しました'); return; }
+            let myPeer = peer;
+            myPeer.on('open', () => {
+                if (gen !== matchGen || !randomMatchActive) return;
+                let settled = false;
+                let fail = () => {
+                    if (settled) return; settled = true;
+                    try { conn.close(); } catch (e) {}
+                    if (gen === matchGen && randomMatchActive) probeMatchSlots(slot + 1);
+                };
+                let conn = myPeer.connect(MATCH_PEER_PREFIX + slot, { reliable: true });
+                let timer = setTimeout(fail, 2000);
+                conn.on('open', () => {
+                    if (settled) return; settled = true; clearTimeout(timer);
+                    if (gen !== matchGen || !randomMatchActive) { try { conn.close(); } catch (e) {} return; }
+                    // マッチ成立（ゲスト側）
+                    matchGen++;
+                    if (matchElapsedTimer) { clearInterval(matchElapsedTimer); matchElapsedTimer = null; }
+                    peerConnections = [conn];
+                    setMatchStatus('対戦相手が見つかりました！');
+                    document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
+                    setupConnectionDataHandler(conn);
+                    conn.on('close', () => { handleHostDisconnect(false); });
+                    conn.on('error', () => { handleHostDisconnect(true); });
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar }); } catch (e) {}
+                });
+                conn.on('error', () => { clearTimeout(timer); fail(); });
+                myPeer.on('error', (err) => {
+                    if (err && err.type === 'peer-unavailable') { clearTimeout(timer); fail(); }
+                });
+            });
+            myPeer.on('error', (err) => {
+                if (gen !== matchGen || !randomMatchActive) return;
+                if (err && err.type === 'peer-unavailable') return; // attempt 側で処理する
+                console.error('Match peer error:', err);
+            });
+        }
+
+        // ② 空いているスロットで待つ
+        function claimMatchSlot(slot) {
+            if (!randomMatchActive) return;
+            if (slot >= MATCH_SLOT_COUNT) {
+                // 全スロット埋まっているのに参加もできなかった（相手が入れ替わった等）→ 少し待って探し直す
+                let gen = ++matchGen;
+                setTimeout(() => { if (gen === matchGen && randomMatchActive) probeMatchSlots(0); }, 2500);
+                return;
+            }
+            let gen = ++matchGen;
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            peerConnections = [];
+            onlineMemberChars = {};
+            let slotPeerId = MATCH_PEER_PREFIX + slot;
+            try {
+                peer = new Peer(slotPeerId, { debug: 1 });
+            } catch (e) { setMatchStatus('接続エラーが発生しました'); return; }
+            let myPeer = peer;
+            myPeer.on('open', () => {
+                if (gen !== matchGen || !randomMatchActive) return;
+                isHost = true;
+                myPlayerIndex = 0;
+                onlineMemberChars[0] = myChar;
+                updateLobbyCharUI();
+                document.getElementById('lobbyMemberCount').innerText = '1 / 4';
+                setMatchStatus('対戦相手を待っています…');
+                // 行き違い対策：誰も来ないまま25秒経ったら、探す側に回り直す
+                if (matchReprobeTimer) clearTimeout(matchReprobeTimer);
+                matchReprobeTimer = setTimeout(() => {
+                    if (randomMatchActive && isHost && liveGuestCount() === 0) probeMatchSlots(0);
+                }, 25000);
+            });
+            myPeer.on('connection', (conn) => {
+                if (!isHost || gen !== matchGen) return;
+                if (peerConnections.length >= 3) {
+                    try { conn.send({ type: 'ERROR', message: '部屋が満員です' }); } catch (e) {}
+                    setTimeout(() => { try { conn.close(); } catch (e) {} }, 500);
+                    return;
+                }
+                if (matchReprobeTimer) { clearTimeout(matchReprobeTimer); matchReprobeTimer = null; }
+                if (matchElapsedTimer) { clearInterval(matchElapsedTimer); matchElapsedTimer = null; }
+                peerConnections.push(conn);
+                let assignedPIdx = peerConnections.length;
+                conn.on('open', () => {
+                    try {
+                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars });
+                    } catch (e) {}
+                    document.getElementById('lobbyMemberCount').innerText = (liveGuestCount() + 1) + ' / 4';
+                    document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
+                });
+                setupConnectionDataHandler(conn);
+                conn.on('close', () => { handleGuestDisconnect(conn); });
+            });
+            myPeer.on('error', (err) => {
+                if (gen !== matchGen || !randomMatchActive) return;
+                if (err && err.type === 'unavailable-id') {
+                    // そのスロットは他の人が待っていた → ゲストとして参加しに行く
+                    joinMatchSlot(slot, gen);
+                } else {
+                    console.error('Match host peer error:', err);
+                }
+            });
+        }
+
+        // claim に失敗したスロットへゲストとして参加する（ダメなら次のスロットを claim）
+        function joinMatchSlot(slot, gen) {
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            isHost = false;
+            hostDisconnectHandled = false;
+            try {
+                peer = new Peer({ debug: 1 });
+            } catch (e) { claimMatchSlot(slot + 1); return; }
+            let myPeer = peer;
+            myPeer.on('open', () => {
+                if (gen !== matchGen || !randomMatchActive) return;
+                let settled = false;
+                let conn = myPeer.connect(MATCH_PEER_PREFIX + slot, { reliable: true });
+                let timer = setTimeout(() => {
+                    if (settled) return; settled = true;
+                    try { conn.close(); } catch (e) {}
+                    if (gen === matchGen && randomMatchActive) claimMatchSlot(slot + 1);
+                }, 2500);
+                conn.on('open', () => {
+                    if (settled) return; settled = true; clearTimeout(timer);
+                    if (gen !== matchGen || !randomMatchActive) { try { conn.close(); } catch (e) {} return; }
+                    matchGen++;
+                    if (matchElapsedTimer) { clearInterval(matchElapsedTimer); matchElapsedTimer = null; }
+                    peerConnections = [conn];
+                    document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
+                    setupConnectionDataHandler(conn);
+                    conn.on('close', () => { handleHostDisconnect(false); });
+                    conn.on('error', () => { handleHostDisconnect(true); });
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar }); } catch (e) {}
+                });
+                conn.on('error', () => {
+                    if (settled) return; settled = true; clearTimeout(timer);
+                    if (gen === matchGen && randomMatchActive) claimMatchSlot(slot + 1);
+                });
+            });
+        }
+
         function setupConnectionDataHandler(conn) {
             conn.on('data', (data) => {
                 if (!data || !data.type) return;
@@ -4024,6 +4230,7 @@
         }
 
         function leaveOnlineLobby() {
+            cancelRandomMatch();
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
                 peer = null;
@@ -4076,6 +4283,7 @@
             // 進まないため、全員 finished を検知したらゲストも自分でエンディングへ進む（1回だけ）
             if (!isHost && players.length > 0 && players.every(pl => pl.finished) && !allFinishedEndingTriggered && !deadlineEndTriggered) {
                 allFinishedEndingTriggered = true;
+                treeBloomed = true;
                 setTimeout(showFinalResultModal, 3500);
             }
 
@@ -4157,7 +4365,7 @@
                 showBranchSelectionUI(myPlayerIndex, candidates, req.remainingSteps, (chosenTileIdx) => {
                     let isAltarBranch = candidates.some(c => c.tileIdx === tileCoords.length);
                     if (isAltarBranch && chosenTileIdx !== tileCoords.length) {
-                        if (!confirm('星のカケラを5つ持っています。祭壇へは行かず、このまま周回コースを進みますか？')) { presentGuestBranch(); return; }
+                        if (!confirm('星のカケラを5つ持っています。大樹へは行かず、このまま周回コースを進みますか？')) { presentGuestBranch(); return; }
                     }
                     hideBranchSelectionUI();
                     isWaitingForBranchChoice = false;
@@ -4493,7 +4701,7 @@
             { who: 'narration', text: "一行がそれに近づくと頭の中に声が響いてくる。" },
             { who: '???', text: "（星めぐ…りの継承…者たちよ…――わたし…の声が聞…こえま…すか？）" },
             { who: 'hikari', text: "誰？" },
-            { who: 'megami', text: "（わ…たしは星…めぐりの女…神――\nみなさ…んにお願…いがありま…す。\n『星のカケラ』を…集め、星の…祭壇まで持って…きてほしいの…です）" },
+            { who: 'megami', text: "（わ…たしは星…めぐりの女…神――\nみなさ…んにお願…いがありま…す。\n『星のカケラ』を…集め、星の…大樹まで持って…きてほしいの…です）" },
             { who: 'megami', text: "（はや…く、わた…しのチカ…ラが消えて…しまう前に…）" },
             { who: 'hikari', text: "よーし、よくわかんないけど元の所に帰るためならがんばる！\nあたしが一番に『星のカケラ』を集めちゃうからね！\nみんなで帰るよ！" }
         ];
@@ -4675,14 +4883,14 @@
 
         // 🎬 エンディング会話: 優先順位は シート ＞ デバッグ内エディタ ＞ 内蔵デフォルト(ENDING_SCRIPT)
         const ENDING_SCRIPT = [
-            { who: 'narration', text: '星のカケラの光が、祭壇いっぱいに広がっていく――。' },
+            { who: 'narration', text: '星のカケラの光が、星の大樹いっぱいに広がっていく――。' },
             { who: 'utsuro', text: '集まりました…！ 星のカケラが、全部…！' },
-            { who: 'hikari', text: '見て見て！ 祭壇が光ってる！ すっごい綺麗…！' },
-            { who: 'shano', text: '伝説は本当じゃったな。星の祭壇は、願いを叶える力を取り戻したのじゃ。' },
+            { who: 'hikari', text: '見て見て！ 星の大樹が光ってる！ すっごい綺麗…！' },
+            { who: 'shano', text: '伝説は本当じゃったな。星の大樹は、願いを叶える力を取り戻したのじゃ。' },
             { who: 'narration', text: '眩い光の中に、懐かしい星めぐり学園の景色が浮かび上がってくる。' },
             { who: 'utsuro', text: 'あ…！ あれは学園です！ みんな、帰れるんですね…！' },
             { who: 'hikari', text: 'やったぁ！ でも、{winner}は本当に強かったよね。さすが一位だよ！' },
-            { who: 'winner', text: '星のカケラを全部集めて、祭壇に辿り着いた！ みんなが見ててくれたからだ！' },
+            { who: 'winner', text: '星のカケラを全部集めて、星の大樹に辿り着いた！ みんなが見ててくれたからだ！' },
             { who: 'winner', text: '願いなら、もう叶ったよ。みんなと星をめぐれた、それだけで十分だ。' },
             { who: 'shano', text: 'うむ、見事な星めぐりじゃった。皆もよく頑張ったぞ。' },
             { who: 'utsuro', text: 'わたし、今日のこと絶対に忘れません。みんなと星をめぐれて、とっても楽しかったです！' },
@@ -4874,7 +5082,7 @@
             { who: "narration", text: "――これは、すべての物語が終わったあとの、お話。", fx: "black slow" },
             { who: "megami", text: "……あら。あなたは、まだいてくださいましたのね。", fx: "" },
             { who: "megami", text: "わたくしは、たくさんの世界を見てきました。数えきれないほどの、星めぐりの物語を。", fx: "" },
-            { who: "megami", text: "祭壇に願いが届いた世界。婚礼の朝に目覚めた世界。本音を隠した世界。そして――お別れの世界も。", fx: "" },
+            { who: "megami", text: "星の大樹に願いが届いた世界。婚礼の朝に目覚めた世界。本音を隠した世界。そして――お別れの世界も。", fx: "" },
             { who: "megami", text: "どの世界でも、みなさんは一生懸命で、まぶしくて。わたくしは、その全部を覚えています。", fx: "" },
             { who: "megami", text: "だから、ずっと考えていました。全ての世界のみなさんに、改めてお礼が言いたい、と。", fx: "" },
             { who: "megami", text: "……でも、お礼よりも先に。どうしても、果たしたい約束がありました。", fx: "" },
@@ -4906,7 +5114,7 @@
             { who: "megami", text: "……繋がりは、ほんの少しで十分です。心は、頭よりも正直ですから。", fx: "" },
             { who: "megami", text: "さて。これで、わたくしの約束は果たせました。", fx: "" },
             { who: "megami", text: "そして――あなたへ。全ての世界で、みなさんを見守り、導いてくださって、ありがとうございました。", fx: "" },
-            { who: "megami", text: "祭壇の世界も、夢の世界も、現実の世界も。全部、あなたがいたから生まれた物語です。", fx: "" },
+            { who: "megami", text: "星の大樹の世界も、夢の世界も、現実の世界も。全部、あなたがいたから生まれた物語です。", fx: "" },
             { who: "megami", text: "わたくしからのお礼は、この新しい世界そのもの。かたるさんの、笑顔の毎日です。", fx: "" },
             { who: "megami", text: "どうかこれからも――星めぐりの物語を、見守ってくださいね。", fx: "" },
             { who: "narration", text: "――世界は今日も、静かに回り続ける。誰かの願いと、誰かのお礼を乗せて。", fx: "gold slow" },
@@ -5172,6 +5380,37 @@
         }
         refreshTitleTree();
         refreshTitleTheme();
+        // 📱 ステータスバー裏の帯と theme-color を、表示中の画面の色に同期する（金色タイトルの色が次の画面に残る不具合対策）
+        function syncTopChrome() {
+            let strip = document.getElementById('topSafeStrip');
+            let meta = document.querySelector('meta[name="theme-color"]');
+            const vis = id => { let el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
+            let bg = '#090d16', metaColor = '#090d16', grad = false;
+            if (vis('endingListOverlay')) { bg = '#1e1b4b'; metaColor = '#1e1b4b'; }
+            else if (vis('hiddenHintOverlay')) { bg = '#000000'; metaColor = '#000000'; }
+            else if (vis('titleScreen')) {
+                if (isTrueSeen()) { bg = 'linear-gradient(180deg,#fde68a 0%,#fef9c3 50%,#fef3c7 100%)'; metaColor = '#fde68a'; }
+                else { bg = 'linear-gradient(180deg,#d8b4fe 0%,#e9d5ff 50%,#e0e7ff 100%)'; metaColor = '#d8b4fe'; }
+                grad = true;
+            }
+            else if (vis('openingOverlay')) { bg = '#000000'; metaColor = '#000000'; }
+            else if (vis('staffRollOverlay')) { bg = '#2e1065'; metaColor = '#2e1065'; }
+            else if (vis('endingResultOverlay')) { bg = '#d8b4fe'; metaColor = '#d8b4fe'; }
+            else if (vis('charSelectModal')) { bg = '#1b1f7a'; metaColor = '#1b1f7a'; }
+            else if (vis('rulesOverlay')) { bg = '#0b1030'; metaColor = '#0b1030'; }
+            else if (vis('startModal') || vis('roomCodeModal') || vis('onlineLobbyModal')) { bg = '#1e1b4b'; metaColor = '#1e1b4b'; }
+            else if (vis('resultModal') || vis('optionsOverlay') || vis('debugModal')) { bg = '#000000'; metaColor = '#000000'; }
+            if (strip) { strip.style.background = bg; strip.style.backgroundSize = grad ? '100% 100dvh' : ''; }
+            if (meta) meta.setAttribute('content', metaColor);
+        }
+        try {
+            const __topChromeObs = new MutationObserver(() => { try { syncTopChrome(); } catch (e) {} });
+            ['titleScreen','charSelectModal','openingOverlay','startModal','roomCodeModal','onlineLobbyModal','rulesOverlay','endingListOverlay','hiddenHintOverlay','resultModal','staffRollOverlay','endingResultOverlay','optionsOverlay','debugModal'].forEach(id => {
+                let el = document.getElementById(id);
+                if (el) __topChromeObs.observe(el, { attributes: true, attributeFilter: ['class'] });
+            });
+        } catch (e) {}
+        try { syncTopChrome(); } catch (e) {}
         // 🌳 トゥルーエンドの余韻：暗転して少し間を置き、金色タイトルをゆっくり出す
         function returnToTitleWithLinger() {
             let fade = document.getElementById('trueEndFade');
@@ -5180,7 +5419,7 @@
             if (!fade) {
                 if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
                 let ts0 = document.getElementById('titleScreen');
-                if (ts0) ts0.classList.remove('hidden');
+                if (ts0) { ts0.classList.remove('hidden'); ts0.classList.add('flex'); }
                 try { playSelectBgm(); } catch (e) {}
                 refreshTitleTree();
                 refreshTitleTheme();
@@ -5192,7 +5431,7 @@
             setTimeout(() => {
                 if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
                 let tsR = document.getElementById('titleScreen');
-                if (tsR) tsR.classList.remove('hidden');
+                if (tsR) { tsR.classList.remove('hidden'); tsR.classList.add('flex'); }
                 refreshTitleTree();
                 refreshTitleTheme();
                 try { playSelectBgm(); } catch (e) {} // 金色タイトルのBGMへ
@@ -6387,7 +6626,7 @@
                                 showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
                                     let isAltarBranch = possibleNextTiles.some(c => c.tileIdx === altarTileIndex());
                                     if (isAltarBranch && chosenTileIdx !== altarTileIndex()) {
-                                        if (!confirm('星のカケラを5つ持っています。祭壇へは行かず、このまま周回コースを進みますか？')) { presentLocalBranch(); return; }
+                                        if (!confirm('星のカケラを5つ持っています。大樹へは行かず、このまま周回コースを進みますか？')) { presentLocalBranch(); return; }
                                     }
                                     hideBranchSelectionUI();
                                     isWaitingForBranchChoice = false;
@@ -6453,15 +6692,15 @@
                 let toTile = tileCoords[p.pos];
                 remainingSteps--;
 
-                // ⛩️ 星の祭壇（スタートマス）に到達
+                // ⛩️ 星の大樹（スタートマス）に到達
                 if (toTileIdx === 0 && !p.finished) {
                     if ((p.fragments || 0) >= FRAGMENTS_REQUIRED) {
-                        // カケラが揃っていれば自動ゴールはせず、この先の分岐で「祭壇への道」を選べる
+                        // カケラが揃っていれば自動ゴールはせず、この先の分岐で「大樹への道」を選べる
                     } else {
                         p.listeners += LAP_BONUS_LISTENERS;
                         let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
                         if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
-                        document.getElementById('currentEventTitle').innerText = '【⛩️ 星の祭壇を通過】';
+                        document.getElementById('currentEventTitle').innerText = '【🌳 星の大樹を通過】';
                         document.getElementById('currentEventDesc').innerText = `${p.name}さん周回ボーナス！星のカケラはあと${FRAGMENTS_REQUIRED - (p.fragments || 0)}個`;
                         document.getElementById('currentEventEffect').innerText = `リスナー +${LAP_BONUS_LISTENERS}人`;
                         if (isOnlineMode && isHost) broadcastGameState(true);
@@ -6495,13 +6734,13 @@
                 requestAnimationFrame(animateStep);
             }
 
-            // ⛩️ 祭壇への1マス：光の道を下ってゴール
+            // ⛩️ 大樹への1マス：光の道を下ってゴール
             function executeAltarStep() {
                 let fromTile = tileCoords[p.pos];
                 let toTile = altarVirtualTile();
                 p.lastVisitedTileIndex = p.pos;
                 remainingSteps = 0;
-                // 祭壇までは見た目の距離が長いので、1マス分ずつに区切って通常マスと同じぴょんぴょん移動にする
+                // 大樹までは見た目の距離が長いので、1マス分ずつに区切って通常マスと同じぴょんぴょん移動にする
                 let dxA = toTile.x - fromTile.x, dyA = toTile.y - fromTile.y;
                 let distA = Math.hypot(dxA, dyA);
                 let hopLen = branchGridStep() || 80;
@@ -6540,7 +6779,7 @@
             stepNext();
         }
 
-        // ⛩️ 星の祭壇は「スタートの真下の仮想マス」。インデックスは tileCoords.length（実マスの直後）
+        // ⛩️ 星の大樹は「スタートの真下の仮想マス」。インデックスは tileCoords.length（実マスの直後）
         function altarTileIndex() { return tileCoords.length; }
         function branchGridStep() {
             let ys = [...new Set(tileCoords.map(t => t.y))].sort((a, b) => a - b);
@@ -6577,7 +6816,7 @@
             });
 
             candidates.sort((a, b) => (tileCoords.length - 1 - a.tileIdx) - (tileCoords.length - 1 - b.tileIdx));
-            // ⛩️ スタートマス上でカケラが5個揃っていれば、祭壇への道も候補に入る（1マス分で移動）
+            // ⛩️ スタートマス上でカケラが5個揃っていれば、大樹への道も候補に入る（1マス分で移動）
             if (currentTileIdx === 0 && typeof pIndex === 'number') {
                 let pl = players[pIndex];
                 if (pl && !pl.finished && (pl.fragments || 0) >= FRAGMENTS_REQUIRED) {
@@ -6618,10 +6857,10 @@
                 let btn = document.createElement('button');
                 btn.className = 'absolute pointer-events-auto pixel-btn px-2.5 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs sm:text-sm border-2 border-black shadow-lg animate-bounce cursor-pointer z-30 flex items-center gap-1';
                 btn.innerHTML = (cand.tileIdx === tileCoords.length)
-                    ? `<span>⬇️ 星の祭壇へ（ゴール！）</span>`
+                    ? `<span>⬇️ 星の大樹へ（ゴール！）</span>`
                     : `<span>${arrowSymbol} (あと${remainingSteps}マス)</span>`;
 
-                // 祭壇ボタンは盤面中央（祭壇の絵の位置）に出すとズーム画面では画面外に飛んで見えなくなるので、スタートマスの1マス下（光の道の入口）に出す
+                // 大樹ボタンは盤面中央（大樹の絵の位置）に出すとズーム画面では画面外に飛んで見えなくなるので、スタートマスの1マス下（光の道の入口）に出す
                 let screenPos = (cand.tileIdx === tileCoords.length)
                     ? calculateScreenPos(currTile.x, currTile.y + branchGridStep(), currTile)
                     : calculateScreenPos(targetTile.x, targetTile.y, currTile);
@@ -6640,7 +6879,7 @@
         }
 
         function calculateBranchDestinationTile(pIndex, startBranchTileIdx, remSteps) {
-            if (startBranchTileIdx >= tileCoords.length) return startBranchTileIdx; // 祭壇はそのままゴール
+            if (startBranchTileIdx >= tileCoords.length) return startBranchTileIdx; // 大樹はそのままゴール
             let currIdx = startBranchTileIdx;
             let lastIdx = players[pIndex].pos;
             let steps = remSteps;
@@ -6804,10 +7043,10 @@
                 if (nIdx >= 0) starTileIdxs.push(nIdx);
                 updateFragmentUI();
                 let need = FRAGMENTS_REQUIRED - p.fragments;
-                preDesc = need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の祭壇を目指そう！`;
+                preDesc = need > 0 ? `${p.name}さんが星のカケラを拾った！（あと${need}個で願いが叶う）` : `${p.name}さんの星のカケラが揃った！星の大樹を目指そう！`;
             }
 
-            // ⭐ 奪い合い: 同じマスにいる相手からカケラを1個奪う（スタートマスの祭壇案内より先に処理する。以前はスタート判定が先に return して奪い合いが発動しなかった）
+            // ⭐ 奪い合い: 同じマスにいる相手からカケラを1個奪う（スタートマスの大樹案内より先に処理する。以前はスタート判定が先に return して奪い合いが発動しなかった）
             let victim = players.filter(q => q !== p && !q.finished && q.pos === p.pos && (q.fragments || 0) > 0)
                                 .sort((a, b) => (b.fragments || 0) - (a.fragments || 0))[0];
             if (victim) {
@@ -6828,13 +7067,13 @@
                 }
             }
 
-            // ⛩️ 星の祭壇（スタートマス）にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
+            // ⛩️ 星の大樹（スタートマス）にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
             // ※奪い合いを先に処理してからここに来るので、スタートマスでも同じマスの相手からカケラを奪える
             if (tile.type === 'start') {
                 let need = FRAGMENTS_REQUIRED - (p.fragments || 0);
-                let altarDesc = need > 0 ? `${p.name}さんが星の祭壇に立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！次の自分の番でサイコロを振ると、祭壇への道（⬇️）か周回コース（⬅️）を選べる！`;
+                let altarDesc = need > 0 ? `${p.name}さんが星の大樹のもとに立った。星のカケラがあと${need}個あれば願いが叶う！` : `${p.name}さん、星のカケラは揃っている！次の自分の番でサイコロを振ると、大樹への道（⬇️）か周回コース（⬅️）を選べる！`;
                 resolveSpecialLanding(pIndex,
-                    '【⛩️ 星の祭壇】',
+                    '【🌳 星の大樹】',
                     preDesc ? (preDesc + ' ' + altarDesc) : altarDesc,
                     `⭐ 星のカケラ ${p.fragments || 0} / ${FRAGMENTS_REQUIRED}`);
                 return;
@@ -7028,7 +7267,7 @@
 
             if (viaAltar) {
                 document.getElementById('currentEventTitle').innerText = `【⭐ ${p.name} 願いが叶った！】`;
-                document.getElementById('currentEventDesc').innerText = `${p.name}さんが星のカケラを集めて星の祭壇に到達！ ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！` + (fragBonus > 0 ? ' さらに1着ボーナスで星のカケラ+1個！' : '');
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが星のカケラを集めて星の大樹に到達！ ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！` + (fragBonus > 0 ? ' さらに1着ボーナスで星のカケラ+1個！' : '');
             } else {
                 document.getElementById('currentEventTitle').innerText = `【👑 ${p.name} ゴール！】`;
                 document.getElementById('currentEventDesc').innerText = `${p.name}さんが ${p.rank}位でゴール！順位ボーナス +${bonus.toLocaleString()}人のリスナーを獲得！` + (fragBonus > 0 ? ' さらに1着ボーナスで星のカケラ+1個！' : '');
@@ -7044,6 +7283,7 @@
             broadcastGameState(true);
 
             if (players.every(player => player.finished)) {
+                treeBloomed = true;
                 setTimeout(showFinalResultModal, 3500);
             } else {
                 if (!isOnlineMode || isHost) {
@@ -7058,7 +7298,7 @@
             if (!b) return;
             let main = document.getElementById('deadlineBannerMain');
             let sub = document.getElementById('deadlineBannerSub');
-            if (main) main.innerText = `${playerName}さんが星の祭壇に到達！`;
+            if (main) main.innerText = `${playerName}さんが星の大樹に到達！`;
             if (sub) sub.innerText = `残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります`;
             b.classList.remove('hidden');
             b.classList.add('flex');
@@ -7069,6 +7309,7 @@
         function endGameByDeadline() {
             if (deadlineEndTriggered) return;
             deadlineEndTriggered = true;
+            treeBloomed = true;
             document.getElementById('currentEventTitle').innerText = '【⌛ 制限日数に到達！】';
             document.getElementById('currentEventDesc').innerText = `最初のゴールから${GOAL_DEADLINE_DAYS}日が経ったので、ここでゲーム終了！ゴールできなかったプレイヤーは、今の星のカケラとリスナー数で順位が決まります。`;
             document.getElementById('currentEventEffect').innerText = '⌛ 日数制限で終了';
@@ -7506,6 +7747,7 @@
         }
 
         function showFinalResultModal() {
+            treeBloomed = true;
             cpuGameActive = false;
             clearSuspendedGame();
             playEndingDialogue();
@@ -7603,6 +7845,19 @@
             });
         }
 
+        // 🌳 星の大樹：盤面中央のゴール。普段は太い幹の枯れ木、ゲーム終了時に緑の葉と星で開花する
+        let treeBloomed = false;
+        const boardTreeImages = {};
+        function boardTreeImage(kind) {
+            if (!boardTreeImages[kind]) {
+                const img = new Image();
+                const base = kind === 'green' ? 'board_tree_green' : 'board_tree_dry';
+                img.src = base + '.png';
+                img.onerror = () => { if (!img.dataset.triedUpper) { img.dataset.triedUpper = '1'; img.src = base + '.PNG'; } };
+                boardTreeImages[kind] = img;
+            }
+            return boardTreeImages[kind];
+        }
         function drawStarAltar(ctx) {
             if (!tileCoords || tileCoords.length === 0) return;
             let minX = Math.min(...tileCoords.map(t => t.x));
@@ -7628,23 +7883,53 @@
                 ctx.strokeStyle = stroke;
                 ctx.stroke();
             };
-            ring(118, '#312e81', '#fbbf24', 4);
-            ring(92, '#3730a3', '#fde68a', 2);
-            ring(62, '#1e1b4b', '#fbbf24', 3);
-            ctx.fillStyle = '#fde68a';
-            ctx.font = '13px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            for (let i = 0; i < 8; i++) {
-                let ang = now / 6000 + i * Math.PI / 4;
-                ctx.fillText('✦', cx + Math.cos(ang) * 79, cy + Math.sin(ang) * 79);
+            let treeImg = boardTreeImage(treeBloomed ? 'green' : 'dry');
+            if (treeImg && treeImg.naturalWidth > 0) {
+                const TH = 470; // 大樹の表示高さ（盤面座標）
+                const TW = TH * treeImg.naturalWidth / treeImg.naturalHeight;
+                ctx.drawImage(treeImg, cx - TW / 2, cy - TH / 2 - 4, TW, TH);
+                if (treeBloomed) {
+                    // 開花時は樹冠の周りに星のきらめきを散らす
+                    ctx.fillStyle = '#fde68a';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    for (let i = 0; i < 26; i++) {
+                        let seedA = i * 2.39996; // 黄金角で散らす
+                        let rad = 60 + (i % 7) * 22;
+                        let sx = cx + Math.cos(seedA) * rad * 1.25;
+                        let sy = cy - 40 + Math.sin(seedA) * rad * 0.78;
+                        let tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now / (380 + (i % 5) * 90) + i * 1.7));
+                        ctx.globalAlpha = tw;
+                        ctx.font = (11 + (i % 3) * 5) + 'px sans-serif';
+                        ctx.fillText('✦', sx, sy);
+                    }
+                    ctx.globalAlpha = 1;
+                }
+                ctx.font = '700 19px "Zen Maru Gothic", sans-serif';
+                ctx.fillStyle = '#fde68a';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('星の大樹', cx, cy + 252);
+            } else {
+                // 画像がまだ読めていない間は従来のリング＋星で代替表示
+                ring(118, '#312e81', '#fbbf24', 4);
+                ring(92, '#3730a3', '#fde68a', 2);
+                ring(62, '#1e1b4b', '#fbbf24', 3);
+                ctx.fillStyle = '#fde68a';
+                ctx.font = '13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let i = 0; i < 8; i++) {
+                    let ang = now / 6000 + i * Math.PI / 4;
+                    ctx.fillText('✦', cx + Math.cos(ang) * 79, cy + Math.sin(ang) * 79);
+                }
+                ring(34, '#4c1d95', '#fbbf24', 3);
+                ctx.font = '60px sans-serif';
+                ctx.fillText('⭐', cx, cy - 2 + Math.sin(now / 500) * 4);
+                ctx.font = '700 19px "Zen Maru Gothic", sans-serif';
+                ctx.fillStyle = '#fde68a';
+                ctx.fillText('星の大樹', cx, cy + 50);
             }
-            ring(34, '#4c1d95', '#fbbf24', 3);
-            ctx.font = '60px sans-serif';
-            ctx.fillText('⭐', cx, cy - 2 + Math.sin(now / 500) * 4);
-            ctx.font = '700 19px "Zen Maru Gothic", sans-serif';
-            ctx.fillStyle = '#fde68a';
-            ctx.fillText('星の祭壇', cx, cy + 50);
             ctx.restore();
         }
 
@@ -7718,7 +8003,7 @@
             ctx.restore();
         }
 
-        // スタート（祭壇マス）から星の祭壇までを結ぶ、光の点線
+        // スタート（大樹マス）から星の大樹までを結ぶ、光の点線
         function drawAltarPath(ctx) {
             if (!tileCoords || tileCoords.length === 0) return;
             let s = tileCoords[0];
@@ -7780,7 +8065,7 @@
                     let currP = players[currentPlayerIndex];
                     let currTile = tileCoords[currP.pos] || { x: 0, y: 0 };
                     // カメラは論理マスではなく「今キャラが描かれている位置」を追う。
-                    // 祭壇への移動は pos がスタートのまま render だけが盤面中央へ進むため、
+                    // 大樹への移動は pos がスタートのまま render だけが盤面中央へ進むため、
                     // マス基準だとキャラが画面外へ出て行ってしまった（2026-11-17 修正）
                     let camX = (currP && currP.renderX !== undefined) ? currP.renderX : currTile.x;
                     let camY = (currP && currP.renderY !== undefined) ? currP.renderY : currTile.y;
