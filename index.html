@@ -375,7 +375,8 @@
     <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
     <div id="hiddenHintOverlay" class="fixed inset-0 bg-black hidden z-[100005]" style="overflow:hidden; cursor:pointer;">
         <div id="hiddenHintFx" class="absolute inset-0 pointer-events-none"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 sm:gap-3 px-4 select-none pointer-events-none">
+        <canvas id="hiddenHintCanvas" class="absolute inset-0 hidden pointer-events-none"></canvas>
+        <div id="hiddenHintTextWrap" class="absolute inset-0 flex flex-col items-center justify-center gap-2 sm:gap-3 px-4 select-none pointer-events-none">
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="隠し人物１：トモコ"></div>
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="世界地図の日本を3回タップ（クリック）"></div>
             <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px); margin-top:1.2em;" data-hint="隠し人物２：繰言かたる"></div>
@@ -517,7 +518,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-8 ・ 501,689 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-10 ・ 506,280 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -652,7 +653,7 @@
         .deco-star { animation-name: decoTwinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
         @keyframes decoTwinkle { from { filter: brightness(0.65); } to { filter: brightness(1.35); } }
         .hint-line { color: #e8dcc0; }
-        .hint-char { display: inline-block; opacity: 0; color: #e8dcc0; text-shadow: 0 0 18px rgba(232, 220, 192, .35); animation: hintIn .5s ease forwards; }
+        .hint-char { display: inline-block; opacity: 0; color: #e8dcc0; text-shadow: 0 0 18px rgba(232, 220, 192, .35); animation: hintIn .8s ease forwards; }
         @keyframes hintIn { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
         .hint-char.dissolve { animation: hintOut .4s ease-in forwards; }
         @keyframes hintOut { to { opacity: 0; filter: blur(8px); transform: translate(var(--dx, 10px), var(--dy, -14px)) scale(.55); } }
@@ -5300,7 +5301,7 @@
                     let sp = document.createElement('span');
                     sp.textContent = (ch === ' ') ? '\u00A0' : ch;
                     sp.className = 'hint-char';
-                    sp.style.animationDelay = (charDelay * 45) + 'ms';
+                    sp.style.animationDelay = (charDelay * 75) + 'ms';
                     line.appendChild(sp);
                     charDelay++;
                 });
@@ -5312,11 +5313,98 @@
                     let n = document.getElementById('hiddenHintTapNote');
                     if (n) n.style.opacity = '0.75';
                 }
-            }, charDelay * 45 + 550);
+            }, charDelay * 75 + 850);
+        }
+        // 文字そのものをピクセル化して、左から右へ魔法の粉になって崩れる演出（canvas）
+        function startHintPowder() {
+            let ov = document.getElementById('hiddenHintOverlay');
+            let wrap = document.getElementById('hiddenHintTextWrap');
+            let cv = document.getElementById('hiddenHintCanvas');
+            if (!ov || !wrap || !cv) return false;
+            let W = ov.clientWidth, H = ov.clientHeight;
+            if (!W || !H) return false;
+            let dpr = Math.min(window.devicePixelRatio || 1, 2);
+            let off = document.createElement('canvas');
+            off.width = W * dpr; off.height = H * dpr;
+            let octx = off.getContext('2d');
+            if (!octx) return false;
+            octx.scale(dpr, dpr);
+            octx.fillStyle = '#e8dcc0';
+            octx.textAlign = 'center';
+            octx.textBaseline = 'middle';
+            let ovRect = ov.getBoundingClientRect();
+            ov.querySelectorAll('.hint-line').forEach(line => {
+                let fs = parseFloat(window.getComputedStyle(line).fontSize) || 24;
+                octx.font = '900 ' + fs + 'px "Zen Maru Gothic", sans-serif';
+                let r = line.getBoundingClientRect();
+                octx.fillText(line.getAttribute('data-hint') || '', W / 2, (r.top - ovRect.top) + r.height / 2);
+            });
+            let img;
+            try { img = octx.getImageData(0, 0, off.width, off.height); } catch (e) { return false; }
+            let gap = 3 * dpr;
+            let pts = [];
+            for (let y = 0; y < off.height; y += gap) {
+                for (let x = 0; x < off.width; x += gap) {
+                    if (img.data[(y * off.width + x) * 4 + 3] > 120) pts.push([x / dpr, y / dpr]);
+                }
+            }
+            if (!pts.length) return false;
+            let stride = Math.max(1, Math.ceil(pts.length / 7000));
+            let particles = [];
+            for (let i = 0; i < pts.length; i += stride) {
+                particles.push({
+                    x: pts[i][0], y: pts[i][1],
+                    delay: (pts[i][0] / W) * 2200 + Math.random() * 200,
+                    vx: (Math.random() - 0.3) * 0.25,
+                    vy: -(0.25 + Math.random() * 0.75),
+                    life: 1100 + Math.random() * 1100,
+                    size: 1 + Math.random() * 1.8,
+                    ph: Math.random() * Math.PI * 2
+                });
+            }
+            cv.width = W * dpr; cv.height = H * dpr;
+            cv.style.width = W + 'px'; cv.style.height = H + 'px';
+            let ctx = cv.getContext('2d');
+            if (!ctx) return false;
+            ctx.scale(dpr, dpr);
+            wrap.style.visibility = 'hidden';
+            cv.classList.remove('hidden');
+            let t0 = performance.now();
+            function frame(now) {
+                let t = now - t0;
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#e8dcc0';
+                let alive = false;
+                for (let pt of particles) {
+                    let lt = t - pt.delay;
+                    if (lt < 0) {
+                        ctx.globalAlpha = 1;
+                        ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+                        alive = true;
+                    } else if (lt < pt.life) {
+                        alive = true;
+                        let k = lt / pt.life;
+                        let px = pt.x + pt.vx * lt * 0.06 + Math.sin(lt * 0.004 + pt.ph) * 3 * k;
+                        let py = pt.y + pt.vy * lt * 0.06 - k * k * 14;
+                        let tw = 0.65 + 0.35 * Math.sin(lt * 0.03 + pt.ph);
+                        ctx.globalAlpha = Math.max(0, 1 - k) * tw;
+                        let sz = pt.size * (1 - k * 0.5);
+                        ctx.fillRect(px, py, sz, sz);
+                    }
+                }
+                ctx.globalAlpha = 1;
+                if (alive) requestAnimationFrame(frame);
+                else location.reload();
+            }
+            requestAnimationFrame(frame);
+            return true;
         }
         function dissolveHiddenHints() {
             if (hiddenHintState === 'dissolving' || hiddenHintState === 'idle') return;
             hiddenHintState = 'dissolving';
+            let note0 = document.getElementById('hiddenHintTapNote');
+            if (note0) note0.style.opacity = '0';
+            if (startHintPowder()) return; // 粉の演出が始まったら、終わりにタイトルへ戻る
             let ov = document.getElementById('hiddenHintOverlay');
             let fx = document.getElementById('hiddenHintFx');
             let note = document.getElementById('hiddenHintTapNote');
@@ -5341,12 +5429,13 @@
                 if (fx && r.width > 0 && sp.animate) {
                     for (let k = 0; k < 3; k++) {
                         let d = document.createElement('div');
-                        d.style.cssText = 'position:absolute;width:3px;height:3px;border-radius:9999px;background:#e8dcc0;left:' + (r.left - ovRect.left + Math.random() * r.width).toFixed(0) + 'px;top:' + (r.top - ovRect.top + Math.random() * r.height).toFixed(0) + 'px;';
+                        d.style.cssText = 'position:absolute;width:3px;height:3px;border-radius:9999px;background:#e8dcc0;opacity:0;left:' + (r.left - ovRect.left + Math.random() * r.width).toFixed(0) + 'px;top:' + (r.top - ovRect.top + Math.random() * r.height).toFixed(0) + 'px;';
                         fx.appendChild(d);
                         let anim = d.animate([
-                            { transform: 'translate(0,0)', opacity: 0.9 },
-                            { transform: 'translate(' + (Math.random() * 70 - 35).toFixed(0) + 'px,' + (Math.random() * 50 - 38).toFixed(0) + 'px)', opacity: 0 }
-                        ], { duration: 700 + Math.random() * 500, delay: i * 45 + Math.random() * 90, easing: 'ease-out', fill: 'forwards' });
+                            { transform: 'translate(0,0)', opacity: 0, offset: 0 },
+                            { transform: 'translate(0,0)', opacity: 0.95, offset: 0.12 },
+                            { transform: 'translate(' + (Math.random() * 70 - 35).toFixed(0) + 'px,' + (Math.random() * 50 - 38).toFixed(0) + 'px)', opacity: 0, offset: 1 }
+                        ], { duration: 700 + Math.random() * 500, delay: i * 45 + Math.random() * 90, easing: 'ease-out', fill: 'backwards' });
                         if (anim && anim.finished) anim.finished.then(() => d.remove()).catch(() => {});
                     }
                 }
