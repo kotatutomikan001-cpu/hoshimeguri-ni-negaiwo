@@ -543,7 +543,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-15 ・ 514,007 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-16 ・ 516,541 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1241,8 +1241,8 @@
             volLevels[kind] = level;
             saveVolLevels();
             if (kind === 'bgm') changeBgmVolume(volValue('bgm'));
-            if (kind === 'voice') { try { Object.values(charVoiceFiles).forEach(r => { if (r && r.el) r.el.volume = volValue('voice'); }); } catch (e) {} }
-            if (kind === 'se') { try { Object.values(dialogueSeCache).forEach(a => { if (a) a.volume = volValue('se'); }); } catch (e) {} }
+            if (kind === 'voice') { try { Object.values(charVoiceFiles).forEach(r => { if (r && r.el) { let g = voiceGainMap.get(r.el); if (g) { try { g.gain.value = volValue('voice'); } catch (e) {} } else r.el.volume = volValue('voice'); } }); } catch (e) {} }
+            if (kind === 'se') { try { Object.values(dialogueSeCache).forEach(a => { if (a) { let g = seGainMap.get(a); if (g) { try { g.gain.value = volValue('se'); } catch (e) {} } else a.volume = volValue('se'); } }); } catch (e) {} }
             refreshOptionsUI();
         }
         function openOptions() { refreshOptionsUI(); let ov = document.getElementById('optionsOverlay'); if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); } }
@@ -2621,6 +2621,31 @@
                 }
             }
         }
+        // 🔊 iPhoneのSafariは audio要素の volume を無視するため、ボイスと会話SEも再生時にWebAudioゲイン経由にして
+        //    オプションの音量段階を効かせる（経由できない環境では従来の要素volumeのまま）
+        const voiceGainMap = new WeakMap();
+        const seGainMap = new WeakMap();
+        function routeElThroughGain(el, store) {
+            try {
+                if (!/^https?:$/.test(location.protocol)) return null;
+                if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+                if (!audioCtx) return null;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                if (audioCtx.state !== 'running') return null;
+                if (store.has(el)) return store.get(el);
+                let src = audioCtx.createMediaElementSource(el);
+                let g = audioCtx.createGain();
+                src.connect(g); g.connect(audioCtx.destination);
+                store.set(el, g);
+                el.volume = 1;
+                return g;
+            } catch (e) { return null; }
+        }
+        function applyVoiceVolume(rec) {
+            let g = routeElThroughGain(rec.el, voiceGainMap);
+            if (g) { try { g.gain.value = volValue('voice'); } catch (e) {} }
+            else { try { rec.el.volume = volValue('voice'); } catch (e) {} }
+        }
         function playCharVoice(charId, kind) {
             // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
             if (!charId) return;
@@ -2638,13 +2663,13 @@
                 // 初回は読み込み完了前のため、1番の要素をそのまま再生試行する（読み込み次第鳴る）。壊れたファイルは試さない
                 const first = charVoiceFiles[charId + '_' + kind + '1'];
                 if (first && !first.dead) {
-                    try { first.el.volume = volValue('voice'); const pr = first.el.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {}
+                    try { applyVoiceVolume(first); const pr = first.el.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {}
                 }
                 return;
             }
             const rec = avail[Math.floor(Math.random() * avail.length)];
             try {
-                rec.el.volume = volValue('voice');
+                applyVoiceVolume(rec);
                 rec.el.currentTime = 0;
                 const pr = rec.el.play();
                 if (pr && pr.catch) pr.catch(() => {});
@@ -2687,6 +2712,9 @@
             if (!name) return;
             try {
                 let a = dialogueSeElement(name);
+                let g = routeElThroughGain(a, seGainMap);
+                if (g) { try { g.gain.value = volValue('se'); } catch (e) {} }
+                else { try { a.volume = volValue('se'); } catch (e) {} }
                 try { a.currentTime = 0; } catch (e) {}
                 let pr = a.play(); if (pr && pr.catch) pr.catch(() => {});
             } catch (e) {}
@@ -2799,6 +2827,15 @@
             else if (activeBgm === 'endingTomoko' && endingTomokoAudio) target = endingTomokoAudio;
             else if (activeBgm === 'endingTalk' && endingTalkAudio) target = endingTalkAudio;
             else if (activeBgm === 'titleGold' && titleGoldAudio) target = titleGoldAudio;
+            // 🔊 iPhoneのSafariは audio要素の volume 変更を無視するので、再生する曲はその場でWebAudioゲイン経由にして
+            //    オプションで設定した音量を効かせる（タイトルで音量を下げてもオープニングが大きい問題の対策）
+            try {
+                if (/^https?:$/.test(location.protocol)) {
+                    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                    ensureBgmRoutingFor(target);
+                }
+            } catch (e) {}
             if (bgmGains[target.id]) { try { bgmGains[target.id].gain.value = bgmVolFor(target.id); } catch (e) {} }
             let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTomokoAudio, endingTalkAudio, titleGoldAudio].filter(a => a && a !== target);
             others.forEach(a => { a.pause(); a.currentTime = 0; });
