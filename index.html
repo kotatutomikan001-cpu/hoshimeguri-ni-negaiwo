@@ -543,7 +543,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-17 ・ 516,943 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-18 ・ 518,010 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2646,9 +2646,17 @@
             if (g) { try { g.gain.value = volValue('voice'); } catch (e) {} }
             else { try { rec.el.volume = volValue('voice'); } catch (e) {} }
         }
+        let lastSelectVoiceAt = {};
+        let lastSelectVoiceEl = null;
         function playCharVoice(charId, kind) {
             // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
             if (!charId) return;
+            if (kind === 'select') {
+                // カーソル移動→決定のように同じキャラの選択ボイスが続けて呼ばれても二重に鳴らさない
+                let now = Date.now();
+                if (lastSelectVoiceAt[charId] && now - lastSelectVoiceAt[charId] < 1500) return;
+                lastSelectVoiceAt[charId] = now;
+            }
             probeCharVoiceKind(charId, kind);
             const avail = [];
             for (let n = 1; n <= VOICE_VARIANTS; n++) {
@@ -2663,12 +2671,16 @@
                 // 初回は読み込み完了前のため、1番の要素をそのまま再生試行する（読み込み次第鳴る）。壊れたファイルは試さない
                 const first = charVoiceFiles[charId + '_' + kind + '1'];
                 if (first && !first.dead) {
-                    try { applyVoiceVolume(first); const pr = first.el.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {}
+                    try {
+                        if (kind === 'select') { if (lastSelectVoiceEl && lastSelectVoiceEl !== first.el) { try { lastSelectVoiceEl.pause(); lastSelectVoiceEl.currentTime = 0; } catch (e) {} } lastSelectVoiceEl = first.el; }
+                        applyVoiceVolume(first); const pr = first.el.play(); if (pr && pr.catch) pr.catch(() => {});
+                    } catch (e) {}
                 }
                 return;
             }
             const rec = avail[Math.floor(Math.random() * avail.length)];
             try {
+                if (kind === 'select') { if (lastSelectVoiceEl && lastSelectVoiceEl !== rec.el) { try { lastSelectVoiceEl.pause(); lastSelectVoiceEl.currentTime = 0; } catch (e) {} } lastSelectVoiceEl = rec.el; }
                 applyVoiceVolume(rec);
                 rec.el.currentTime = 0;
                 const pr = rec.el.play();
@@ -2997,9 +3009,11 @@
 
         function csHover(id) {
             if (!csVisibleIds().includes(id)) return;
+            let changed = csCursor !== id;
             csCursor = id;
             markCsCursor();
             refreshCsSlots();
+            if (changed) playCharVoice(id, 'select');
         }
 
         // カットイン表示で目の帯を合わせる縦位置（％）。キャラごとにアイコン実物で実測して調整済み
@@ -3218,7 +3232,7 @@
             let apply = () => {
                 csMorphKataru = !csMorphKataru;
                 let newId = csMorphKataru ? 'kataru' : 'utsuro';
-                if (csCursor === curId || csCursor === newId) csCursor = newId;
+                if (csCursor === curId || csCursor === newId) { csCursor = newId; playCharVoice(newId, 'select'); }
                 buildCsGrid();
                 refreshCsSlots();
                 updateCsSeqCounter();
