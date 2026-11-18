@@ -183,10 +183,8 @@
             </div>
 
             <!-- リスナー数比較 -->
-            <div class="bgm-vol-control flex items-center gap-1.5 flex-none self-center select-none" title="BGM音量">
-                <span class="text-xs sm:text-sm">🔊</span>
-                <input type="range" min="0" max="100" step="1" value="30" class="bgm-vol-slider w-20 sm:w-28 cursor-pointer accent-purple-400" oninput="changeBgmVolume(this.value / 100)">
-                <span class="bgm-vol-percent text-[10px] sm:text-xs font-bold text-yellow-200 w-8">30%</span>
+            <div class="flex items-center flex-none self-center select-none">
+                <button onclick="openOptions()" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション</button>
             </div>
             <div class="hud-cards text-xs sm:text-sm font-bold">
                 <div class="hud-card bg-purple-900/80 border border-purple-400">
@@ -373,6 +371,26 @@
     </div>
 
     <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
+    <div id="optionsOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3 z-[100006]">
+        <div class="pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-400 shadow-2xl flex flex-col gap-4">
+            <h2 class="text-base sm:text-lg font-black text-purple-200 tracking-wider text-center">⚙ オプション</h2>
+            <div>
+                <div class="text-sm font-black text-purple-100 mb-1.5">🎵 BGM</div>
+                <div class="flex gap-1.5" data-vol-row="bgm"></div>
+            </div>
+            <div>
+                <div class="text-sm font-black text-purple-100 mb-1.5">🎤 ボイス</div>
+                <div class="flex gap-1.5" data-vol-row="voice"></div>
+            </div>
+            <div>
+                <div class="text-sm font-black text-purple-100 mb-1.5">🔊 効果音（SE）</div>
+                <div class="flex gap-1.5" data-vol-row="se"></div>
+            </div>
+            <div class="text-[11px] text-purple-300 font-bold text-center">音量はこの端末に保存されます</div>
+            <button onclick="closeOptions()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer">閉じる</button>
+        </div>
+    </div>
+
     <div id="hiddenHintOverlay" class="fixed inset-0 bg-black hidden z-[100005]" style="overflow:hidden; cursor:pointer;">
         <div id="hiddenHintFx" class="absolute inset-0 pointer-events-none"></div>
         <canvas id="hiddenHintCanvas" class="absolute inset-0 hidden pointer-events-none"></canvas>
@@ -518,7 +536,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-11 ・ 506,357 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-12 ・ 510,114 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -538,10 +556,8 @@
                     <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
                 </div>
             </div>
-            <div class="bgm-vol-control mt-4 flex items-center justify-center gap-2 select-none" title="BGM音量">
-                <span class="text-sm">🔊</span>
-                <input type="range" min="0" max="100" step="1" value="30" class="bgm-vol-slider w-44 cursor-pointer accent-purple-600" oninput="changeBgmVolume(this.value / 100)">
-                <span class="bgm-vol-percent text-xs font-bold text-purple-950/70 w-9 text-left">30%</span>
+            <div class="mt-4 flex items-center justify-center select-none">
+                <button onclick="openOptions()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション（音量）</button>
             </div>
         </div>
     </div>
@@ -1187,6 +1203,47 @@
         let currentEventFilter = 'all';
 
         let currentBgmVolume = 0.3;
+        // 🔊 音量はBGM・ボイス・SEを個別に5段階（消・小・中・大・最大）で調整できる
+        const VOL_STEPS = [0, 0.25, 0.45, 0.7, 1.0];
+        const VOL_LABELS = ['消', '小', '中', '大', '最大'];
+        let volLevels = { bgm: 1, voice: 4, se: 4 };
+        function volValue(kind) { let lv = volLevels[kind]; if (lv === undefined) lv = 1; return VOL_STEPS[Math.min(4, Math.max(0, lv))]; }
+        function loadVolLevels() {
+            try {
+                let saved = JSON.parse(localStorage.getItem('utsuro_vol_levels') || 'null');
+                if (saved) {
+                    ['bgm', 'voice', 'se'].forEach(k => { if (Number.isInteger(saved[k]) && saved[k] >= 0 && saved[k] <= 4) volLevels[k] = saved[k]; });
+                } else {
+                    let old = parseFloat(localStorage.getItem('utsuro_bgm_volume'));
+                    if (!isNaN(old)) { let best = 1, bd = 9; VOL_STEPS.forEach((v, i) => { let d = Math.abs(v - old); if (d < bd) { bd = d; best = i; } }); volLevels.bgm = best; }
+                }
+            } catch (e) {}
+            currentBgmVolume = volValue('bgm');
+        }
+        function saveVolLevels() { try { localStorage.setItem('utsuro_vol_levels', JSON.stringify(volLevels)); } catch (e) {} }
+        function setVolLevel(kind, level) {
+            volLevels[kind] = level;
+            saveVolLevels();
+            if (kind === 'bgm') changeBgmVolume(volValue('bgm'));
+            if (kind === 'voice') { try { Object.values(charVoiceFiles).forEach(r => { if (r && r.el) r.el.volume = volValue('voice'); }); } catch (e) {} }
+            if (kind === 'se') { try { Object.values(dialogueSeCache).forEach(a => { if (a) a.volume = volValue('se'); }); } catch (e) {} }
+            refreshOptionsUI();
+        }
+        function openOptions() { refreshOptionsUI(); let ov = document.getElementById('optionsOverlay'); if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); } }
+        function closeOptions() { let ov = document.getElementById('optionsOverlay'); if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); } }
+        function refreshOptionsUI() {
+            document.querySelectorAll('[data-vol-row]').forEach(row => {
+                let kind = row.getAttribute('data-vol-row');
+                row.innerHTML = '';
+                VOL_LABELS.forEach((label, i) => {
+                    let b = document.createElement('button');
+                    b.textContent = label;
+                    b.className = 'flex-1 py-2 rounded-lg font-black text-xs sm:text-sm border cursor-pointer ' + (volLevels[kind] === i ? 'bg-purple-500 text-white border-purple-200 shadow' : 'bg-slate-800 text-purple-200 border-purple-700/60 hover:bg-slate-700');
+                    b.onclick = () => setVolLevel(kind, i);
+                    row.appendChild(b);
+                });
+            });
+        }
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
         function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST); return v; }
@@ -1229,12 +1286,7 @@
             mapEditorCanvas = document.getElementById('mapEditorCanvas');
             if (mapEditorCanvas) mapEditorCtx = mapEditorCanvas.getContext('2d');
 
-            let savedVol = localStorage.getItem('utsuro_bgm_volume');
-            if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
-                currentBgmVolume = parseFloat(savedVol);
-            } else {
-                currentBgmVolume = 0.3;
-            }
+            loadVolLevels();
             updateVolumeControlsUI(currentBgmVolume);
             applyVolumeControlVisibility();
 
@@ -2474,7 +2526,7 @@
 
             const now = audioCtx.currentTime;
             const masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0.85, now);
+            masterGain.gain.setValueAtTime(volValue('se'), now);
             masterGain.connect(audioCtx.destination);
 
             if (type === 'dice_roll') {
@@ -2564,7 +2616,7 @@
             if (!avail.length) return;
             const rec = avail[Math.floor(Math.random() * avail.length)];
             try {
-                rec.el.volume = 0.9;
+                rec.el.volume = volValue('voice');
                 rec.el.currentTime = 0;
                 const pr = rec.el.play();
                 if (pr && pr.catch) pr.catch(() => {});
@@ -2600,7 +2652,7 @@
         let dialogueSeCache = {};
         function dialogueSeElement(name) {
             let a = dialogueSeCache[name];
-            if (!a) { a = new Audio('se_' + name + '.mp3'); a.preload = 'auto'; a.volume = 0.9; dialogueSeCache[name] = a; }
+            if (!a) { a = new Audio('se_' + name + '.mp3'); a.preload = 'auto'; a.volume = volValue('se'); dialogueSeCache[name] = a; }
             return a;
         }
         function playDialogueSe(name) {
