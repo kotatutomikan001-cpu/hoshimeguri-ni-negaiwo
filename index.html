@@ -543,7 +543,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-16 ・ 516,541 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-17 ・ 516,943 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5357,7 +5357,12 @@
             staffRollPhase = 'hold';
             if (staffRollTimer) { clearTimeout(staffRollTimer); staffRollTimer = null; }
             let finale = document.getElementById('staffRollFinale');
-            if (finale) { finale.classList.remove('finale-pop'); void finale.offsetWidth; finale.classList.add('finale-pop'); }
+            if (finale) {
+                // 上昇トランジションが残っていると、ポップ終了後に残りの上昇が再生されて「おしまい」がもう一度流れてしまう（実機報告）ため、到着時点で必ず止める
+                finale.style.transition = 'none';
+                finale.style.transform = 'translateY(-50%)';
+                finale.classList.remove('finale-pop'); void finale.offsetWidth; finale.classList.add('finale-pop');
+            }
         }
         function finishStaffRoll() {
             if (staffRollPhase === 'idle') return;
@@ -5398,8 +5403,9 @@
                 let finale = document.getElementById('staffRollFinale');
                 if (finale) {
                     finale.style.visibility = 'visible';
-                    finale.style.transition = 'transform 0.6s ease';
+                    finale.style.transition = 'none';
                     finale.style.transform = 'translateY(-50%)';
+                    void finale.offsetWidth;
                 }
                 arriveStaffRollFinale();
             } else if (staffRollPhase === 'hold') {
