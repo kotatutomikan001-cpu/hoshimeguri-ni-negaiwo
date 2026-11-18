@@ -85,6 +85,11 @@
             #csFooterBtns { flex-direction: column; }
             #csFooterBtns > button { width: 100%; }
         }
+        /* 📱 背の低い横画面では盤面を少し縮め、収まらない分はスクロールで届くようにする（画面切れ対策） */
+        @media (max-height: 520px) {
+            #gameMain { overflow-y: auto !important; }
+            #gameMain > section { flex: none !important; height: 46dvh !important; min-height: 150px !important; }
+        }
         /* 📱 横画面・iOS対策：見えている画面（dvh）に表示とタップ位置を一致させる */
         html, body { height: 100dvh !important; min-height: 100dvh !important; }
         body { overflow: hidden !important; overscroll-behavior: none; }
@@ -538,7 +543,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-14 ・ 512,537 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-15 ・ 514,007 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2275,7 +2280,6 @@
         }
 
         function loadDataFromLocalStorage() {
-            preloadCharVoices();
             try {
                 let savedEvents = localStorage.getItem('utsuro_custom_events');
                 gameEvents = savedEvents ? JSON.parse(savedEvents) : JSON.parse(JSON.stringify(defaultEvents));
@@ -2586,35 +2590,41 @@
         const charVoiceFiles = {};
         const VOICE_KINDS = ['select', 'plus', 'minus', 'stolen'];
         const VOICE_VARIANTS = 4;
-        function preloadCharVoices() {
-            CHARACTERS.forEach(c => {
-                VOICE_KINDS.forEach(kind => {
-                    for (let n = 1; n <= VOICE_VARIANTS; n++) {
-                        try {
-                            const a = new Audio();
-                            a.preload = 'auto';
-                            a.src = 'char_assets/voice/' + c.id + '_' + kind + n + '.mp3';
-                            const rec = { el: a, ok: false };
-                            a.addEventListener('canplaythrough', () => { rec.ok = true; });
-                            charVoiceFiles[c.id + '_' + kind + n] = rec;
-                        } catch (e) {}
-                    }
-                });
-                ['plus', 'minus'].forEach(kind => {
+        // 🔊 ボイスは起動時に全員分（288ファイル）を読み込まない。必要になったキャラ・場面の分だけ
+        //    その場で読み込む遅延方式にして、スマホの起動を軽く保つ（2026-11-18 実機で起動が重くなったため）
+        function probeCharVoiceKind(charId, kind) {
+            for (let n = 1; n <= VOICE_VARIANTS; n++) {
+                const key = charId + '_' + kind + n;
+                if (charVoiceFiles[key]) continue;
+                try {
+                    const a = new Audio();
+                    a.preload = 'auto';
+                    a.src = 'char_assets/voice/' + key + '.mp3';
+                    const rec = { el: a, ok: false, dead: false };
+                    a.addEventListener('canplaythrough', () => { rec.ok = true; });
+                    a.addEventListener('error', () => { rec.dead = true; });
+                    charVoiceFiles[key] = rec;
+                } catch (e) {}
+            }
+            if (kind === 'plus' || kind === 'minus') {
+                const key = charId + '_' + kind;
+                if (!charVoiceFiles[key]) {
                     try {
                         const a = new Audio();
                         a.preload = 'auto';
-                        a.src = 'char_assets/voice/' + c.id + '_' + kind + '.mp3';
-                        const rec = { el: a, ok: false };
+                        a.src = 'char_assets/voice/' + key + '.mp3';
+                        const rec = { el: a, ok: false, dead: false };
                         a.addEventListener('canplaythrough', () => { rec.ok = true; });
-                        charVoiceFiles[c.id + '_' + kind] = rec;
+                        a.addEventListener('error', () => { rec.dead = true; });
+                        charVoiceFiles[key] = rec;
                     } catch (e) {}
-                });
-            });
+                }
+            }
         }
         function playCharVoice(charId, kind) {
             // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
             if (!charId) return;
+            probeCharVoiceKind(charId, kind);
             const avail = [];
             for (let n = 1; n <= VOICE_VARIANTS; n++) {
                 const rec = charVoiceFiles[charId + '_' + kind + n];
@@ -2624,7 +2634,14 @@
                 const legacy = charVoiceFiles[charId + '_' + kind];
                 if (legacy && legacy.ok) avail.push(legacy);
             }
-            if (!avail.length) return;
+            if (!avail.length) {
+                // 初回は読み込み完了前のため、1番の要素をそのまま再生試行する（読み込み次第鳴る）。壊れたファイルは試さない
+                const first = charVoiceFiles[charId + '_' + kind + '1'];
+                if (first && !first.dead) {
+                    try { first.el.volume = volValue('voice'); const pr = first.el.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {}
+                }
+                return;
+            }
             const rec = avail[Math.floor(Math.random() * avail.length)];
             try {
                 rec.el.volume = volValue('voice');
@@ -2835,6 +2852,7 @@
         }
 
         function openCharSelect(mode) {
+            CHARACTERS.forEach(c => probeCharVoiceKind(c.id, 'select')); // 決定ボイスだけ先読み（起動時の一括読み込みはしない）
             csMode = mode;
             csCursor = (myChar && csVisibleIds().includes(myChar)) ? myChar : 'utsuro';
             if (mode === 'cpu') {
