@@ -536,7 +536,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-12 ・ 510,114 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-13 ・ 510,955 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2921,6 +2921,13 @@
 
         function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.75; if (id === 'kataru') return 1.45; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
         // 駒の立ち絵は全員「余白を除いた見た目の高さ」がそろう描き方に統一（drawPieceImage）。倍率は全員共通の1.25（旧トモコ・かたる分）
+        // 📏 身長データ（2026-11-18 ユーザー提示）。中央値157cm（うつろ・りつ）を現在のサイズ＝基準1.0として、盤面の駒だけ比率で拡大縮小する。かたる・トモコはデータ無しのため対象外（1.0のまま）
+        const CHAR_HEIGHT_CM = { mikado: 153, hikari: 142, sakura: 143, nemea: 164, rui: 155, tefu: 168, heru: 183, shakuna: 174, mirine: 154, yuni: 152, eru: 160, utsuro: 157, shano: 162, ritsu: 157 };
+        const HEIGHT_BASE_CM = 157;
+        function pieceHeightScale(charType) {
+            let cm = CHAR_HEIGHT_CM[charType] || CHAR_HEIGHT_CM[legacyCharId(charType)];
+            return cm ? cm / HEIGHT_BASE_CM : 1;
+        }
 
         function csHover(id) {
             if (!csVisibleIds().includes(id)) return;
@@ -6036,6 +6043,7 @@
         }
 
         function drawPlayerDotModel(context, charType, x, y, size = 32) {
+            size = size * pieceHeightScale(charType); // 身長データぶんの拡大縮小（中央値157cmが今の大きさ）
             size = size * 1.25; // 全員トモコ並みの大きさに統一（2026-11-14 ユーザー要望）
             let img = charImages[charType] || charImages[legacyCharId(charType)];
             if (img && img.complete && drawPieceImage(context, img, x, y, size)) return;
