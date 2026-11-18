@@ -375,9 +375,13 @@
     <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
     <div id="hiddenHintOverlay" class="fixed inset-0 bg-black hidden z-[100005]" style="overflow:hidden; cursor:pointer;">
         <div id="hiddenHintFx" class="absolute inset-0 pointer-events-none"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-10 sm:gap-14 px-4 select-none pointer-events-none">
-            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(20px, 4.6vw, 44px);" data-hint="隠し人物１：トモコ　世界地図の日本を3回タップ（クリック）"></div>
-            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(15px, 3.3vw, 32px);" data-hint="隠し人物２：繰言かたる　氷室うつろを5回タップ→？を1回タップ→氷室うつろを2回タップ→？を1回タップ→氷室うつろを6回タップ"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 sm:gap-3 px-4 select-none pointer-events-none">
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="隠し人物１：トモコ"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="世界地図の日本を3回タップ（クリック）"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px); margin-top:1.2em;" data-hint="隠し人物２：繰言かたる"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを5回タップ→？を1回タップ→"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを2回タップ→？を1回タップ→"></div>
+            <div class="hint-line text-center font-black leading-relaxed" style="font-size:clamp(16px, 3.6vw, 34px);" data-hint="氷室うつろを6回タップ"></div>
         </div>
         <div id="hiddenHintTapNote" class="absolute bottom-6 inset-x-0 text-center text-xs sm:text-sm font-bold pointer-events-none" style="color:#e8dcc0; opacity:0; transition:opacity .6s;">タップでタイトルへ</div>
     </div>
@@ -513,7 +517,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-7 ・ 500,513 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1118-8 ・ 501,689 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -650,7 +654,7 @@
         .hint-line { color: #e8dcc0; }
         .hint-char { display: inline-block; opacity: 0; color: #e8dcc0; text-shadow: 0 0 18px rgba(232, 220, 192, .35); animation: hintIn .5s ease forwards; }
         @keyframes hintIn { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
-        .hint-char.dissolve { animation: hintOut .7s ease-in forwards; }
+        .hint-char.dissolve { animation: hintOut .4s ease-in forwards; }
         @keyframes hintOut { to { opacity: 0; filter: blur(8px); transform: translate(var(--dx, 10px), var(--dy, -14px)) scale(.55); } }
         @keyframes csCursorBlink { 0%, 100% { box-shadow: 0 0 0 3px #facc15, 0 0 16px #facc15; } 50% { box-shadow: 0 0 0 3px #ffffff, 0 0 4px #ffffff; } }
         .cs-cursor { animation: csCursorBlink 0.6s steps(2) infinite; z-index: 2; }
@@ -5321,10 +5325,19 @@
             let chars = ov.querySelectorAll('.hint-char');
             chars.forEach((sp, i) => {
                 let r = sp.getBoundingClientRect();
-                sp.style.setProperty('--dx', (Math.random() * 36 - 18).toFixed(0) + 'px');
-                sp.style.setProperty('--dy', (-(Math.random() * 26 + 6)).toFixed(0) + 'px');
-                sp.style.animationDelay = (i * 35) + 'ms';
+                let dxv = (Math.random() * 36 - 18).toFixed(0);
+                let dyv = (-(Math.random() * 26 + 6)).toFixed(0);
+                sp.style.setProperty('--dx', dxv + 'px');
+                sp.style.setProperty('--dy', dyv + 'px');
+                sp.style.animationDelay = (i * 45) + 'ms';
                 sp.classList.add('dissolve');
+                if (sp.animate) {
+                    // CSSアニメの遅延が効かない環境でも、左から右への波が確実に見えるようにWAAPIでも崩す
+                    sp.animate([
+                        { opacity: 1, filter: 'blur(0px)', transform: 'translate(0px, 0px) scale(1)' },
+                        { opacity: 0, filter: 'blur(8px)', transform: 'translate(' + dxv + 'px, ' + dyv + 'px) scale(0.55)' }
+                    ], { duration: 400, delay: i * 45, easing: 'ease-in', fill: 'forwards' });
+                }
                 if (fx && r.width > 0 && sp.animate) {
                     for (let k = 0; k < 3; k++) {
                         let d = document.createElement('div');
@@ -5333,12 +5346,12 @@
                         let anim = d.animate([
                             { transform: 'translate(0,0)', opacity: 0.9 },
                             { transform: 'translate(' + (Math.random() * 70 - 35).toFixed(0) + 'px,' + (Math.random() * 50 - 38).toFixed(0) + 'px)', opacity: 0 }
-                        ], { duration: 700 + Math.random() * 500, delay: i * 35 + Math.random() * 90, easing: 'ease-out', fill: 'forwards' });
+                        ], { duration: 700 + Math.random() * 500, delay: i * 45 + Math.random() * 90, easing: 'ease-out', fill: 'forwards' });
                         if (anim && anim.finished) anim.finished.then(() => d.remove()).catch(() => {});
                     }
                 }
             });
-            setTimeout(() => { location.reload(); }, chars.length * 35 + 1000);
+            setTimeout(() => { location.reload(); }, chars.length * 45 + 900);
         }
         (function () {
             let ov = document.getElementById('hiddenHintOverlay');
