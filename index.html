@@ -443,7 +443,7 @@
                     </div>
                     <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">🎮 キャラを選ぶ</button>
                 </div>
-                <div id="lobbyPickedList" class="text-[10px] font-bold text-purple-200 text-left truncate"></div>
+                <div id="lobbyPickedList" class="text-left"></div>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-2 ・ 542,917 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-3 ・ 546,011 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1303,6 +1303,7 @@
         let myPlayerIndex = 0;
         let currentRoomCode = '';
         let onlineMemberChars = {};
+        let onlineMemberReady = {}; // 参加者がキャラ選択で「決定」を押したかどうか（接続時の自動登録と区別する）
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -3524,6 +3525,7 @@
             }
             peerConnections = [];
             onlineMemberChars = {};
+            onlineMemberReady = {};
             
             let hostPeerId = `utsuro-sugoroku-room-${roomCode}`;
             
@@ -3556,7 +3558,7 @@
                             type: 'INIT_GUEST',
                             playerIndex: assignedPIdx,
                             hostChar: myChar,
-                            onlineMemberChars: onlineMemberChars
+                            onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady
                         });
                         
                         document.getElementById('lobbyMemberCount').innerText = `${liveGuestCount() + 1} / 4`;
@@ -3714,6 +3716,7 @@
             if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
             peerConnections = [];
             onlineMemberChars = {};
+            onlineMemberReady = {};
             let slotPeerId = MATCH_PEER_PREFIX + slot;
             try {
                 peer = new Peer(slotPeerId, { debug: 1 });
@@ -3746,7 +3749,7 @@
                 let assignedPIdx = peerConnections.length;
                 conn.on('open', () => {
                     try {
-                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars });
+                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady });
                     } catch (e) {}
                     document.getElementById('lobbyMemberCount').innerText = (liveGuestCount() + 1) + ' / 4';
                     document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
@@ -3816,6 +3819,7 @@
                             let conflict = pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== pIdx && onlineMemberChars[k] === pairId);
                             if (!conflict) {
                                 onlineMemberChars[pIdx] = data.char;
+                                if (data.decided) onlineMemberReady[pIdx] = true;
                             } else if (conn.open) {
                                 conn.send({ type: 'CHAR_REJECTED', char: data.char });
                             }
@@ -3860,9 +3864,15 @@
                         if (data.onlineMemberChars) {
                             onlineMemberChars = data.onlineMemberChars;
                         }
+                        if (data.onlineMemberReady) onlineMemberReady = data.onlineMemberReady;
                         onlineMemberChars[myPlayerIndex] = myChar;
                         updateLobbyCharUI();
                     } else if (data.type === 'LOBBY_STATE') {
+                        if (data.onlineMemberReady) {
+                            let keepMine = myCharPending && onlineMemberReady[myPlayerIndex];
+                            onlineMemberReady = data.onlineMemberReady;
+                            if (keepMine) onlineMemberReady[myPlayerIndex] = true;
+                        }
                         if (data.onlineMemberChars) {
                             onlineMemberChars = data.onlineMemberChars;
                             let hostMine = onlineMemberChars[myPlayerIndex] || null;
@@ -3946,7 +3956,7 @@
             if (!isHost) return;
             let state = {
                 type: 'LOBBY_STATE',
-                onlineMemberChars: onlineMemberChars,
+                onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady,
                 memberCount: liveGuestCount() + 1
             };
             peerConnections.forEach(c => {
@@ -3973,8 +3983,15 @@
             }
             let list = document.getElementById('lobbyPickedList');
             if (list) {
-                let parts = [0, 1, 2, 3].map(i => (i + 1) + 'P: ' + (onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (i <= liveGuestCount() ? '選択中…' : 'CPU')));
-                list.innerText = parts.join(' ／ ');
+                list.innerHTML = [0, 1, 2, 3].map(i => {
+                    let human = i <= liveGuestCount();
+                    let ready = i === 0 ? true : !!onlineMemberReady[i];
+                    let badge = !human
+                        ? '<span style="color:#94a3b8;">CPUで補います</span>'
+                        : (ready ? '<span style="color:#4ade80;">✓ 準備OK</span>' : '<span style="color:#fbbf24;">キャラ選択中…</span>');
+                    let who = ready && onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (human ? '（未決定）' : 'ーーー');
+                    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:11px;font-weight:700;color:#e9d5ff;"><span>' + (i + 1) + 'P：' + who + '</span>' + badge + '</div>';
+                }).join('');
             }
         }
 
@@ -3987,6 +4004,7 @@
             }
             myChar = char;
             onlineMemberChars[myPlayerIndex] = char;
+            onlineMemberReady[myPlayerIndex] = true;
             updateLobbyCharUI();
 
             if (isHost) {
@@ -3996,9 +4014,17 @@
                 myCharSentAt = Date.now();
                 peerConnections[0].send({
                     type: 'REGISTER_CHAR',
-                    char: char
+                    char: char,
+                    decided: true
                 });
             }
+        }
+
+        function lobbyNotReadyList() {
+            let live = liveGuestCount();
+            let arr = [];
+            for (let i = 1; i <= live; i++) if (!onlineMemberReady[i]) arr.push(i);
+            return arr;
         }
 
         function updateLobbyCharUI() {
@@ -4010,7 +4036,7 @@
                 refreshCsSlots();
             }
 
-            let selectedChars = Object.values(onlineMemberChars).filter(Boolean);
+            let selectedChars = [0, 1, 2, 3].filter(i => (i === 0 || onlineMemberReady[i]) && onlineMemberChars[i]).map(i => onlineMemberChars[i]);
             let hasDuplicate = new Set(selectedChars).size !== selectedChars.length;
 
             let startBtn = document.getElementById('btnStartLobbyGame');
@@ -4022,6 +4048,9 @@
                     if (hasDuplicate) {
                         statusText.innerText = '⚠️ キャラクターが重複しています！別のキャラを選んでください';
                         statusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
+                    } else if (!onlineMemberReady[myPlayerIndex]) {
+                        statusText.innerText = 'キャラを選んで「決定」を押すと準備OKになります';
+                        statusText.className = 'text-xs text-amber-300 font-bold animate-pulse mb-2';
                     } else {
                         statusText.innerText = 'ホストがゲームを開始するのを待っています...';
                         statusText.className = 'text-xs text-cyan-300 font-bold animate-pulse mb-2';
@@ -4040,10 +4069,19 @@
                         statusText.className = 'text-xs text-red-400 font-bold animate-pulse mb-2';
                     }
                 } else {
-                    if (startBtn) startBtn.disabled = false;
-                    if (statusText) {
-                        statusText.innerText = '全員の準備が整いました！';
-                        statusText.className = 'text-xs text-green-400 font-bold animate-pulse mb-2';
+                    let notReady = lobbyNotReadyList();
+                    if (notReady.length) {
+                        if (startBtn) startBtn.disabled = true;
+                        if (statusText) {
+                            statusText.innerText = '⏳ ' + notReady.map(i => (i + 1) + 'P').join('・') + ' のキャラ決定を待っています…（全員の準備OKで開始できます）';
+                            statusText.className = 'text-xs text-amber-300 font-bold animate-pulse mb-2';
+                        }
+                    } else {
+                        if (startBtn) startBtn.disabled = false;
+                        if (statusText) {
+                            statusText.innerText = '全員の準備が整いました！';
+                            statusText.className = 'text-xs text-green-400 font-bold animate-pulse mb-2';
+                        }
                     }
                 }
             }
@@ -4053,7 +4091,12 @@
             cpuGameActive = false;
             if (!isHost) return;
 
-            let selectedChars = Object.values(onlineMemberChars);
+            let notReadyOnStart = lobbyNotReadyList();
+            if (notReadyOnStart.length) {
+                alert('まだキャラを決めていない参加者がいます（' + notReadyOnStart.map(i => (i + 1) + 'P').join('・') + '）。全員の準備OKを待ってください。');
+                return;
+            }
+            let selectedChars = [0, 1, 2, 3].filter(i => (i === 0 || onlineMemberReady[i]) && onlineMemberChars[i]).map(i => onlineMemberChars[i]);
             if (new Set(selectedChars).size !== selectedChars.length) {
                 alert('キャラクターが重複しています。参加者全員が異なるキャラクターを選択してください！');
                 return;
