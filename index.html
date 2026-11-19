@@ -462,7 +462,7 @@
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
     <div id="trueEndFinale" class="fixed inset-0 hidden" style="z-index:100005;background:#000000;opacity:0;transition:opacity 1.2s ease;" onclick="skipTrueEndFinale()">
-        <div class="w-full h-full flex flex-col items-center justify-center gap-8 sm:gap-10 px-6">
+        <div id="trueEndFinaleInner" class="w-full h-full flex flex-col items-center justify-center gap-8 sm:gap-10 px-6" style="opacity:0;">
             <div class="text-2xl sm:text-4xl font-black tracking-[.2em] text-center" style="color:#f5eeda;text-shadow:0 0 18px rgba(251,191,36,.45);">『星めぐりに願いを』</div>
             <div class="text-6xl sm:text-7xl font-black tracking-[.3em] pl-2" style="color:#f7e7b4;text-shadow:0 0 26px rgba(251,191,36,.55);">完</div>
         </div>
@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-11 ・ 540,461 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-1 ・ 542,723 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1230,7 +1230,9 @@
         const VOL_LABELS = ['消', '小', '中', '大', '最大'];
         let volLevels = { bgm: 4, voice: 4, se: 4 };
         function volStepsFor(kind) { return kind === 'bgm' ? VOL_STEPS_BGM : VOL_STEPS; }
-        function volValue(kind) { if (isSmartphoneAudio()) return volStepsFor(kind)[4]; let lv = volLevels[kind]; if (lv === undefined) lv = 4; let steps = volStepsFor(kind); return steps[Math.min(4, Math.max(0, lv))]; }
+        const SP_BGM_VOLUME = 0.15; // スマホ用BGM標準音量（iPhoneは要素volumeが効かず実質フル音量で鳴っていたため、ゲイン経由で下げる。2026-11-19 ユーザー指定）
+        const SP_VOICE_GAIN = 2.0; // スマホ用ボイス増幅（収録ファイルが小さめでBGMに埋もれるため、ゲイン経由で上げる。2026-11-19 ユーザー指定）
+        function volValue(kind) { if (isSmartphoneAudio()) return kind === 'bgm' ? SP_BGM_VOLUME : 1; let lv = volLevels[kind]; if (lv === undefined) lv = 4; let steps = volStepsFor(kind); return steps[Math.min(4, Math.max(0, lv))]; }
         // 📱 スマートフォン（タッチ端末）では音量調整を行わない（2026-11-19 ユーザー決定）：iPhoneはブラウザ仕様で
         //    要素の音量を変更できず、効かせるためのWebAudio経由化が再生のブツブツの原因にもなったため、
         //    スマホではBGM・ボイス・SEすべて標準音量（BGM=0.25／ボイス・SE=1.0）で再生し、音量は端末のボタンで調整する。
@@ -2667,7 +2669,12 @@
             } catch (e) { return null; }
         }
         function applyVoiceVolume(rec) {
-            if (isSmartphoneAudio()) { try { rec.el.volume = volValue('voice'); } catch (e) {} return; }
+            if (isSmartphoneAudio()) {
+                let g = routeElThroughGain(rec.el, voiceGainMap);
+                if (g) { try { g.gain.value = SP_VOICE_GAIN; } catch (e) {} }
+                else { try { rec.el.volume = 1; } catch (e) {} }
+                return;
+            }
             let g = routeElThroughGain(rec.el, voiceGainMap);
             if (g) { try { g.gain.value = volValue('voice'); } catch (e) {} }
             else { try { rec.el.volume = volValue('voice'); } catch (e) {} }
@@ -2867,11 +2874,12 @@
             else if (activeBgm === 'titleGold' && titleGoldAudio) target = titleGoldAudio;
             // 🔊 iPhoneのSafariは audio要素の volume 変更を無視するので、再生する曲はその場でWebAudioゲイン経由にして
             //    オプションで設定した音量を効かせる（タイトルで音量を下げてもオープニングが大きい問題の対策）
-            //    ただしゲームBGMだけは経由化しない：盤面は毎フレーム全体を描画し続けるため、経由化するとiPhoneで
-            //    再生がブツブツ途切れて短い音が繰り返すように聞こえる（2026-11-19 実機報告）。ゲーム中は従来方式で流し、
-            //    iPhoneではBGM音量設定の対象外になる（端末の音量で調整。PCでは要素volumeが効くので今まで通り）。
+            //    PCではゲームBGMだけ経由化しない：盤面は毎フレーム全体を描画し続けるため、経由化するとiPhoneで
+            //    再生がブツブツ途切れて聞こえた（2026-11-19 実機報告）ための予防で、PCは要素volumeで足りる。
+            //    スマホは全曲経由化する：iPhoneは要素volumeでは音量を下げられないため、BGMの標準音量を下げるには
+            //    ゲイン経由が必須（2026-11-19 ユーザー指定）。ブツブツが再発したらスマホのゲームBGMだけ外すのが次の一手。
             try {
-                if (/^https?:$/.test(location.protocol) && target !== gameAudio && !isSmartphoneAudio()) {
+                if (/^https?:$/.test(location.protocol) && (isSmartphoneAudio() || target !== gameAudio)) {
                     if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
                     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                     ensureBgmRoutingFor(target);
@@ -5436,24 +5444,45 @@
         // 🌟 トゥルーエンドの締め：最後のナレーションの後に、画面全体へ『星めぐりに願いを』完 を出してから余韻へ
         let trueFinaleTimer = null;
         let trueFinaleFinished = false;
+        let trueFinaleState = 'idle'; // delay（黒い間）→ in（フェードイン中）→ shown（表示中）→ out（フェードアウト中）
         function showTrueEndFinale() {
             stopOpeningDust();
             let fin = document.getElementById('trueEndFinale');
-            if (!fin) { returnToTitleWithLinger(); return; }
+            let inner = document.getElementById('trueEndFinaleInner');
+            if (!fin || !inner) { returnToTitleWithLinger(); return; }
             trueFinaleFinished = false;
+            if (trueFinaleTimer) { clearTimeout(trueFinaleTimer); trueFinaleTimer = null; }
             fin.classList.remove('hidden');
-            fin.style.opacity = '0';
-            requestAnimationFrame(() => { requestAnimationFrame(() => { fin.style.opacity = '1'; }); });
+            fin.style.transition = 'none';
+            fin.style.opacity = '1'; // まず真っ黒な画面にして「間」を取る
+            inner.style.transition = 'none';
+            inner.style.opacity = '0';
+            trueFinaleState = 'delay';
             try { syncTopChrome(); } catch (e) {}
-            // タップされるまで表示し続ける（自動では進まない。2026-11-19 ユーザー指定）
+            // 間（2秒）→ ゆっくりフェードイン（2.8秒）→ タップされるまで表示し続ける（2026-11-20 ユーザー指定）
+            trueFinaleTimer = setTimeout(() => {
+                if (trueFinaleState !== 'delay') return;
+                trueFinaleState = 'in';
+                inner.style.transition = 'opacity 2.8s ease';
+                inner.style.opacity = '1';
+                trueFinaleTimer = setTimeout(() => { if (trueFinaleState === 'in') trueFinaleState = 'shown'; }, 2900);
+            }, 2000);
         }
         function finishTrueEndFinale() {
             if (trueFinaleFinished) return;
             trueFinaleFinished = true;
+            trueFinaleState = 'idle';
             if (trueFinaleTimer) { clearTimeout(trueFinaleTimer); trueFinaleTimer = null; }
             returnToTitleWithLinger(); // 余韻を持たせてタイトルへ（即座に戻らない）
         }
-        function skipTrueEndFinale() { finishTrueEndFinale(); }
+        function skipTrueEndFinale() {
+            if (trueFinaleState !== 'in' && trueFinaleState !== 'shown') return; // 黒い「間」の間はタップを受け付けない
+            if (trueFinaleTimer) { clearTimeout(trueFinaleTimer); trueFinaleTimer = null; }
+            trueFinaleState = 'out';
+            let inner = document.getElementById('trueEndFinaleInner');
+            if (inner) { inner.style.transition = 'opacity 2s ease'; inner.style.opacity = '0'; } // スーッと消えていく
+            trueFinaleTimer = setTimeout(finishTrueEndFinale, 2100);
+        }
         // 🌳 トゥルーエンドの余韻：暗転して少し間を置き、金色タイトルをゆっくり出す
         function returnToTitleWithLinger() {
             let fade = document.getElementById('trueEndFade');
@@ -5542,7 +5571,7 @@
             h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
             h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
-            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
+            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
