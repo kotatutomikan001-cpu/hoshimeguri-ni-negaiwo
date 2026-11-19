@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-1 ・ 542,723 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-2 ・ 542,917 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6221,7 +6221,7 @@
                 if (bgFx !== undefined) setOpeningBg(bgFx);
                 if (fxToks.includes('bgmoff')) fadeOutBgmByFx();
                 fxToks.forEach(t => { if (t.indexOf('se:') === 0) playDialogueSe(t.slice(3)); });
-                if (fxToks.includes('dust') || isStardustReturnLine(line)) startOpeningDust(); else stopOpeningDust();
+                if (fxToks.includes('dust') || isStardustReturnLine(line)) startOpeningDust(); // 一度出たら会話シーンが終わるまで流れ続ける（かたるエンドの星屑を長く見せるため。2026-11-20 ユーザー指定）。停止はシーン終了時（clearOpeningBg等）で行う
             }
             document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
             let txEl = document.getElementById('openingText');
