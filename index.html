@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-10 ・ 540,421 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-11 ・ 540,461 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5546,8 +5546,8 @@
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
             [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
-            let maskReplayMembers = endingReplayActive && endingReplayKind === 'generic'; // 汎用リプレイは優勝者（うつろ）以外は順位を出さずーーーにする（2026-11-19 ユーザー指定）
-            players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + ((maskReplayMembers && i > 0) ? 'ーーー' : pl.name + (pl.isHuman ? '' : '（CPU）')) + '</div>'; });
+            let maskReplayMembers = endingReplayActive; // エンディングリスト再生時は「今回の対戦メンバー」を優勝者以外ーーーにする（2026-11-19 ユーザー指定。当初は汎用のみ→全エンドに拡大）
+            players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + ((maskReplayMembers && pl !== winner) ? 'ーーー' : pl.name + (pl.isHuman ? '' : '（CPU）')) + '</div>'; });
             if (winner) {
                 h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 優勝 ✦</div>';
                 h += '<div class="text-2xl sm:text-3xl font-black text-yellow-300 leading-snug mt-2">👑 ' + winner.name + '</div>';
