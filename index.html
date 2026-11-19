@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-7 ・ 537,668 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-8 ・ 538,276 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2466,7 +2466,7 @@
                         if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
                         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                         let activeEl = bgmElementFor(activeBgm);
-                        if (activeEl && !activeEl.paused) ensureBgmRoutingFor(activeEl);
+                        if (activeEl && !activeEl.paused && activeEl.id !== 'gameBgmAudio') ensureBgmRoutingFor(activeEl); // ゲームBGMは経由化しない（2026-11-19 ブツブツ対策）
                     }
                 } catch (e) {}
                 ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
@@ -2856,8 +2856,11 @@
             else if (activeBgm === 'titleGold' && titleGoldAudio) target = titleGoldAudio;
             // 🔊 iPhoneのSafariは audio要素の volume 変更を無視するので、再生する曲はその場でWebAudioゲイン経由にして
             //    オプションで設定した音量を効かせる（タイトルで音量を下げてもオープニングが大きい問題の対策）
+            //    ただしゲームBGMだけは経由化しない：盤面は毎フレーム全体を描画し続けるため、経由化するとiPhoneで
+            //    再生がブツブツ途切れて短い音が繰り返すように聞こえる（2026-11-19 実機報告）。ゲーム中は従来方式で流し、
+            //    iPhoneではBGM音量設定の対象外になる（端末の音量で調整。PCでは要素volumeが効くので今まで通り）。
             try {
-                if (/^https?:$/.test(location.protocol)) {
+                if (/^https?:$/.test(location.protocol) && target !== gameAudio) {
                     if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
                     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                     ensureBgmRoutingFor(target);
