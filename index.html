@@ -461,6 +461,12 @@
 
     <!-- 🌟 メインタイトル・モード選択モーダル（ゲーム起動時初期表示） -->
     <!-- 🎬 タイトル画面 -->
+    <div id="trueEndFinale" class="fixed inset-0 hidden" style="z-index:100005;background:#000000;opacity:0;transition:opacity 1.2s ease;" onclick="skipTrueEndFinale()">
+        <div class="w-full h-full flex flex-col items-center justify-center gap-8 sm:gap-10 px-6">
+            <div class="text-2xl sm:text-4xl font-black tracking-[.2em] text-center" style="color:#f5eeda;text-shadow:0 0 18px rgba(251,191,36,.45);">『星めぐりに願いを』</div>
+            <div class="text-6xl sm:text-7xl font-black tracking-[.3em] pl-2" style="color:#f7e7b4;text-shadow:0 0 26px rgba(251,191,36,.55);">完</div>
+        </div>
+    </div>
     <div id="trueEndFade" class="fixed inset-0 bg-black hidden" style="z-index:100006;opacity:0;pointer-events:none;"></div>
     <div id="topSafeStrip" aria-hidden="true"></div>
     <div id="titleScreen" class="fixed inset-0 bg-gradient-to-b from-purple-300 via-purple-200 to-indigo-100 flex items-center justify-center p-3 z-[100004] overflow-hidden">
@@ -546,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-4 ・ 535,344 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1119-5 ・ 537,498 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5387,7 +5393,7 @@
             const vis = id => { let el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
             let bg = '#090d16', metaColor = '#090d16', grad = false;
             if (vis('endingListOverlay')) { bg = '#1e1b4b'; metaColor = '#1e1b4b'; }
-            else if (vis('hiddenHintOverlay')) { bg = '#000000'; metaColor = '#000000'; }
+            else if (vis('hiddenHintOverlay') || vis('trueEndFinale')) { bg = '#000000'; metaColor = '#000000'; }
             else if (vis('titleScreen')) {
                 if (isTrueSeen()) { bg = 'linear-gradient(180deg,#fde68a 0%,#fef9c3 50%,#fef3c7 100%)'; metaColor = '#fde68a'; }
                 else { bg = 'linear-gradient(180deg,#d8b4fe 0%,#e9d5ff 50%,#e0e7ff 100%)'; metaColor = '#d8b4fe'; }
@@ -5405,19 +5411,40 @@
         }
         try {
             const __topChromeObs = new MutationObserver(() => { try { syncTopChrome(); } catch (e) {} });
-            ['titleScreen','charSelectModal','openingOverlay','startModal','roomCodeModal','onlineLobbyModal','rulesOverlay','endingListOverlay','hiddenHintOverlay','resultModal','staffRollOverlay','endingResultOverlay','optionsOverlay','debugModal'].forEach(id => {
+            ['titleScreen','charSelectModal','openingOverlay','startModal','roomCodeModal','onlineLobbyModal','rulesOverlay','endingListOverlay','hiddenHintOverlay','trueEndFinale','resultModal','staffRollOverlay','endingResultOverlay','optionsOverlay','debugModal'].forEach(id => {
                 let el = document.getElementById(id);
                 if (el) __topChromeObs.observe(el, { attributes: true, attributeFilter: ['class'] });
             });
         } catch (e) {}
         try { syncTopChrome(); } catch (e) {}
+        // 🌟 トゥルーエンドの締め：最後のナレーションの後に、画面全体へ『星めぐりに願いを』完 を出してから余韻へ
+        let trueFinaleTimer = null;
+        let trueFinaleFinished = false;
+        function showTrueEndFinale() {
+            stopOpeningDust();
+            let fin = document.getElementById('trueEndFinale');
+            if (!fin) { returnToTitleWithLinger(); return; }
+            trueFinaleFinished = false;
+            fin.classList.remove('hidden');
+            fin.style.opacity = '0';
+            requestAnimationFrame(() => { requestAnimationFrame(() => { fin.style.opacity = '1'; }); });
+            try { syncTopChrome(); } catch (e) {}
+            trueFinaleTimer = setTimeout(finishTrueEndFinale, 4000);
+        }
+        function finishTrueEndFinale() {
+            if (trueFinaleFinished) return;
+            trueFinaleFinished = true;
+            if (trueFinaleTimer) { clearTimeout(trueFinaleTimer); trueFinaleTimer = null; }
+            returnToTitleWithLinger(); // 余韻を持たせてタイトルへ（即座に戻らない）
+        }
+        function skipTrueEndFinale() { finishTrueEndFinale(); }
         // 🌳 トゥルーエンドの余韻：暗転して少し間を置き、金色タイトルをゆっくり出す
         function returnToTitleWithLinger() {
             let fade = document.getElementById('trueEndFade');
             let ovT = document.getElementById('openingOverlay');
             try { fadeOutBgmByFx(); } catch (e) {} // 会話BGMをゆっくり消す
             if (!fade) {
-                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
+                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); } let finT = document.getElementById('trueEndFinale'); if (finT) { finT.classList.add('hidden'); finT.style.opacity = '0'; }
                 let ts0 = document.getElementById('titleScreen');
                 if (ts0) { ts0.classList.remove('hidden'); ts0.classList.add('flex'); }
                 try { playSelectBgm(); } catch (e) {}
@@ -5429,7 +5456,7 @@
             fade.style.transition = 'opacity 1.6s ease';
             requestAnimationFrame(() => { requestAnimationFrame(() => { fade.style.opacity = '1'; }); });
             setTimeout(() => {
-                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); }
+                if (ovT) { ovT.classList.add('hidden'); ovT.classList.remove('flex'); } let finT = document.getElementById('trueEndFinale'); if (finT) { finT.classList.add('hidden'); finT.style.opacity = '0'; }
                 let tsR = document.getElementById('titleScreen');
                 if (tsR) { tsR.classList.remove('hidden'); tsR.classList.add('flex'); }
                 refreshTitleTree();
@@ -5447,7 +5474,7 @@
                 openingActive = false;
                 dialogueMode = 'opening';
                 try { localStorage.setItem('utsuro_true_seen', '1'); } catch (e) {}
-                returnToTitleWithLinger(); // 余韻を持たせてタイトルへ（即座に戻らない）
+                showTrueEndFinale(); // まず画面全体に『星めぐりに願いを』完 を出し、その後に余韻を持たせてタイトルへ
                 return;
             }
             stopOpeningDust();
