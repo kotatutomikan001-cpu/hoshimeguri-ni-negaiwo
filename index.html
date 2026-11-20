@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-7 ・ 549,173 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-1 ・ 553,235 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -668,6 +668,8 @@
             <p class="text-xs text-gray-300 mb-4 font-bold">合言葉（部屋コード）を入力して作成・参加します</p>
 
             <div class="flex flex-col gap-3">
+                <input type="text" id="userNameInput" placeholder="ユーザー名 (例: hiro-pon)" maxlength="12" class="bg-slate-950 border-2 border-purple-500 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 font-bold text-center">
+                <p class="text-[10px] text-gray-400 font-bold -mt-1">オンライン対戦で相手に表示される名前です（キャラ名とは別）</p>
                 <input type="text" id="roomCodeInput" placeholder="部屋コード (例: 1234)" class="bg-slate-950 border-2 border-cyan-500 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 font-bold text-center tracking-widest">
                 <button onclick="startOnlineGame()" class="pixel-btn py-2 px-4 font-bold text-sm text-white rounded bg-cyan-600 hover:bg-cyan-500 cursor-pointer">
                     部屋に入る / 作成する
@@ -1304,6 +1306,26 @@
         let currentRoomCode = '';
         let onlineMemberChars = {};
         let onlineMemberReady = {}; // 参加者がキャラ選択で「決定」を押したかどうか（接続時の自動登録と区別する）
+        let onlineMemberNames = {}; // 参加者のユーザー名（キャラ名とは別に、誰と対戦しているか判別するため）
+        let myUserName = '';
+        try { myUserName = sanitizeUserName(localStorage.getItem('utsuro_user_name') || ''); } catch (e) {}
+        function sanitizeUserName(s) {
+            return String(s == null ? '' : s).replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+        }
+        function escHtml(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        // 表示用の名前：ユーザー名があれば「ユーザー名（キャラ名）」、なければキャラ名のみ
+        function playerLabel(p) {
+            if (!p) return '';
+            return p.userName ? p.userName + '（' + p.name + '）' : p.name;
+        }
+        function readUserNameInput() {
+            let el = document.getElementById('userNameInput');
+            if (el) myUserName = sanitizeUserName(el.value);
+            try { localStorage.setItem('utsuro_user_name', myUserName); } catch (e) {}
+            return myUserName;
+        }
 
         const defaultEvents = [
             { type: 'plus', title: '【長文ツイートバズ】', desc: '渾身の長文ツイートがバズって新規リスナー急増！', val: 300 },
@@ -2918,6 +2940,8 @@
         function openRoomCodeModal() {
             document.getElementById('startModal').classList.add('hidden');
             document.getElementById('roomCodeModal').classList.remove('hidden');
+            let un = document.getElementById('userNameInput');
+            if (un) un.value = myUserName || '';
         }
 
         function closeRoomCodeModal() {
@@ -3213,6 +3237,7 @@
                 players[i].char = csCpuPicks[i];
                 players[i].name = charName(csCpuPicks[i]);
                 players[i].color = charColor(csCpuPicks[i]);
+                players[i].userName = '';
             }
             applyHudNames();
             // 選択画面は startCpuGame 側で閉じる（上書き確認で「いいえ」の時は閉じない）
@@ -3409,7 +3434,7 @@
             cpuGameActive = true;
             data.players.forEach((sp, i) => {
                 let p = players[i];
-                p.name = sp.name; p.char = sp.char; p.color = sp.color;
+                p.name = sp.name; p.char = sp.char; p.color = sp.color; p.userName = '';
                 p.pos = sp.pos; p.listeners = sp.listeners; p.fragments = sp.fragments;
                 p.items = (sp.items || []).slice(); p.diceBonus = sp.diceBonus || 0; p.doubleDice = !!sp.doubleDice; p.moveDouble = !!sp.moveDouble;
                 p.shield = sp.shield || 0; p.finished = !!sp.finished; p.rank = sp.rank || 0;
@@ -3446,11 +3471,11 @@
             applyHudNames();
             updateFragmentUI();
             let activePlayer = players[currentPlayerIndex];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
             let btnRoll = document.getElementById('btnRoll');
             if (activePlayer.isHuman) {
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
-                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
                 document.getElementById('currentEventEffect').innerText = '-';
                 if (btnRoll) { btnRoll.disabled = false; btnRoll.innerText = '🎲 移動！'; }
             } else {
@@ -3498,9 +3523,9 @@
             drawDice(1);
             document.getElementById('turnCounter').innerText = turnCounterText();
             let activePlayer = players[0];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
-            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
             
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
@@ -3513,6 +3538,7 @@
         }
 
         function startOnlineGame() {
+            readUserNameInput();
             let roomCode = document.getElementById('roomCodeInput').value.trim();
             if (!roomCode) { alert('部屋コードを入力してください'); return; }
 
@@ -3539,6 +3565,7 @@
             peerConnections = [];
             onlineMemberChars = {};
             onlineMemberReady = {};
+            onlineMemberNames = {};
             
             let hostPeerId = `utsuro-sugoroku-room-${roomCode}`;
             
@@ -3549,6 +3576,7 @@
                     isHost = true;
                     myPlayerIndex = 0;
                     onlineMemberChars[0] = myChar;
+                    onlineMemberNames[0] = myUserName;
                     updateLobbyCharUI();
                     document.getElementById('lobbyMemberCount').innerText = `1 / 4`;
                     document.getElementById('lobbyStatusText').innerText = '部屋を作成しました。対戦相手を待っています...';
@@ -3571,7 +3599,7 @@
                             type: 'INIT_GUEST',
                             playerIndex: assignedPIdx,
                             hostChar: myChar,
-                            onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady
+                            onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames
                         });
                         
                         document.getElementById('lobbyMemberCount').innerText = `${liveGuestCount() + 1} / 4`;
@@ -3610,7 +3638,8 @@
                     
                     conn.send({
                         type: 'REGISTER_CHAR',
-                        char: myChar
+                        char: myChar,
+                        name: myUserName
                     });
                 });
 
@@ -3653,6 +3682,7 @@
         }
 
         function startRandomMatch() {
+            readUserNameInput();
             if (!tileCoords || tileCoords.length === 0) convertCustomGridToTileCoords();
             currentRoomCode = '';
             isOnlineMode = true;
@@ -3702,7 +3732,7 @@
                     setupConnectionDataHandler(conn);
                     conn.on('close', () => { handleHostDisconnect(false); });
                     conn.on('error', () => { handleHostDisconnect(true); });
-                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar }); } catch (e) {}
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName }); } catch (e) {}
                 });
                 conn.on('error', () => { clearTimeout(timer); fail(); });
                 myPeer.on('error', (err) => {
@@ -3730,6 +3760,7 @@
             peerConnections = [];
             onlineMemberChars = {};
             onlineMemberReady = {};
+            onlineMemberNames = {};
             let slotPeerId = MATCH_PEER_PREFIX + slot;
             try {
                 peer = new Peer(slotPeerId, { debug: 1 });
@@ -3740,6 +3771,7 @@
                 isHost = true;
                 myPlayerIndex = 0;
                 onlineMemberChars[0] = myChar;
+                onlineMemberNames[0] = myUserName;
                 updateLobbyCharUI();
                 document.getElementById('lobbyMemberCount').innerText = '1 / 4';
                 setMatchStatus('対戦相手を待っています…');
@@ -3762,7 +3794,7 @@
                 let assignedPIdx = peerConnections.length;
                 conn.on('open', () => {
                     try {
-                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady });
+                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames });
                     } catch (e) {}
                     document.getElementById('lobbyMemberCount').innerText = (liveGuestCount() + 1) + ' / 4';
                     document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
@@ -3809,7 +3841,7 @@
                     setupConnectionDataHandler(conn);
                     conn.on('close', () => { handleHostDisconnect(false); });
                     conn.on('error', () => { handleHostDisconnect(true); });
-                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar }); } catch (e) {}
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName }); } catch (e) {}
                 });
                 conn.on('error', () => {
                     if (settled) return; settled = true; clearTimeout(timer);
@@ -3832,6 +3864,7 @@
                             let conflict = pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== pIdx && onlineMemberChars[k] === pairId);
                             if (!conflict) {
                                 onlineMemberChars[pIdx] = data.char;
+                                if (typeof data.name === 'string') onlineMemberNames[pIdx] = sanitizeUserName(data.name);
                                 if (data.decided) onlineMemberReady[pIdx] = true;
                             } else if (conn.open) {
                                 conn.send({ type: 'CHAR_REJECTED', char: data.char });
@@ -3884,7 +3917,9 @@
                             onlineMemberChars = data.onlineMemberChars;
                         }
                         if (data.onlineMemberReady) onlineMemberReady = data.onlineMemberReady;
+                        if (data.onlineMemberNames) onlineMemberNames = data.onlineMemberNames;
                         onlineMemberChars[myPlayerIndex] = myChar;
+                        onlineMemberNames[myPlayerIndex] = myUserName;
                         updateLobbyCharUI();
                     } else if (data.type === 'LOBBY_STATE') {
                         if (data.onlineMemberReady) {
@@ -3904,6 +3939,10 @@
                                 myChar = hostMine; // ホストの確定状態に合わせる（拒否された選択はここで戻る）
                                 myCharPending = false;
                             }
+                        }
+                        if (data.onlineMemberNames) {
+                            onlineMemberNames = data.onlineMemberNames;
+                            onlineMemberNames[myPlayerIndex] = myUserName; // 自分の席は自分の名前で保持
                         }
                         if (data.memberCount) {
                             document.getElementById('lobbyMemberCount').innerText = `${data.memberCount} / 4`;
@@ -3934,6 +3973,7 @@
                                 players[idx].name = charName(cfg.char);
                                 players[idx].color = charColor(cfg.char);
                                 players[idx].isHuman = cfg.isHuman;
+                                players[idx].userName = cfg.userName || '';
                             });
 
                             applyHudNames();
@@ -3947,9 +3987,9 @@
                         document.getElementById('turnCounter').innerText = turnCounterText();
 
                         let activePlayer = players[0];
-                        document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+                        document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
                         document.getElementById('currentEventTitle').innerText = '【スタート！】';
-                        document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                        document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
 
                         let btnRoll = document.getElementById('btnRoll');
                         if (btnRoll) {
@@ -3975,7 +4015,7 @@
             if (!isHost) return;
             let state = {
                 type: 'LOBBY_STATE',
-                onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady,
+                onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames,
                 memberCount: liveGuestCount() + 1
             };
             peerConnections.forEach(c => {
@@ -3989,7 +4029,7 @@
             let icon = document.getElementById('lobbyMyCharIcon');
             let ph = document.getElementById('lobbyMyCharPh');
             let nm = document.getElementById('lobbyMyCharName');
-            if (nm) nm.innerText = charName(myChar);
+            if (nm) nm.innerText = myUserName ? myUserName + '（' + charName(myChar) + '）' : charName(myChar);
             if (icon && ph) {
                 retryUpperExt(icon, () => { icon.classList.add('hidden'); ph.style.display = 'flex'; ph.innerText = charName(myChar).charAt(0); ph.style.color = charColor(myChar); });
                 if (icon.dataset.charId !== myChar) {
@@ -4008,7 +4048,10 @@
                     let badge = !human
                         ? '<span style="color:#94a3b8;">CPUで補います</span>'
                         : (ready ? '<span style="color:#4ade80;">✓ 準備OK</span>' : '<span style="color:#fbbf24;">キャラ選択中…</span>');
-                    let who = ready && onlineMemberChars[i] ? charName(onlineMemberChars[i]) : (human ? '（未決定）' : 'ーーー');
+                    let uname = human && onlineMemberNames[i] ? escHtml(onlineMemberNames[i]) : '';
+                    let who = ready && onlineMemberChars[i]
+                        ? (uname ? uname + '（' + charName(onlineMemberChars[i]) + '）' : charName(onlineMemberChars[i]))
+                        : (human ? (uname ? uname + '（未決定）' : '（未決定）') : 'ーーー');
                     return '<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:11px;font-weight:700;color:#e9d5ff;"><span>' + (i + 1) + 'P：' + who + '</span>' + badge + '</div>';
                 }).join('');
             }
@@ -4034,6 +4077,7 @@
                 peerConnections[0].send({
                     type: 'REGISTER_CHAR',
                     char: char,
+                    name: myUserName,
                     decided: true
                 });
             }
@@ -4140,7 +4184,8 @@
 
                 return {
                     char: chosenChar,
-                    isHuman: isHuman
+                    isHuman: isHuman,
+                    userName: isHuman ? (onlineMemberNames[idx] || '') : ''
                 };
             });
 
@@ -4149,6 +4194,7 @@
                 players[idx].name = charName(cfg.char);
                 players[idx].color = charColor(cfg.char);
                 players[idx].isHuman = cfg.isHuman;
+                players[idx].userName = cfg.userName || '';
             });
 
             applyHudNames();
@@ -4178,9 +4224,9 @@
             document.getElementById('turnCounter').innerText = turnCounterText();
 
             let activePlayer = players[0];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
             document.getElementById('currentEventTitle').innerText = '【スタート！】';
-            document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+            document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
 
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
@@ -4306,7 +4352,7 @@
             document.getElementById('currentEventEffect').innerText = '-';
             let activePlayer = players[currentPlayerIndex];
             if (!activePlayer || activePlayer.finished) { nextTurn(); return; }
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
             let btnRoll = document.getElementById('btnRoll');
             if (activePlayer.isHuman) {
                 if (btnRoll) { btnRoll.disabled = false; btnRoll.innerText = '🎲 移動！'; }
@@ -4395,7 +4441,7 @@
                 goalDeadlineDay = data.goalDeadlineDay;
                 if (wasNullDeadline && goalDeadlineDay !== null) {
                     let wi = (data.players || []).findIndex(pl => pl && pl.rank === 1);
-                    if (wi >= 0 && players[wi]) showDeadlineBanner(players[wi].name);
+                    if (wi >= 0 && players[wi]) showDeadlineBanner(playerLabel(players[wi]));
                 }
                 if (goalDeadlineDay !== null && currentTurnNumber > goalDeadlineDay && !players.every(player => player.finished)) endGameByDeadline();
             }
@@ -4414,7 +4460,7 @@
             if (data.currentPlayerIndex !== undefined) {
                 currentPlayerIndex = data.currentPlayerIndex;
                 let activePlayer = players[currentPlayerIndex];
-                document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+                document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
 
                 let btnRoll = document.getElementById('btnRoll');
                 if (btnRoll) {
@@ -5332,6 +5378,7 @@
                 pl.char = cid;
                 pl.name = charName(cid);
                 pl.color = charColor(cid);
+                pl.userName = '';
                 pl.isHuman = i === 0;
                 pl.fragments = i === 0 ? 6 : Math.max(0, 3 - i);
                 pl.listeners = i === 0 ? 5000 : 3000 - i * 500;
@@ -6013,6 +6060,12 @@
                 let nm = document.createElement('div');
                 nm.className = 'text-[11px] sm:text-sm font-black text-purple-950 text-center leading-tight';
                 nm.innerHTML = splitSurnameHtml(p.name);
+                if (p.userName) {
+                    let un = document.createElement('div');
+                    un.className = 'text-[9px] sm:text-[11px] font-bold text-cyan-700 text-center leading-tight';
+                    un.innerText = p.userName;
+                    nm.appendChild(un);
+                }
                 let st = document.createElement('div');
                 st.className = 'text-[9px] sm:text-[11px] font-bold text-indigo-700 text-center';
                 st.innerText = '👥 ' + p.listeners.toLocaleString() + '人 ・ ⭐ ' + p.fragments;
@@ -6025,7 +6078,7 @@
                     let score = evalScoreOf(p);
                     return '<tr class="border-t border-purple-300/60">'
                         + '<td class="py-1 px-2 font-black whitespace-nowrap">' + (idx + 1) + '位</td>'
-                        + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + p.name + '</td>'
+                        + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + escHtml(playerLabel(p)) + '</td>'
                         + '<td class="py-1 px-2 text-right whitespace-nowrap">⭐ ' + (p.fragments || 0) + '</td>'
                         + '<td class="py-1 px-2 text-right whitespace-nowrap">👥 ' + p.listeners.toLocaleString() + '</td>'
                         + '<td class="py-1 px-2 text-right font-black whitespace-nowrap">' + score.toLocaleString() + '</td></tr>';
@@ -7099,7 +7152,10 @@
         function applyHudNames() {
             for (let i = 0; i < 4; i++) {
                 let el = document.getElementById('p' + (i + 1) + 'Name');
-                if (el && players[i]) el.innerHTML = splitSurnameHtml(players[i].name);
+                if (el && players[i]) {
+                    el.innerHTML = splitSurnameHtml(players[i].name)
+                        + (players[i].userName ? '<span style="display:block;font-size:8px;line-height:1.2;color:#a5f3fc;font-weight:700;">' + escHtml(players[i].userName) + '</span>' : '');
+                }
             }
         }
 
@@ -7439,7 +7495,7 @@
             if (finishedRankCount === 1 && !players.every(player => player.finished)) {
                 goalDeadlineDay = currentTurnNumber + GOAL_DEADLINE_DAYS;
                 document.getElementById('currentEventDesc').innerText += ` ⌛ 最初のゴール！残り${GOAL_DEADLINE_DAYS}日でゲーム終了になります。`;
-                showDeadlineBanner(p.name);
+                showDeadlineBanner(playerLabel(p));
             }
             document.getElementById('currentEventEffect').innerText = `🏆 ${p.rank}位完走ボーナス (+${bonus.toLocaleString()}人)` + (fragBonus > 0 ? ' ＋ 星のカケラ+1個' : '');
 
@@ -7499,7 +7555,7 @@
             if (goalDeadlineDay !== null && currentTurnNumber > goalDeadlineDay && !players.every(player => player.finished)) { endGameByDeadline(); return; }
 
             let activePlayer = players[currentPlayerIndex];
-            document.getElementById('activePlayerTag').innerText = `手番: ${activePlayer.name}`;
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
             let drt = document.getElementById('diceResultText');
             if (drt) drt.innerText = '準備完了';
 
@@ -7507,7 +7563,7 @@
 
             if (activePlayer.isHuman) {
                 document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
-                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}さんの番です。サイコロを振ってください。`;
+                document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
                 document.getElementById('currentEventEffect').innerText = '-';
 
                 let btnRoll = document.getElementById('btnRoll');
