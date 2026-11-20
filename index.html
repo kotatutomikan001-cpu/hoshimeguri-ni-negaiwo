@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-5 ・ 548,180 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-6 ・ 549,059 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2620,6 +2620,18 @@
         const VOICE_VARIANTS = 4;
         // 🔊 ボイスは起動時に全員分（288ファイル）を読み込まない。必要になったキャラ・場面の分だけ
         //    その場で読み込む遅延方式にして、スマホの起動を軽く保つ（2026-11-18 実機で起動が重くなったため）
+        // 無音プレースホルダーは全て同じバイト数（2411）で用意されている。これと一致するファイルは
+        // 「実ボイスなし」として扱い、ランダム再生の候補から外す（実ボイスが1つだけのキャラで
+        // 無音が選ばれて「声が出ない」ように見える問題への対策）
+        const VOICE_PLACEHOLDER_BYTES = 2411;
+        function markPlaceholderIfSilent(rec, url) {
+            try {
+                fetch(url, { method: 'HEAD' }).then(r => {
+                    let len = parseInt((r.headers && r.headers.get('Content-Length')) || '0', 10);
+                    if (len === VOICE_PLACEHOLDER_BYTES) rec.dead = true;
+                }).catch(() => {});
+            } catch (e) {}
+        }
         function probeCharVoiceKind(charId, kind) {
             for (let n = 1; n <= VOICE_VARIANTS; n++) {
                 const key = charId + '_' + kind + n;
@@ -2632,6 +2644,7 @@
                     a.addEventListener('canplaythrough', () => { rec.ok = true; });
                     a.addEventListener('error', () => { rec.dead = true; });
                     charVoiceFiles[key] = rec;
+                    markPlaceholderIfSilent(rec, a.src);
                 } catch (e) {}
             }
             if (kind === 'plus' || kind === 'minus') {
@@ -2695,11 +2708,11 @@
             const avail = [];
             for (let n = 1; n <= VOICE_VARIANTS; n++) {
                 const rec = charVoiceFiles[charId + '_' + kind + n];
-                if (rec && rec.ok) avail.push(rec);
+                if (rec && rec.ok && !rec.dead) avail.push(rec);
             }
             if (!avail.length) {
                 const legacy = charVoiceFiles[charId + '_' + kind];
-                if (legacy && legacy.ok) avail.push(legacy);
+                if (legacy && legacy.ok && !legacy.dead) avail.push(legacy);
             }
             if (!avail.length) {
                 // 初回は読み込み完了前のため、1番の要素をそのまま再生試行する（読み込み次第鳴る）。壊れたファイルは試さない
