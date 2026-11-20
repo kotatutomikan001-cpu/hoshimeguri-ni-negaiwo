@@ -552,7 +552,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-6 ・ 549,059 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1120-7 ・ 549,173 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -8049,9 +8049,10 @@
             };
             let treeImg = boardTreeImage(treeBloomed ? 'green' : 'dry');
             if (treeImg && treeImg.naturalWidth > 0) {
-                const TH = 344; // 大樹の表示高さ（盤面座標）：円状の光（半径150＝直径300）から少しはみ出るくらい（2026-11-19 ユーザー指定で縮小）
+                const TH = 296; // 大樹の表示高さ（盤面座標）：2026-11-20 ユーザー指定でもう少し縮小（344→296）
                 const TW = TH * treeImg.naturalWidth / treeImg.naturalHeight;
-                ctx.drawImage(treeImg, cx - TW / 2, cy - TH / 2 - 4, TW, TH);
+                // 画像内の根元（横0.50・縦0.88の点）が盤面中央＝光の道の先端に来るように描く（2026-11-20 ユーザー要望）
+                ctx.drawImage(treeImg, cx - TW * 0.50, cy - TH * 0.88, TW, TH);
                 if (treeBloomed) {
                     // 開花時は樹冠の周りに星のきらめきを散らす
                     ctx.fillStyle = '#fde68a';
@@ -8061,7 +8062,7 @@
                         let seedA = i * 2.39996; // 黄金角で散らす
                         let rad = 44 + (i % 7) * 16;
                         let sx = cx + Math.cos(seedA) * rad * 1.25;
-                        let sy = cy - 30 + Math.sin(seedA) * rad * 0.75;
+                        let sy = cy - 175 + Math.sin(seedA) * rad * 0.75;
                         let tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now / (380 + (i % 5) * 90) + i * 1.7));
                         ctx.globalAlpha = tw;
                         ctx.font = (11 + (i % 3) * 5) + 'px sans-serif';
@@ -8073,7 +8074,7 @@
                 ctx.fillStyle = '#fde68a';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('星の大樹', cx, cy + 196);
+                ctx.fillText('星の大樹', cx, cy + 118);
             } else {
                 // 画像がまだ読めていない間は従来のリング＋星で代替表示
                 ring(118, '#312e81', '#fbbf24', 4);
