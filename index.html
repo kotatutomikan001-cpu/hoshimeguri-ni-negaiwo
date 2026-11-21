@@ -254,8 +254,8 @@
             <!-- 分岐選択用オーバーレイコンテナ -->
             <div id="branchOverlayContainer" class="absolute inset-0 pointer-events-none z-20"></div>
 
-            <!-- ターン表示＆カメラ切替オーバーレイ -->
-            <div class="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+            <!-- ターン表示＆カメラ切替オーバーレイ（スマホでは縦並びにして、全体表示のマップを横一列で隠さないようにする。2026-11-22 ユーザー要望） -->
+            <div class="absolute top-2 left-2 flex flex-col items-start gap-1.5 z-10 sm:flex-row sm:items-center">
                 <div class="bg-black/80 border border-purple-500/80 rounded px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs flex items-center gap-1 backdrop-blur-sm">
                     <span id="turnCounter" class="font-mono text-yellow-300 font-bold text-xs sm:text-sm">1日目</span>
                 </div>
@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-25 ・ 567,202 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-1 ・ 567,377 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
