@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-18 ・ 558,774 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-19 ・ 561,541 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1307,6 +1307,23 @@
         let audioUnlocked = false;
         let activeBgm = 'select';
         let audioCtx = null;
+        let userGestured = false; // 初回のタップがあったか。AudioContextはタップ前に作るとiOSで止まったままになりやすいので、作るのはタップ以降だけにする
+        function watchBgmCtx() {
+            if (!audioCtx || audioCtx.__watched) return;
+            audioCtx.__watched = true;
+            audioCtx.onstatechange = () => {
+                if (audioCtx && audioCtx.state === 'running') {
+                    // 経由化を見送っていた再生中の曲を、contextが動き出したこの時点でゲイン経由に切り替える
+                    try { let el = bgmElementFor(activeBgm); if (el && !el.paused && !bgmGains[el.id]) { ensureBgmRoutingFor(el); if (bgmGains[el.id]) { try { bgmGains[el.id].gain.value = bgmVolFor(el.id); } catch (e) {} } } } catch (e) {}
+                }
+            };
+        }
+        function kickAudioCtx() {
+            try {
+                if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); watchBgmCtx(); }
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) {}
+        }
 
         // 🌐 オンラインPeerJS変数
         let peer = null;
@@ -2536,6 +2553,18 @@
         }
 
         function setupAudioUnlockers() {
+            // 最初のタップを capture 段階（ボタンの処理より前）で受けて、AudioContextを用意・再開しておく。
+            // これでボタンの処理がBGM再生を始める時点で context が動き出している状態にできる。
+            // （用意が済んだ後はタップのたびに触らない：再生中に context をいじると音量が上下して聞こえる事があるため）
+            ['pointerdown', 'click', 'touchstart', 'keydown'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    if (userGestured) return;
+                    userGestured = true;
+                    let el = null;
+                    try { el = bgmElementFor(activeBgm); } catch (e) {}
+                    if (!(audioUnlocked && el && !el.paused)) kickAudioCtx(); // すでに曲が鳴っているなら context には触らない
+                }, { passive: true, capture: true });
+            });
             const unlockAudio = (ev) => {
                 // タイトル表示中のタップでは、そのタイトルに合ったBGM（通常／金色）だけを始める。
                 // ？？？ボタンへのタップは会話側（playTrueEnding）が専用BGMを始めるので、ここでは触らない（タイトル曲の割り込み防止）
@@ -2604,6 +2633,7 @@
             const resumeBgm = () => {
                 try {
                     if (bgmMutedByFx) return;
+                    kickAudioCtx();
                     let tsEl = document.getElementById('titleScreen');
                     if (tsEl && !tsEl.classList.contains('hidden')) { playSelectBgm(); return; }
                     if (!audioUnlocked) return;
@@ -2952,11 +2982,14 @@
             //    再生がブツブツ途切れて聞こえた（2026-11-19 実機報告）ための予防で、PCは要素volumeで足りる。
             //    スマホは全曲経由化する：iPhoneは要素volumeでは音量を下げられないため、BGMの標準音量を下げるには
             //    ゲイン経由が必須（2026-11-19 ユーザー指定）。ブツブツが再発したらスマホのゲームBGMだけ外すのが次の一手。
+            // ⚠️ ただし経由化は AudioContext が running の時だけ。止まったままの context に繋ぐと、その曲は
+            //    「再生中なのに無音・進まない」状態で固まってしまう（2026-11-21 実機報告：タイトルでBGMが始まらない）。
+            //    context が動き出すまでは要素のまま鳴らし、running になった時点で watchBgmCtx が経由化を引き継ぐ。
             try {
                 if (/^https?:$/.test(location.protocol) && (isSmartphoneAudio() || target !== gameAudio)) {
-                    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                    ensureBgmRoutingFor(target);
+                    if (!audioCtx && userGestured) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); watchBgmCtx(); } catch (e) {} }
+                    if (audioCtx) { watchBgmCtx(); if (audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch (e) {} } }
+                    if (audioCtx && audioCtx.state === 'running') ensureBgmRoutingFor(target);
                 }
             } catch (e) {}
             if (bgmGains[target.id]) { try { bgmGains[target.id].gain.value = bgmVolFor(target.id); } catch (e) {} }
