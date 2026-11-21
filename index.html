@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-1 ・ 567,377 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-2 ・ 570,145 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1350,6 +1350,7 @@
         let onlineMemberReady = {}; // 参加者がキャラ選択で「決定」を押したかどうか（接続時の自動登録と区別する）
         let onlineMemberNames = {}; // 参加者のユーザー名（キャラ名とは別に、誰と対戦しているか判別するため）
         let myUserName = '';
+        let myClientId = 'c' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); // このページを開いている間だけの端末ID。二重入室の検出に使う
         try { myUserName = sanitizeUserName(localStorage.getItem('utsuro_user_name') || ''); } catch (e) {}
         function sanitizeUserName(s) {
             return String(s == null ? '' : s).replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
@@ -3676,15 +3677,18 @@
 
                 peer.on('connection', (conn) => {
                     if (!isHost) return;
-                    
-                    if (peerConnections.length >= 3) {
+
+                    // 満員判定と枠の割り当ては「生きている接続」だけで行う（切断済みの接続が配列に残っていて、
+                    // 本当は空いているのに「満員」で入れない／枠番号がずれる事故の対策）。枠は接続ごとに固定し、最も小さい空き番号を使う
+                    let usedSlots = peerConnections.filter(c => c && c.open && !c.__dead).map(c => c.__pIdx).filter(n => n);
+                    if (usedSlots.length >= 3) {
                         conn.send({ type: 'ERROR', message: '部屋が満員です' });
                         setTimeout(() => conn.close(), 500);
                         return;
                     }
-
+                    let assignedPIdx = [1, 2, 3].find(n => !usedSlots.includes(n));
+                    conn.__pIdx = assignedPIdx;
                     peerConnections.push(conn);
-                    let assignedPIdx = peerConnections.length;
                     
                     conn.on('open', () => {
                         conn.send({
@@ -3718,6 +3722,10 @@
         function connectAsGuest(hostPeerId) {
             isHost = false;
             hostDisconnectHandled = false;
+            // 前の接続が残っていると二重に入室してしまうため、開いている接続があれば先に片付ける
+            // （開けなかった接続は相手の部屋を巻き込まないよう destroy せずに手放すだけにする）
+            if (peer) { if (peer.open) { try { peer.destroy(); } catch (e) {} } peer = null; }
+            peerConnections = [];
             peer = new Peer({ debug: 1 });
 
             peer.on('open', () => {
@@ -3731,7 +3739,8 @@
                     conn.send({
                         type: 'REGISTER_CHAR',
                         char: myChar,
-                        name: myUserName
+                        name: myUserName,
+                        clientId: myClientId
                     });
                 });
 
@@ -3824,7 +3833,7 @@
                     setupConnectionDataHandler(conn);
                     conn.on('close', () => { handleHostDisconnect(false); });
                     conn.on('error', () => { handleHostDisconnect(true); });
-                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName }); } catch (e) {}
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName, clientId: myClientId }); } catch (e) {}
                 });
                 conn.on('error', () => { clearTimeout(timer); fail(); });
                 myPeer.on('error', (err) => {
@@ -3933,7 +3942,7 @@
                     setupConnectionDataHandler(conn);
                     conn.on('close', () => { handleHostDisconnect(false); });
                     conn.on('error', () => { handleHostDisconnect(true); });
-                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName }); } catch (e) {}
+                    try { conn.send({ type: 'REGISTER_CHAR', char: myChar, name: myUserName, clientId: myClientId }); } catch (e) {}
                 });
                 conn.on('error', () => {
                     if (settled) return; settled = true; clearTimeout(timer);
@@ -3949,9 +3958,16 @@
 
                 if (isHost) {
                     if (data.type === 'REGISTER_CHAR') {
-                        let connIdx = peerConnections.indexOf(conn);
-                        if (connIdx !== -1) {
-                            let pIdx = connIdx + 1;
+                        let pIdx = senderPIdx(conn);
+                        if (pIdx >= 1) {
+                            // 同じ端末（clientId）が別の接続で登録済みなら、古い接続を閉じて片付ける
+                            // （接続のやり直しや二重入室で、同じ人が2枠に表示される事故の対策。2026-11-22 実機報告）
+                            if (data.clientId) {
+                                peerConnections.slice().forEach(c => {
+                                    if (c !== conn && c.__clientId && c.__clientId === data.clientId) { try { c.close(); } catch (e) {} handleGuestDisconnect(c); }
+                                });
+                                conn.__clientId = data.clientId;
+                            }
                             let pairId = csPairOf(data.char);
                             let conflict = pairId && Object.keys(onlineMemberChars).some(k => parseInt(k) !== pIdx && onlineMemberChars[k] === pairId);
                             if (!conflict) {
@@ -3965,8 +3981,8 @@
                             broadcastLobbyState();
                         }
                     } else if (data.type === 'ACTION_ROLL') {
-                        // 送信者は申告値ではなく接続順で確定する
-                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        // 送信者は申告値ではなく、接続時に固定した番号（senderPIdx）で確定する
+                        let senderIndex = senderPIdx(conn);
                         if (senderIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice && turnPhase === 'idle') {
                             executeRollForCurrentPlayer();
                         } else {
@@ -3974,12 +3990,12 @@
                         }
                     } else if (data.type === 'ACTION_ADVANCE') {
                         // イベント結果の「タップで進む」を、本人の端末からのタップで受け取る
-                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        let senderIndex = senderPIdx(conn);
                         if (senderIndex === currentPlayerIndex && eventAdvanceTapFn && eventAdvanceRemote) {
                             eventAdvanceTapFn();
                         }
                     } else if (data.type === 'ACTION_USE_ITEM') {
-                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        let senderIndex = senderPIdx(conn);
                         if (senderIndex === currentPlayerIndex) {
                             if (data.cheatValue) applyCheatDice(senderIndex, data.itemName, data.cheatValue);
                             else applyUseItem(senderIndex, data.itemIndex, data.itemName);
@@ -3987,7 +4003,7 @@
                             broadcastGameState(true);
                         }
                     } else if (data.type === 'ACTION_BRANCH') {
-                        let senderIndex = peerConnections.indexOf(conn) + 1;
+                        let senderIndex = senderPIdx(conn);
                         if (pendingBranchResolver && pendingBranchInfo && senderIndex === pendingBranchInfo.playerIndex && pendingBranchInfo.candidateTileIdxs.includes(data.tileIdx)) {
                             if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
                             let resolver = pendingBranchResolver;
@@ -4103,6 +4119,9 @@
         }
 
         function liveGuestCount() { return peerConnections.filter(c => c && c.open && !c.__dead).length; }
+        // 接続からプレイヤー番号を引く。番号は接続時に固定した __pIdx を使い、配列の位置からは決めない
+        // （切断した接続を配列から外しても、残りの接続の番号がずれないようにするため）
+        function senderPIdx(conn) { if (!conn) return -1; if (conn.__pIdx) return conn.__pIdx; let i = peerConnections.indexOf(conn); return i === -1 ? -1 : i + 1; }
         function broadcastLobbyState() {
             if (!isHost) return;
             let state = {
@@ -4170,6 +4189,7 @@
                     type: 'REGISTER_CHAR',
                     char: char,
                     name: myUserName,
+                    clientId: myClientId,
                     decided: true
                 });
             }
@@ -4379,10 +4399,15 @@
         function handleGuestDisconnect(conn) {
             let connIdx = peerConnections.indexOf(conn);
             if (connIdx === -1) return;
+            let pIdx = senderPIdx(conn);
+            // 切断した接続は配列から外す（残しておくと「満員」判定に数えられて新しい人が入れなくなる。2026-11-22 実機報告）
+            peerConnections.splice(connIdx, 1);
             conn.__dead = true;
-            let pIdx = connIdx + 1;
             if (!onlineGameStarted) {
+                // ロビーの登録情報はキャラ・準備OK・名前の全部を消す（残っていると、抜けた人が別の枠に残って見える）
                 delete onlineMemberChars[pIdx];
+                delete onlineMemberReady[pIdx];
+                delete onlineMemberNames[pIdx];
                 updateLobbyCharUI();
                 broadcastLobbyState();
                 let mc = document.getElementById('lobbyMemberCount');
