@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-2 ・ 570,145 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-3 ・ 573,522 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -3222,7 +3222,7 @@
                 let nm = document.getElementById('csSlotName' + i);
                 let tag = document.getElementById('csSlotTag' + i);
                 if (!img || !ph || !nm) continue;
-                if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (i <= liveGuestCount() ? 'PLAYER' : 'CPU'));
+                if (tag) tag.innerText = (csMode === 'cpu') ? (i === 0 ? 'あなた' : 'CPU') : (i === myPlayerIndex ? 'あなた' : (isLobbySlotHuman(i) ? 'PLAYER' : 'CPU'));
                 if (id) {
                     let eye = csSlotEyeMode();
                     img.dataset.csMode = eye ? 'eye' : 'stand';
@@ -4122,6 +4122,13 @@
         // 接続からプレイヤー番号を引く。番号は接続時に固定した __pIdx を使い、配列の位置からは決めない
         // （切断した接続を配列から外しても、残りの接続の番号がずれないようにするため）
         function senderPIdx(conn) { if (!conn) return -1; if (conn.__pIdx) return conn.__pIdx; let i = peerConnections.indexOf(conn); return i === -1 ? -1 : i + 1; }
+        // その枠が「人間の参加者」かどうか。人数からの連番推定（i <= ゲスト数）は、途中退出で枠に空きがあると
+        // 実在のゲストをCPU扱いしてしまうため使わない。ホストは生きている接続の有無、ゲストはロビー同期の登録有無で判定する
+        function isLobbySlotHuman(i) {
+            if (i === 0) return true;
+            if (isHost) return peerConnections.some(c => c && c.open && !c.__dead && senderPIdx(c) === i);
+            return i === myPlayerIndex || onlineMemberChars[i] !== undefined || !!onlineMemberReady[i] || !!onlineMemberNames[i];
+        }
         function broadcastLobbyState() {
             if (!isHost) return;
             let state = {
@@ -4154,7 +4161,7 @@
             let list = document.getElementById('lobbyPickedList');
             if (list) {
                 list.innerHTML = [0, 1, 2, 3].map(i => {
-                    let human = i <= liveGuestCount();
+                    let human = isLobbySlotHuman(i);
                     let ready = i === 0 ? true : !!onlineMemberReady[i];
                     let badge = !human
                         ? '<span style="color:#94a3b8;">CPUで補います</span>'
@@ -4196,10 +4203,14 @@
         }
 
         function lobbyNotReadyList() {
-            let live = liveGuestCount();
+            if (!isHost) return [];
+            // 準備OKが必要なのは「実際に接続しているゲストの枠」だけ（空き枠を未決定扱いすると、
+            // 誰かが抜けたロビーで二度と開始できなくなる。2026-11-22 対処）
             let arr = [];
-            for (let i = 1; i <= live; i++) if (!onlineMemberReady[i]) arr.push(i);
-            return arr;
+            peerConnections.forEach(c => {
+                if (c && c.open && !c.__dead) { let idx = senderPIdx(c); if (idx >= 1 && !onlineMemberReady[idx]) arr.push(idx); }
+            });
+            return arr.sort((a, b) => a - b);
         }
 
         function updateLobbyCharUI() {
@@ -4286,7 +4297,9 @@
             let liveGuests = liveGuestCount();
             let playerConfigs = [0, 1, 2, 3].map(idx => {
                 let chosenChar = onlineMemberChars[idx];
-                let isHuman = idx <= liveGuests;
+                // 人間かどうかは「その枠に生きている接続があるか」で判定する（人数からの連番推定だと、
+                // 途中退出で枠に空きがある時に本物のゲストをCPU扱いしてしまう。2026-11-22 対処）
+                let isHuman = idx === 0 || peerConnections.some(c => c && c.open && !c.__dead && senderPIdx(c) === idx);
 
                 if (!chosenChar || usedChars.includes(chosenChar)) {
                     let available = normalCharIds().filter(c => !usedChars.includes(c) && !usedChars.includes(csPairOf(c)));
@@ -4359,9 +4372,22 @@
                 if (!isOnlineMode) return;
                 if (isHost) {
                     broadcastGameState(true);
-                } else if (Date.now() - lastSyncReceivedAt > 5000) {
-                    if (peerConnections[0] && peerConnections[0].open) {
-                        peerConnections[0].send({ type: 'REQUEST_SYNC' });
+                } else {
+                    if (Date.now() - lastSyncReceivedAt > 5000) {
+                        if (peerConnections[0] && peerConnections[0].open) {
+                            peerConnections[0].send({ type: 'REQUEST_SYNC' });
+                        }
+                    }
+                    // 保険：自分の番で全ての状態が「サイコロ待ち」なのにボタンだけ無効なままなら、有効に戻して同期を取り直す
+                    // （状態と表示が食い違って「自分の番なのにダイスが押せない」まま固まるのを防ぐ。2026-11-22 実機報告）
+                    if (onlineGameStarted && myPlayerIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && turnPhase === 'idle' && !isWaitingForBranchChoice) {
+                        let btn = document.getElementById('btnRoll');
+                        if (btn && btn.disabled) {
+                            refreshRollButtonState();
+                            if (peerConnections[0] && peerConnections[0].open) {
+                                peerConnections[0].send({ type: 'REQUEST_SYNC' });
+                            }
+                        }
                     }
                 }
             }, 2000);
@@ -4378,6 +4404,14 @@
             if (!active) return;
             let idleMs = Date.now() - lastProgressAt;
 
+            if (isEventResolving && turnPhase === 'idle' && !isMoving && !isRolling && !isWaitingForBranchChoice && !isSubRollPending && idleMs > 6000) {
+                // イベント解決中のはずがない状態（手番待ちフェーズ）で解決フラグだけ残っていたら落とす。
+                // これが残ると、ゲスト側で「自分の番なのにダイスが押せない」状態のまま固まる（2026-11-22 実機報告への保険）
+                isEventResolving = false;
+                lastProgressAt = Date.now();
+                broadcastGameState(true);
+                return;
+            }
             if ((isMoving || isRolling) && !isWaitingForBranchChoice && idleMs > 15000) {
                 isMoving = false;
                 isRolling = false;
@@ -4496,6 +4530,18 @@
             document.getElementById('startModal').classList.remove('hidden');
         }
 
+        // 🎲 サイコロボタンの有効・無効を、現在の状態から決め直す（同期のたびに呼び、表示だけ古い状態で固まらないようにする）
+        function refreshRollButtonState() {
+            let btnRoll = document.getElementById('btnRoll');
+            if (!btnRoll) return;
+            let activePlayer = players[currentPlayerIndex];
+            if (!activePlayer) return;
+            let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
+            let movingOrRolling = (isMoving || isRolling || isEventResolving || turnPhase !== 'idle');
+            btnRoll.disabled = !isMyTurn || movingOrRolling;
+            btnRoll.innerText = isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
+        }
+
         function applySyncGameState(data) {
             if (data.players) {
                 data.players.forEach((pSync, idx) => {
@@ -4582,21 +4628,15 @@
                 currentPlayerIndex = data.currentPlayerIndex;
                 let activePlayer = players[currentPlayerIndex];
                 document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
-
-                let btnRoll = document.getElementById('btnRoll');
-                if (btnRoll) {
-                    let isMyTurn = isOnlineMode ? (myPlayerIndex === currentPlayerIndex) : activePlayer.isHuman;
-                    let movingOrRolling = (isMoving || isRolling || isEventResolving || turnPhase !== 'idle');
-                    btnRoll.disabled = !isMyTurn || movingOrRolling;
-                    btnRoll.innerText = isSubRollPending ? '🎲 サイコロを振る！' : '🎲 移動！';
-                }
             }
+            refreshRollButtonState();
 
             if (data.eventTitle) document.getElementById('currentEventTitle').innerText = data.eventTitle;
             if (data.eventDesc) document.getElementById('currentEventDesc').innerText = data.eventDesc;
             if (data.eventEffect) document.getElementById('currentEventEffect').innerText = data.eventEffect;
 
             handleSyncBranchRequest(data.branchRequest);
+            refreshRollButtonState();
             updateItemUI();
             if (isOnlineMode && !isHost) {
                 showEventTapHint(isEventResolving && myPlayerIndex === currentPlayerIndex);
