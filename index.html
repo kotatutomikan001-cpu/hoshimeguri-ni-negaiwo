@@ -562,8 +562,8 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-6 ・ 555,232 bytes</div>
-        <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-7 ・ 556,132 bytes</div>
+        <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
@@ -854,6 +854,7 @@
     <audio id="endingKataruBgmAudio" src="ending_kataru_bgm.mp3" preload="auto"></audio>
     <audio id="endingTomokoBgmAudio" src="ending_tomoko_bgm.mp3" preload="auto"></audio>
     <audio id="endingTalkBgmAudio" src="ending_talk_bgm.mp3" preload="auto" loop></audio>
+    <audio id="titleBgmAudio" src="title_bgm.mp3" loop preload="auto"></audio>
     <audio id="titleGoldBgmAudio" src="title_gold_bgm.mp3" loop preload="auto"></audio>
 
     <!-- 🛠️ デバッグモーダル -->
@@ -2514,7 +2515,7 @@
                         if (activeEl && !activeEl.paused && activeEl.id !== 'gameBgmAudio') ensureBgmRoutingFor(activeEl); // ゲームBGMは経由化しない（2026-11-19 ブツブツ対策）
                     }
                 } catch (e) {}
-                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
+                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
                     let el = document.getElementById(id);
                     if (!el) return;
                     let g = bgmGains[id];
@@ -2579,6 +2580,9 @@
                     } else if (activeBgm === 'endingTalk') {
                         const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
                         if (endingTalkAudio && endingTalkAudio.paused) { endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                    } else if (activeBgm === 'title') {
+                        const titleAudio = document.getElementById('titleBgmAudio');
+                        if (titleAudio && titleAudio.paused) { titleAudio.volume = bgmGains[titleAudio.id] ? 1 : currentBgmVolume; titleAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'titleGold') {
                         const titleGoldAudio = document.getElementById('titleGoldBgmAudio');
                         if (titleGoldAudio && titleGoldAudio.paused) { titleGoldAudio.volume = bgmGains[titleGoldAudio.id] ? 1 : currentBgmVolume; titleGoldAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
@@ -2789,7 +2793,7 @@
             } catch (e) { /* 経由できない環境では従来の volume 制御のまま */ }
         }
         function bgmElementFor(kind) {
-            let map = { select: 'selectBgmAudio', game: 'gameBgmAudio', ending: 'endingBgmAudio', endingUtsuro: 'endingUtsuroBgmAudio', endingKataru: 'endingKataruBgmAudio', endingTomoko: 'endingTomokoBgmAudio', endingTalk: 'endingTalkBgmAudio', titleGold: 'titleGoldBgmAudio' };
+            let map = { select: 'selectBgmAudio', game: 'gameBgmAudio', ending: 'endingBgmAudio', endingUtsuro: 'endingUtsuroBgmAudio', endingKataru: 'endingKataruBgmAudio', endingTomoko: 'endingTomokoBgmAudio', endingTalk: 'endingTalkBgmAudio', title: 'titleBgmAudio', titleGold: 'titleGoldBgmAudio' };
             return document.getElementById(map[kind] || 'selectBgmAudio');
         }
         // 🔊 セリフの fx「se:<名前>」で、その行の表示と同時に se_<名前>.mp3 を1回鳴らす（会話専用SE）
@@ -2838,7 +2842,7 @@
         }
 
         function stopAllBgm() {
-            ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
+            ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
                 let a = document.getElementById(id);
                 if (a) { try { a.pause(); } catch (e) {} }
             });
@@ -2848,12 +2852,10 @@
             clearBgmFxMute();
             let tsEl = document.getElementById('titleScreen');
             let titleVisible = !!(tsEl && !tsEl.classList.contains('hidden'));
-            // トゥルーエンド未解放の間は、タイトル画面表示中は無音にする（曲はオープニングトークが始まる時に流れ始める）
-            if (!isTrueSeen() && titleVisible) { stopAllBgm(); return; }
-            // 神無月（金色タイトル専用BGM）は「タイトル画面が表示されている間だけ」。
+            // タイトル専用BGMは「タイトル画面が表示されている間だけ」：紫タイトル＝「星めぐりに願いを」(title_bgm.mp3)、
+            // 金色タイトル＝「星めぐりに願いを（希望の光remix）」(title_gold_bgm.mp3)。2026-11-21 に差し替え（旧仕様：紫は無音／金は神無月）。
             // タイトルを閉じた先（オープニング／ルール説明／キャラ選択など）では通常の選択画面BGMに切り替える。
-            // 以前は isTrueSeen() だけで決めていたため、金色タイトル後は神無月が先の画面でも流れ続けていた（2026-11-17 修正）
-            activeBgm = (isTrueSeen() && titleVisible) ? 'titleGold' : 'select';
+            activeBgm = titleVisible ? (isTrueSeen() ? 'titleGold' : 'title') : 'select';
             attemptPlayBgm();
         }
 
@@ -2884,6 +2886,8 @@
             if (tma) tma.addEventListener('error', () => { if (activeBgm === 'endingTomoko') { activeBgm = 'ending'; attemptPlayBgm(); } }, true);
             const ta = document.getElementById('endingTalkBgmAudio');
             if (ta) ta.addEventListener('error', () => { if (activeBgm === 'endingTalk') { activeBgm = 'game'; attemptPlayBgm(); } }, true);
+            const tba = document.getElementById('titleBgmAudio');
+            if (tba) tba.addEventListener('error', () => { if (activeBgm === 'title') { activeBgm = 'select'; attemptPlayBgm(); } }, true);
             const tga = document.getElementById('titleGoldBgmAudio');
             if (tga) tga.addEventListener('error', () => { if (activeBgm === 'titleGold') { activeBgm = 'select'; attemptPlayBgm(); } }, true);
         })();
@@ -2896,6 +2900,7 @@
             const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
             const endingTomokoAudio = document.getElementById('endingTomokoBgmAudio');
             const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
+            const titleAudio = document.getElementById('titleBgmAudio');
             const titleGoldAudio = document.getElementById('titleGoldBgmAudio');
 
             if (!selectAudio || !gameAudio) return;
@@ -2908,6 +2913,7 @@
             if (endingKataruAudio) endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : bgmVolFor(endingKataruAudio.id);
             if (endingTomokoAudio) endingTomokoAudio.volume = bgmGains[endingTomokoAudio.id] ? 1 : bgmVolFor(endingTomokoAudio.id);
             if (endingTalkAudio) endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume;
+            if (titleAudio) titleAudio.volume = bgmGains[titleAudio.id] ? 1 : currentBgmVolume;
             if (titleGoldAudio) titleGoldAudio.volume = bgmGains[titleGoldAudio.id] ? 1 : currentBgmVolume;
 
             let target = gameAudio;
@@ -2917,6 +2923,7 @@
             else if (activeBgm === 'endingKataru' && endingKataruAudio) target = endingKataruAudio;
             else if (activeBgm === 'endingTomoko' && endingTomokoAudio) target = endingTomokoAudio;
             else if (activeBgm === 'endingTalk' && endingTalkAudio) target = endingTalkAudio;
+            else if (activeBgm === 'title' && titleAudio) target = titleAudio;
             else if (activeBgm === 'titleGold' && titleGoldAudio) target = titleGoldAudio;
             // 🔊 iPhoneのSafariは audio要素の volume 変更を無視するので、再生する曲はその場でWebAudioゲイン経由にして
             //    オプションで設定した音量を効かせる（タイトルで音量を下げてもオープニングが大きい問題の対策）
@@ -2932,7 +2939,7 @@
                 }
             } catch (e) {}
             if (bgmGains[target.id]) { try { bgmGains[target.id].gain.value = bgmVolFor(target.id); } catch (e) {} }
-            let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTomokoAudio, endingTalkAudio, titleGoldAudio].filter(a => a && a !== target);
+            let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTomokoAudio, endingTalkAudio, titleAudio, titleGoldAudio].filter(a => a && a !== target);
             others.forEach(a => { a.pause(); a.currentTime = 0; });
             // スマホ対策：タップで保留になっていた play() が遅れて効くと、止めたはずの前のBGMが被って再生されることがある。
             // 少し置いてから「今鳴らすべき曲以外」をもう一度止め直す（その間に曲が切り替わっていたら、新しい対象は止めない）
@@ -5701,7 +5708,7 @@
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
-            [['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span></div>'; });
+            [['星めぐりに願いを', ''], ['星めぐりに願いを（希望の光remix）', ''], ['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + (sm[1] ? ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span>' : '') + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             let maskReplayMembers = endingReplayActive; // エンディングリスト再生時は「今回の対戦メンバー」を優勝者以外ーーーにする（2026-11-19 ユーザー指定。当初は汎用のみ→全エンドに拡大）
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + ((maskReplayMembers && pl !== winner) ? 'ーーー' : pl.name + (pl.isHuman ? '' : '（CPU）')) + '</div>'; });
