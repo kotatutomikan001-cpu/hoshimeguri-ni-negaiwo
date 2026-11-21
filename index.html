@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-8 ・ 556,384 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-9 ・ 556,684 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5677,7 +5677,7 @@
         let staffRollVh = 800;
         let staffRollTextTargetY = 0;
         let staffRollY = 0; // JSが保持する本文の現在位置（transformと常時一致させる）
-        let staffRollSpeed = 60; // 現在のスクロール速度 px/s（スキップ1回目で900）
+        let staffRollSpeed = 48; // 現在のスクロール速度 px/s（スキップ1回目で900。2026-11-21 ユーザー要望で 60→48 に少し遅くした）
         let staffRollRaf = null;
         let staffRollAnchorTs = 0; // 位置の基準時刻（rAF のタイムスタンプと同じ時計）
         let staffRollAnchorY = 0; // 基準時刻における本文位置
@@ -5700,12 +5700,14 @@
             h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-2 tracking-[.4em]">〜 スタッフロール 〜</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
-            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + c.name + '</div>'; });
-            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">学園長</div>';
+            // 出演はアニメの声優クレジット風に「左に小さく役名／右に出演者名」の2列にする（2026-11-21 ユーザー指定。今回は全員、左右とも同じ名前）
+            let castRow = (nm) => '<div class="' + castLead + '" style="display:flex;align-items:baseline;justify-content:space-between;width:min(430px,86%);margin:0 auto;"><span class="text-xs sm:text-sm font-bold text-purple-200">' + nm + '</span><span class="text-lg sm:text-xl font-bold text-white">' + nm + '</span></div>';
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { h += castRow(c.name); });
+            h += castRow('学園長');
             let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
-            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (kataruInRoll ? '繰言かたる' : '？？？') + '</div>';
-            h += '<div class="text-lg sm:text-xl font-bold text-white ' + castLead + '">' + (tomokoInRoll ? 'トモコ' : '？？？') + '</div>';
+            h += castRow(kataruInRoll ? '繰言かたる' : '？？？');
+            h += castRow(tomokoInRoll ? 'トモコ' : '？？？');
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
@@ -5753,7 +5755,7 @@
         function runStaffRollMotion() {
             staffRollFast = false;
             staffRollFastSeg = null;
-            staffRollSpeed = 60;
+            staffRollSpeed = 48;
             staffRollMotionAt = Date.now();
             let inner = document.getElementById('staffRollInner');
             let finale = document.getElementById('staffRollFinale');
