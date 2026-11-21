@@ -441,7 +441,7 @@
                 </div>
 
                 <!-- キャラクター選択枠 -->
-                <div class="text-xs font-bold text-purple-200 mb-1.5 text-left border-t border-purple-900 pt-2">🎨 あなたのキャラクター:</div>
+                <div class="text-xs font-bold text-purple-200 mb-1.5 text-left border-t border-purple-900 pt-2">あなたのキャラクター:</div>
                 <div class="flex items-center gap-2 mb-1">
                     <div class="relative w-11 h-11 rounded overflow-hidden bg-indigo-950 border border-purple-500 flex-none">
                         <img id="lobbyMyCharIcon" class="absolute inset-0 w-full h-full object-cover hidden" alt="">
@@ -451,7 +451,7 @@
                         <div id="lobbyMyCharName" class="text-sm font-black text-white truncate">氷室うつろ</div>
                         <div class="text-[10px] font-bold text-purple-300">全16キャラから選べます</div>
                     </div>
-                    <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">🎮 キャラを選ぶ</button>
+                    <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">キャラを選ぶ</button>
                 </div>
                 <div id="lobbyPickedList" class="text-left"></div>
             </div>
@@ -461,7 +461,7 @@
                     ゲームを開始する (残りをCPUで補う)
                 </button>
                 <button onclick="leaveOnlineLobby()" class="pixel-btn py-1.5 px-3 font-bold text-xs text-gray-300 rounded bg-slate-800 hover:bg-slate-700 border border-gray-600 cursor-pointer">
-                    🚪 部屋を退出する
+                    部屋を退出する
                 </button>
             </div>
         </div>
@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-13 ・ 557,187 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-17 ・ 557,173 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -599,7 +599,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">🌳 ゴール（星の大樹）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、大樹への道が選べます。⬇️ 大樹へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は評価点で決まります。<br>評価点 ＝ 星のカケラ × 5,000 ＋ リスナー数<br>早くゴールした人にはボーナスがあります（1位は星のカケラ+1個とリスナー+1,500人／2位 リスナー+1,000人／3位 リスナー+500人）。</div></div>
-            <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">わかった！</button></div>
+            <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">ゲームスタート</button></div>
         </div>
     </div>
     <div id="endingListOverlay" class="hidden fixed inset-0 z-[100005] p-4 overflow-y-auto" style="background:linear-gradient(180deg,#1e1b4b,#312e81 55%,#4c1d95);">
@@ -686,7 +686,7 @@
                 </button>
                 <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500"><span class="flex-1 border-t border-slate-700"></span>または<span class="flex-1 border-t border-slate-700"></span></div>
                 <button onclick="startRandomMatch()" class="pixel-btn py-2 px-4 font-bold text-sm text-white rounded bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 cursor-pointer">
-                    🎲 ランダムマッチ
+                    ランダムマッチ
                 </button>
                 <p class="text-[10px] text-gray-400 font-bold -mt-1">部屋コードなしで、今オンラインで待っている誰かと対戦します</p>
                 <button onclick="closeRoomCodeModal()" class="text-xs text-gray-400 hover:text-white mt-1">
