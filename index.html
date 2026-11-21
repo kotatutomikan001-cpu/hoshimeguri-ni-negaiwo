@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-7 ・ 556,132 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-8 ・ 556,384 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1301,7 +1301,8 @@
         }
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
-        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST); return v; }
+        const SELECT_BGM_FACTOR = 0.8; // キャラ選択まわりのBGM（select_bgm）だけ少し控えめにする（2026-11-21 ユーザー要望「少し下げたい」）
+        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST); return v; }
         let audioUnlocked = false;
         let activeBgm = 'select';
         let audioCtx = null;
@@ -2560,7 +2561,7 @@
 
                 if (!bgmMutedByFx) {
                     if (selectAudio && activeBgm === 'select' && selectAudio.paused) {
-                        selectAudio.volume = bgmGains[selectAudio.id] ? 1 : currentBgmVolume;
+                        selectAudio.volume = bgmGains[selectAudio.id] ? 1 : bgmVolFor(selectAudio.id);
                         selectAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
                     } else if (gameAudio && activeBgm === 'game' && gameAudio.paused) {
                         gameAudio.volume = bgmGains[gameAudio.id] ? 1 : currentBgmVolume;
@@ -2906,7 +2907,7 @@
             if (!selectAudio || !gameAudio) return;
             if (bgmMutedByFx) return; // fxで消音中は再開しない（曲の切り替え時は playSelectBgm/playGameBgm/playEndingBgm が解除してから来る）
 
-            selectAudio.volume = bgmGains[selectAudio.id] ? 1 : currentBgmVolume;
+            selectAudio.volume = bgmGains[selectAudio.id] ? 1 : bgmVolFor(selectAudio.id);
             gameAudio.volume = bgmGains[gameAudio.id] ? 1 : currentBgmVolume;
             if (endingAudio) endingAudio.volume = bgmGains[endingAudio.id] ? 1 : currentBgmVolume;
             if (endingUtsuroAudio) endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume;
