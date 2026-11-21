@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-24 ・ 566,882 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-25 ・ 567,202 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -856,7 +856,8 @@
     <audio id="endingTomokoBgmAudio" src="ending_tomoko_bgm.mp3" preload="auto"></audio>
     <audio id="endingTalkBgmAudio" src="ending_talk_bgm.mp3" preload="auto" loop></audio>
     <audio id="titleBgmAudio" src="title_bgm.mp3" loop preload="auto"></audio>
-    <audio id="titleGoldBgmAudio" src="title_gold_bgm.mp3" loop preload="auto"></audio>
+    <!-- src の ?v=remix はキャッシュ対策：ファイル名が同じまま中身（神無月→希望の光remix）を差し替えたため、端末に残った古いキャッシュを読み続けないようURLを変えている。今後また同名で差し替える時はこの目印を変える -->
+    <audio id="titleGoldBgmAudio" src="title_gold_bgm.mp3?v=remix" loop preload="auto"></audio>
 
     <!-- 🛠️ デバッグモーダル -->
     <div id="debugModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-[100000] hidden">
