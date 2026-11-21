@@ -11,6 +11,16 @@
     <meta name="apple-mobile-web-app-title" content="星めぐりに願いを">
     <meta name="theme-color" content="#d8b4fe">
     <title>星めぐりに願いを</title>
+    <meta name="description" content="星のカケラを集めて願いを叶える、最大4人対応のオンラインすごろくゲーム。星めぐり学園のライバーさんたちと一緒に遊ぼう！">
+    <meta property="og:title" content="星めぐりに願いを">
+    <meta property="og:description" content="星のカケラを集めて願いを叶える、最大4人対応のオンラインすごろくゲーム。星めぐり学園のライバーさんたちと一緒に遊ぼう！">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kotatutomikan001-cpu.github.io/hoshimeguri-ni-negaiwo/">
+    <meta property="og:image" content="https://kotatutomikan001-cpu.github.io/hoshimeguri-ni-negaiwo/ogp.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="星めぐりに願いを">
+    <meta name="twitter:description" content="星のカケラを集めて願いを叶える、最大4人対応のオンラインすごろくゲーム。星めぐり学園のライバーさんたちと一緒に遊ぼう！">
+    <meta name="twitter:image" content="https://kotatutomikan001-cpu.github.io/hoshimeguri-ni-negaiwo/ogp.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS for Multi-device Online Matching -->
@@ -552,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-1 ・ 553,235 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-6 ・ 555,232 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 神無月～オルゴールver.～</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2635,10 +2645,10 @@
         }
 
         // ===== キャラボイス（キャラ選択／リスナー増減／カケラを取られた時） =====
-        // char_assets/voice/<id>_<場面><番号>.mp3（場面: select/plus/minus/stolen、番号1〜4）があれば、その中からランダムで1つ再生する。無い場合は無音。
+        // char_assets/voice/<id>_<場面><番号>.mp3（場面: select/plus/minus/stolen/guard、番号1〜4）があれば、その中からランダムで1つ再生する。無い場合は無音。
         // 旧形式の <id>_plus.mp3 / <id>_minus.mp3 も互換として使う（番号付きが無い時だけ）。
         const charVoiceFiles = {};
-        const VOICE_KINDS = ['select', 'plus', 'minus', 'stolen'];
+        const VOICE_KINDS = ['select', 'plus', 'minus', 'stolen', 'guard'];
         const VOICE_VARIANTS = 4;
         // 🔊 ボイスは起動時に全員分（288ファイル）を読み込まない。必要になったキャラ・場面の分だけ
         //    その場で読み込む遅延方式にして、スマホの起動を軽く保つ（2026-11-18 実機で起動が重くなったため）
@@ -4414,6 +4424,9 @@
                     }
                 });
             }
+
+            // 🌳 最初のゴールで大樹が茂る：ゲスト側は同期で誰かの finished を見たら茂らせる
+            if (!isHost && players.some(pl => pl.finished)) treeBloomed = true;
 
             // 全員ゴール時：ホストは handlePlayerGoal 側でエンディングへ進むが、ゲストは状態同期だけでは
             // 進まないため、全員 finished を検知したらゲストも自分でエンディングへ進む（1回だけ）
@@ -6344,27 +6357,6 @@
                 fxToks.forEach(t => { if (t.indexOf('se:') === 0) playDialogueSe(t.slice(3)); });
                 if (fxToks.includes('dust') || isStardustReturnLine(line)) startOpeningDust(); // 一度出たら会話シーンが終わるまで流れ続ける（かたるエンドの星屑を長く見せるため。2026-11-20 ユーザー指定）。停止はシーン終了時（clearOpeningBg等）で行う
             }
-            document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
-            let txEl = document.getElementById('openingText');
-            stopOpeningType(false);
-            openingTypeFull = line.text || '';
-            let typeChars = Array.from(openingTypeFull);
-            if (typeChars.length === 0) {
-                txEl.innerHTML = '';
-                openingTypeDone = true;
-            } else {
-                openingTypeDone = false;
-                let shown = 0;
-                txEl.innerHTML = '';
-                let typeSpeed = fxToks.includes('slow') ? 100 : 45;
-                openingTypeTimer = setInterval(() => {
-                    shown++;
-                    txEl.innerHTML = dialogueTextHtml(typeChars.slice(0, shown).join(''));
-                    if (shown >= typeChars.length) { stopOpeningType(false); scheduleOpeningAuto(); }
-                }, typeSpeed);
-            }
-            txEl.classList.toggle('italic', isNarr);
-            txEl.classList.toggle('text-purple-100', isNarr);
             let fWrap = document.getElementById('openingFaceWrap');
             let fImg = document.getElementById('openingFaceImg');
             let fPh = document.getElementById('openingFacePh');
@@ -6399,6 +6391,30 @@
                     }
                 }
             }
+            let txEl = document.getElementById('openingText');
+            // 話者アイコンの有無で本文の幅が変わる行では、先にレイアウトだけ確定させてから本文を差し替える
+            // （iPhone Safari で前の行の文字が一瞬残る二重描画を抑えるため）
+            void txEl.offsetWidth;
+            document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
+            stopOpeningType(false);
+            openingTypeFull = line.text || '';
+            let typeChars = Array.from(openingTypeFull);
+            if (typeChars.length === 0) {
+                txEl.innerHTML = '';
+                openingTypeDone = true;
+            } else {
+                openingTypeDone = false;
+                let shown = 0;
+                txEl.innerHTML = '';
+                let typeSpeed = fxToks.includes('slow') ? 100 : 45;
+                openingTypeTimer = setInterval(() => {
+                    shown++;
+                    txEl.innerHTML = dialogueTextHtml(typeChars.slice(0, shown).join(''));
+                    if (shown >= typeChars.length) { stopOpeningType(false); scheduleOpeningAuto(); }
+                }, typeSpeed);
+            }
+            txEl.classList.toggle('italic', isNarr);
+            txEl.classList.toggle('text-purple-100', isNarr);
             updateAutoBtn();
             scheduleOpeningAuto();
         }
@@ -7269,6 +7285,7 @@
             if (victim) {
                 let guard = consumeStealGuard(victim);
                 if (guard) {
+                    playCharVoice(victim.char, 'guard'); // 盾で守った側のボイス（<id>_guard<n>.mp3、無ければ無音）
                     updateItemUI();
                     let guardDesc = guard.left > 0
                         ? `${p.name}さんが同じマスにいた${victim.name}さんから星のカケラを奪おうとしたが、${guard.name}がカケラを守った！（${guard.name}はあと${guard.left}回）`
@@ -7471,6 +7488,7 @@
             p.finished = true;
             finishedRankCount++;
             p.rank = finishedRankCount;
+            treeBloomed = true; // 🌳 最初のゴールで星の大樹が茂る（2026-11-21 ユーザー指定）
 
             let bonus = goalBonuses[p.rank] || 500;
             p.listeners += bonus;
