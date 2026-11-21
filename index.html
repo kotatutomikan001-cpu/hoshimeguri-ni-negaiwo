@@ -563,7 +563,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-4 ・ 573,925 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-5 ・ 581,815 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1207,6 +1207,11 @@
         let currentTurnNumber = 1;
         const GOAL_DEADLINE_DAYS = 10; // ⌛ 最初のゴールから何日でゲームを締めるか
         let goalDeadlineDay = null;
+        // 🎲 順番決め（開始前に全員でサイコロを振り、大きい目順に手番を決める）
+        let pendingOrderRolls = null;   // 確定した順番順の出目 [{roll}, ...]（players の並びと対応）
+        let orderRollOffPending = false; // ルール確認後に順番決めの表示が残っているか
+        let orderRollOffShowing = false; // 順番決めの表示中か（二重表示防止）
+        let onlineSeatOrder = null;      // ホスト用：[手番順の位置] = 席番号（順番決めで並べ替えた対応表）
         let deadlineEndTriggered = false;
         let allFinishedEndingTriggered = false;
         let currentDiceVal = 1; // 🎲 同期用出目変数
@@ -3602,6 +3607,15 @@
             players[2].isHuman = false;
             players[3].isHuman = false;
 
+            // 🎲 順番決め：全員でサイコロを振って、大きい目順に並べ替える（1P固定の先手有利をなくす）
+            {
+                let ord = computePlayOrder(4);
+                let reordered = ord.order.map(i => players[i]);
+                reordered.forEach((p, i) => { p.id = i; players[i] = p; });
+                pendingOrderRolls = ord.rolls.map(roll => ({ roll }));
+                orderRollOffPending = true;
+            }
+
             document.getElementById('charSelectModal').classList.add('hidden');
             document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
             playGameBgm();
@@ -3616,14 +3630,16 @@
             currentDiceVal = 1;
             drawDice(1);
             document.getElementById('turnCounter').innerText = turnCounterText();
-            let activePlayer = players[0];
-            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
-            document.getElementById('currentEventTitle').innerText = '【スタート！】';
-            document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
-            
+            applyHudNames();
+            updateFragmentUI();
+            // 先手は順番決めで決まるため、ここでは手番表示にせず、ルール確認後に順番決めを表示する
+            document.getElementById('activePlayerTag').innerText = '🎲 順番決め';
+            document.getElementById('currentEventTitle').innerText = '【🎲 順番決め】';
+            document.getElementById('currentEventDesc').innerText = 'オープニングの後に、全員でサイコロを振って順番を決めます！';
+
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
-                btnRoll.disabled = false;
+                btnRoll.disabled = true;
                 btnRoll.innerText = '🎲 移動！';
             }
             cpuGameActive = true;
@@ -3983,20 +3999,20 @@
                         }
                     } else if (data.type === 'ACTION_ROLL') {
                         // 送信者は申告値ではなく、接続時に固定した番号（senderPIdx）で確定する
-                        let senderIndex = senderPIdx(conn);
-                        if (senderIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice && turnPhase === 'idle') {
+                        let senderIndex = senderPlayIndex(conn);
+                        if (!orderRollOffPending && senderIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice && turnPhase === 'idle') {
                             executeRollForCurrentPlayer();
                         } else {
                             broadcastGameState(true); // 受け付けなかった場合も最新状態を返してゲスト側のロックを解除する
                         }
                     } else if (data.type === 'ACTION_ADVANCE') {
                         // イベント結果の「タップで進む」を、本人の端末からのタップで受け取る
-                        let senderIndex = senderPIdx(conn);
+                        let senderIndex = senderPlayIndex(conn);
                         if (senderIndex === currentPlayerIndex && eventAdvanceTapFn && eventAdvanceRemote) {
                             eventAdvanceTapFn();
                         }
                     } else if (data.type === 'ACTION_USE_ITEM') {
-                        let senderIndex = senderPIdx(conn);
+                        let senderIndex = senderPlayIndex(conn);
                         if (senderIndex === currentPlayerIndex) {
                             if (data.cheatValue) applyCheatDice(senderIndex, data.itemName, data.cheatValue);
                             else applyUseItem(senderIndex, data.itemIndex, data.itemName);
@@ -4004,7 +4020,7 @@
                             broadcastGameState(true);
                         }
                     } else if (data.type === 'ACTION_BRANCH') {
-                        let senderIndex = senderPIdx(conn);
+                        let senderIndex = senderPlayIndex(conn);
                         if (pendingBranchResolver && pendingBranchInfo && senderIndex === pendingBranchInfo.playerIndex && pendingBranchInfo.candidateTileIdxs.includes(data.tileIdx)) {
                             if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
                             let resolver = pendingBranchResolver;
@@ -4088,6 +4104,13 @@
                             applyHudNames();
                         }
 
+                        // 🎲 順番決めはホストが決めて配布する：自分の新しい番号と、全員の出目を受け取る
+                        if (data.yourIndex !== undefined && data.yourIndex !== null) myPlayerIndex = data.yourIndex;
+                        if (data.orderRolls) {
+                            pendingOrderRolls = data.orderRolls.map(roll => ({ roll }));
+                            orderRollOffPending = true;
+                        }
+
                         currentPlayerIndex = 0;
                         currentTurnNumber = 1;
                         goalDeadlineDay = null; deadlineEndTriggered = false; allFinishedEndingTriggered = false;
@@ -4103,7 +4126,7 @@
                         let btnRoll = document.getElementById('btnRoll');
                         if (btnRoll) {
                             btnRoll.innerText = '🎲 移動！';
-                            btnRoll.disabled = (myPlayerIndex !== 0);
+                            btnRoll.disabled = orderRollOffPending ? true : (myPlayerIndex !== 0);
                         }
                         playOpening();
                     } else if (data.type === 'GAME_STATE_UPDATE') {
@@ -4123,6 +4146,8 @@
         // 接続からプレイヤー番号を引く。番号は接続時に固定した __pIdx を使い、配列の位置からは決めない
         // （切断した接続を配列から外しても、残りの接続の番号がずれないようにするため）
         function senderPIdx(conn) { if (!conn) return -1; if (conn.__pIdx) return conn.__pIdx; let i = peerConnections.indexOf(conn); return i === -1 ? -1 : i + 1; }
+        // 対戦中のプレイヤー番号（手番順の並び）で送信者を特定する。席番号とは順番決めの並べ替え分だけずれる
+        function senderPlayIndex(conn) { let seat = senderPIdx(conn); if (seat < 0) return -1; if (onlineSeatOrder) { let i = onlineSeatOrder.indexOf(seat); if (i !== -1) return i; } return seat; }
         // その枠が「人間の参加者」かどうか。人数からの連番推定（i <= ゲスト数）は、途中退出で枠に空きがあると
         // 実在のゲストをCPU扱いしてしまうため使わない。ホストは生きている接続の有無、ゲストはロビー同期の登録有無で判定する
         function isLobbySlotHuman(i) {
@@ -4296,24 +4321,38 @@
 
             let usedChars = [];
             let liveGuests = liveGuestCount();
-            let playerConfigs = [0, 1, 2, 3].map(idx => {
-                let chosenChar = onlineMemberChars[idx];
-                // 人間かどうかは「その枠に生きている接続があるか」で判定する（人数からの連番推定だと、
-                // 途中退出で枠に空きがある時に本物のゲストをCPU扱いしてしまう。2026-11-22 対処）
-                let isHuman = idx === 0 || peerConnections.some(c => c && c.open && !c.__dead && senderPIdx(c) === idx);
-
-                if (!chosenChar || usedChars.includes(chosenChar)) {
-                    let available = normalCharIds().filter(c => !usedChars.includes(c) && !usedChars.includes(csPairOf(c)));
-                    chosenChar = available[0] || 'mikado';
-                }
-                usedChars.push(chosenChar);
-
-                return {
-                    char: chosenChar,
-                    isHuman: isHuman,
-                    userName: isHuman ? (onlineMemberNames[idx] || '') : ''
-                };
+            // 人間かどうかは「その枠に生きている接続があるか」で判定する（人数からの連番推定だと、
+            // 途中退出で枠に空きがある時に本物のゲストをCPU扱いしてしまう。2026-11-22 対処）
+            let playerConfigs = [0, 1, 2, 3].map(idx => ({
+                char: null,
+                isHuman: idx === 0 || peerConnections.some(c => c && c.open && !c.__dead && senderPIdx(c) === idx),
+                userName: ''
+            }));
+            // キャラ割り当ては2段階：まず人間の希望を確定させてから、CPU枠を残りで埋める
+            // （席順に埋めると、空き枠のCPUが後ろの席のゲストの希望キャラを先取りしてしまうため）
+            [true, false].forEach(wantHuman => {
+                [0, 1, 2, 3].forEach(idx => {
+                    let cfg = playerConfigs[idx];
+                    if (cfg.isHuman !== wantHuman) return;
+                    let chosenChar = onlineMemberChars[idx];
+                    if (!chosenChar || usedChars.includes(chosenChar)) {
+                        let available = normalCharIds().filter(c => !usedChars.includes(c) && !usedChars.includes(csPairOf(c)));
+                        chosenChar = available[0] || 'mikado';
+                    }
+                    usedChars.push(chosenChar);
+                    cfg.char = chosenChar;
+                    cfg.userName = cfg.isHuman ? (onlineMemberNames[idx] || '') : '';
+                });
             });
+
+            // 🎲 順番決め：全員でサイコロを振って、大きい目順に並べ替えてから配る（1P固定の先手有利をなくす）
+            let ord = computePlayOrder(4);
+            let seatOrder = ord.order; // seatOrder[新しい並びの位置] = 元の席番号
+            onlineSeatOrder = seatOrder;
+            playerConfigs = seatOrder.map(i => playerConfigs[i]);
+            pendingOrderRolls = ord.rolls.map(roll => ({ roll }));
+            orderRollOffPending = true;
+            myPlayerIndex = seatOrder.indexOf(0);
 
             playerConfigs.forEach((cfg, idx) => {
                 players[idx].char = cfg.char;
@@ -4330,9 +4369,10 @@
                 type: 'START_GAME',
                 playerConfigs: playerConfigs,
                 mapGrid: customMapGrid,
-                starTiles: starTileIdxs
+                starTiles: starTileIdxs,
+                orderRolls: ord.rolls
             };
-            peerConnections.forEach(c => { if (c.open) c.send(startPayload); });
+            peerConnections.forEach(c => { if (c.open) c.send({ ...startPayload, yourIndex: seatOrder.indexOf(senderPIdx(c)) }); });
 
             onlineGameStarted = true;
             document.getElementById('onlineLobbyModal').classList.add('hidden');
@@ -4357,7 +4397,7 @@
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) {
                 btnRoll.innerText = '🎲 移動！';
-                btnRoll.disabled = (myPlayerIndex !== 0);
+                btnRoll.disabled = orderRollOffPending ? true : (myPlayerIndex !== 0);
             }
             turnPhase = 'idle';
             startOnlineSupportLoops();
@@ -4381,7 +4421,7 @@
                     }
                     // 保険：自分の番で全ての状態が「サイコロ待ち」なのにボタンだけ無効なままなら、有効に戻して同期を取り直す
                     // （状態と表示が食い違って「自分の番なのにダイスが押せない」まま固まるのを防ぐ。2026-11-22 実機報告）
-                    if (onlineGameStarted && myPlayerIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && turnPhase === 'idle' && !isWaitingForBranchChoice) {
+                    if (onlineGameStarted && !orderRollOffPending && myPlayerIndex === currentPlayerIndex && !isRolling && !isMoving && !isEventResolving && turnPhase === 'idle' && !isWaitingForBranchChoice) {
                         let btn = document.getElementById('btnRoll');
                         if (btn && btn.disabled) {
                             refreshRollButtonState();
@@ -4399,6 +4439,7 @@
         // 🐶 ホスト側ウォッチドッグ: 止まったら自動復旧する
         function runHostWatchdog() {
             if (!isOnlineMode || !isHost) return;
+            if (orderRollOffPending) return; // 順番決めが終わるまでは対戦開始前なので何もしない
             if (!players || players.length === 0) return;
             if (players.every(p => p.finished)) return;
             let active = players[currentPlayerIndex];
@@ -4449,21 +4490,22 @@
                 if (mc) mc.innerText = `${liveGuestCount() + 1} / 4`;
                 return;
             }
-            let p = players[pIdx];
+            let playIdx = senderPlayIndex(conn); // 対戦中は手番順の番号で引く（席番号とは順番決め分ずれる）
+            let p = players[playIdx];
             if (p && p.isHuman) {
                 p.isHuman = false;
                 document.getElementById('currentEventTitle').innerText = '【📴 切断】';
                 document.getElementById('currentEventDesc').innerText = `${p.name}さんとの接続が切れたため、CPUが引き継ぎます。`;
                 document.getElementById('currentEventEffect').innerText = '-';
-                if (pendingBranchResolver && pendingBranchInfo && pendingBranchInfo.playerIndex === pIdx) {
+                if (pendingBranchResolver && pendingBranchInfo && pendingBranchInfo.playerIndex === playIdx) {
                     if (pendingBranchFallbackTimer) { clearTimeout(pendingBranchFallbackTimer); pendingBranchFallbackTimer = null; }
                     let r = pendingBranchResolver;
                     let info = pendingBranchInfo;
                     pendingBranchResolver = null;
                     pendingBranchInfo = null;
                     r(info.candidateTileIdxs.includes(altarTileIndex()) ? altarTileIndex() : info.candidateTileIdxs[0]);
-                } else if (currentPlayerIndex === pIdx && turnPhase === 'idle' && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice) {
-                    setTimeout(() => { if (currentPlayerIndex === pIdx && !players[pIdx].isHuman) cpuTakeTurn(); }, 800);
+                } else if (currentPlayerIndex === playIdx && turnPhase === 'idle' && !isRolling && !isMoving && !isEventResolving && !isWaitingForBranchChoice) {
+                    setTimeout(() => { if (currentPlayerIndex === playIdx && !players[playIdx].isHuman) cpuTakeTurn(); }, 800);
                 }
             }
             broadcastGameState(true);
@@ -6616,7 +6658,68 @@
             if (openingFromTitle) { openingFromTitle = false; showRulesPanel(); }
         }
         function showRulesPanel(midGame) { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.remove('hidden'); r.classList.add('flex'); } let b = document.getElementById('rulesCloseBtn'); if (b) b.innerText = midGame ? '閉じる' : 'ゲームスタート'; }
-        function hideRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.add('hidden'); r.classList.remove('flex'); } }
+        function hideRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.add('hidden'); r.classList.remove('flex'); } if (orderRollOffPending) showOrderRollOff(); }
+
+        // 🎲 順番決め：全員同時にサイコロを振り、大きい目順に並べる（同点の人だけ振り直して必ず順位を付ける）
+        function computePlayOrder(count) {
+            let vals = [];
+            for (let i = 0; i < count; i++) vals.push(1 + Math.floor(Math.random() * 6));
+            for (let guard = 0; guard < 50; guard++) {
+                let seen = {}, dup = new Set();
+                vals.forEach((v, i) => { if (seen[v] !== undefined) { dup.add(seen[v]); dup.add(i); } else seen[v] = i; });
+                if (dup.size === 0) break;
+                dup.forEach(i => { vals[i] = 1 + Math.floor(Math.random() * 6); });
+            }
+            let order = vals.map((v, i) => i).sort((a, b) => vals[b] - vals[a]);
+            return { order, rolls: order.map(i => vals[i]) };
+        }
+
+        // 🎲 順番決めの表示（ルール確認を閉じた直後に呼ばれる。全端末で同じ結果を表示する）
+        function showOrderRollOff() {
+            if (!pendingOrderRolls || orderRollOffShowing) return;
+            orderRollOffShowing = true;
+            let rolls = pendingOrderRolls;
+            let btnRoll = document.getElementById('btnRoll');
+            if (btnRoll) btnRoll.disabled = true;
+            document.getElementById('activePlayerTag').innerText = '🎲 順番決め';
+            document.getElementById('currentEventTitle').innerText = '【🎲 順番決め！】';
+            document.getElementById('currentEventDesc').innerText = '全員でサイコロを振って、目の大きい順に順番を決めます！';
+            document.getElementById('currentEventEffect').innerText = '🎲 サイコロを振っています…';
+            setTimeout(() => {
+                if (pendingOrderRolls !== rolls) return; // 既に確定済みなら古いタイマーは何もしない
+                document.getElementById('currentEventDesc').innerText = rolls.map((r, i) => `${playerLabel(players[i])}： ${r.roll}`).join(' ／ ');
+                document.getElementById('currentEventEffect').innerText = '順番： ' + rolls.map((r, i) => `${i + 1}番 ${players[i].name}`).join(' → ');
+                setTimeout(finishOrderRollOff, 2200);
+            }, 1200);
+        }
+
+        // 🎲 順番決めの終了：先手の手番表示にして対戦開始
+        function finishOrderRollOff() {
+            if (!orderRollOffPending) return;
+            orderRollOffPending = false;
+            orderRollOffShowing = false;
+            pendingOrderRolls = null;
+            // オンラインで、自分がルールを読んでいる間に他の人が先に進めていた場合は、表示だけ整える
+            let progressed = isOnlineMode && !isHost && (currentTurnNumber > 1 || players.some(p => (p.pos || 0) !== 0 || (p.listeners || 0) !== 1000 || (p.fragments || 0) > 0));
+            if (progressed) { refreshRollButtonState(); updateItemUI(); return; }
+            currentPlayerIndex = 0;
+            let activePlayer = players[0];
+            document.getElementById('activePlayerTag').innerText = `手番: ${playerLabel(activePlayer)}`;
+            document.getElementById('currentEventEffect').innerText = '-';
+            let btnRoll = document.getElementById('btnRoll');
+            if (activePlayer.isHuman) {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name}のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${playerLabel(activePlayer)}さんの番です。サイコロを振ってください。`;
+                if (btnRoll) { btnRoll.disabled = isOnlineMode ? (myPlayerIndex !== 0) : false; btnRoll.innerText = '🎲 移動！'; }
+            } else {
+                document.getElementById('currentEventTitle').innerText = `【${activePlayer.name} (CPU) のターン】`;
+                document.getElementById('currentEventDesc').innerText = `${activePlayer.name}が思考中...`;
+                if (btnRoll) btnRoll.disabled = true;
+                if (!isOnlineMode || isHost) setTimeout(() => { cpuTakeTurn(); }, 1500);
+            }
+            updateItemUI();
+            if (isOnlineMode && isHost) broadcastGameState(true);
+        }
 
         // 🖼️ PNG差し替え: 登録済みPNGがあればそれを描き、なければドット絵にフォールバック
         let charImageData = {}; // target -> dataURL（localStorage保存用）
