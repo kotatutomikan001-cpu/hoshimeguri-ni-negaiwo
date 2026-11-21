@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-12 ・ 556,882 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-13 ・ 557,187 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1302,7 +1302,8 @@
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
         const SELECT_BGM_FACTOR = 0.8; // キャラ選択まわりのBGM（select_bgm）だけ少し控えめにする（2026-11-21 ユーザー要望「少し下げたい」）
-        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST); return v; }
+        const ENDING_BGM_FACTOR = 1.25; // エンディング曲（スタッフロールの曲）を少しだけ大きくする（2026-11-21 ユーザー要望）
+        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingBgmAudio' || id === 'endingUtsuroBgmAudio') v = Math.min(1, v * ENDING_BGM_FACTOR); if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST * ENDING_BGM_FACTOR); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST * ENDING_BGM_FACTOR); return v; }
         let audioUnlocked = false;
         let activeBgm = 'select';
         let audioCtx = null;
@@ -5708,7 +5709,7 @@
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
             castRows.push(kataruInRoll ? '繰言かたる' : '？？？');
             castRows.push(tomokoInRoll ? 'トモコ' : '？？？');
-            h += '<div style="display:grid;grid-template-columns:1fr 1fr;width:min(560px,92%);margin:0 auto;align-items:baseline;">';
+            h += '<div style="display:grid;grid-template-columns:1fr 1fr;width:min(460px,90%);margin:0 auto;align-items:baseline;">';
             castRows.forEach(nm => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="text-align:center;">' + nm + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="text-align:center;">' + nm + '</span>'; });
             h += '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
