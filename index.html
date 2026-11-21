@@ -200,7 +200,8 @@
             </div>
 
             <!-- リスナー数比較 -->
-            <div class="flex items-center flex-none self-center select-none">
+            <div class="flex items-center gap-1.5 flex-none self-center select-none">
+                <button onclick="showRulesPanel(true)" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">📖 ルール</button>
                 <button onclick="openOptions()" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション</button>
             </div>
             <div class="hud-cards text-xs sm:text-sm font-bold">
@@ -562,7 +563,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-3 ・ 573,522 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-4 ・ 573,925 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -599,7 +600,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">🌳 ゴール（星の大樹）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、大樹への道が選べます。⬇️ 大樹へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は評価点で決まります。<br>評価点 ＝ 星のカケラ × 5,000 ＋ リスナー数<br>早くゴールした人にはボーナスがあります（1位は星のカケラ+1個とリスナー+1,500人／2位 リスナー+1,000人／3位 リスナー+500人）。</div></div>
-            <div class="text-center mt-6"><button onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">ゲームスタート</button></div>
+            <div class="text-center mt-6"><button id="rulesCloseBtn" onclick="hideRulesPanel()" class="px-8 py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-lg font-black rounded-full shadow-lg">ゲームスタート</button></div>
         </div>
     </div>
     <div id="endingListOverlay" class="hidden fixed inset-0 z-[100005] p-4 overflow-y-auto" style="background:linear-gradient(180deg,#1e1b4b,#312e81 55%,#4c1d95);">
@@ -6614,7 +6615,7 @@
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
             if (openingFromTitle) { openingFromTitle = false; showRulesPanel(); }
         }
-        function showRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.remove('hidden'); r.classList.add('flex'); } }
+        function showRulesPanel(midGame) { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.remove('hidden'); r.classList.add('flex'); } let b = document.getElementById('rulesCloseBtn'); if (b) b.innerText = midGame ? '閉じる' : 'ゲームスタート'; }
         function hideRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.add('hidden'); r.classList.remove('flex'); } }
 
         // 🖼️ PNG差し替え: 登録済みPNGがあればそれを描き、なければドット絵にフォールバック
