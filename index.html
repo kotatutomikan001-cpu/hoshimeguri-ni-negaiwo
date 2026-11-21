@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-17 ・ 557,173 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-18 ・ 558,774 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2543,9 +2543,12 @@
                 if (tsEl && !tsEl.classList.contains('hidden')) {
                     let tgt = ev && ev.target;
                     if (tgt && tgt.closest && tgt.closest('#trueEndBtnWrap')) return;
-                    let aEl0 = null;
-                    try { aEl0 = bgmElementFor(activeBgm); } catch (e) {}
-                    if (audioUnlocked && aEl0 && !aEl0.paused) return;
+                    // 「今流れている曲」ではなく「タイトル画面で流れるべき曲」が流れていない限り、選び直す。
+                    // （アプリ復帰などで選択画面BGMが流れっぱなしのままタイトルに戻ると、タイトル曲に切り替わらない不具合の対策。2026-11-21 実機報告）
+                    let wantKind = isTrueSeen() ? 'titleGold' : 'title';
+                    let wantEl = null;
+                    try { wantEl = bgmElementFor(wantKind); } catch (e) {}
+                    if (activeBgm === wantKind && audioUnlocked && wantEl && !wantEl.paused) return;
                     try { playSelectBgm(); } catch (e) {}
                     return;
                 }
@@ -2595,6 +2598,22 @@
             ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
                 window.addEventListener(evt, (e) => unlockAudio(e), { passive: true });
             });
+            // 📱 アプリに戻ってきた時（ホーム画面や他アプリから復帰）のBGM立て直し。
+            // iOSはバックグラウンドで再生を止めることがあり、復帰しても自動では再開しないため、
+            // タイトル表示中ならタイトル曲を選び直し、それ以外なら今の曲の再開を試みる（2026-11-21 実機報告への対策）
+            const resumeBgm = () => {
+                try {
+                    if (bgmMutedByFx) return;
+                    let tsEl = document.getElementById('titleScreen');
+                    if (tsEl && !tsEl.classList.contains('hidden')) { playSelectBgm(); return; }
+                    if (!audioUnlocked) return;
+                    let el = null;
+                    try { el = bgmElementFor(activeBgm); } catch (e) {}
+                    if (el && el.paused) attemptPlayBgm();
+                } catch (e) {}
+            };
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeBgm(); });
+            window.addEventListener('pageshow', () => { resumeBgm(); });
         }
 
         function playSe(type) {
