@@ -562,7 +562,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-11 ・ 556,936 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1121-12 ・ 556,882 bytes</div>
         <div id="titleGoldCredit" class="hidden absolute bottom-2 left-3 text-[10px] font-bold text-amber-900/50 select-none">♫ 星めぐりに願いを（希望の光remix）</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5708,8 +5708,8 @@
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
             castRows.push(kataruInRoll ? '繰言かたる' : '？？？');
             castRows.push(tomokoInRoll ? 'トモコ' : '？？？');
-            h += '<div style="display:grid;grid-template-columns:max-content max-content;justify-content:center;column-gap:1.4em;align-items:baseline;">';
-            castRows.forEach(nm => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="justify-self:end;text-align:right;">' + nm + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="justify-self:start;text-align:left;">' + nm + '</span>'; });
+            h += '<div style="display:grid;grid-template-columns:1fr 1fr;width:min(560px,92%);margin:0 auto;align-items:baseline;">';
+            castRows.forEach(nm => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="text-align:center;">' + nm + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="text-align:center;">' + nm + '</span>'; });
             h += '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
