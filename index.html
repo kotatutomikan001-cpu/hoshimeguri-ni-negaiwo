@@ -563,7 +563,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-5 ・ 581,815 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-6 ・ 582,862 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1316,6 +1316,14 @@
         let activeBgm = 'select';
         let audioCtx = null;
         let userGestured = false; // 初回のタップがあったか。AudioContextはタップ前に作るとiOSで止まったままになりやすいので、作るのはタップ以降だけにする
+        function newGameAudioContext() {
+            // 🔊 サンプルレートを 44100 に固定して作る。他アプリの音声再生や割り込みで iOS のハードウェア側レートが
+            //    切り替わると、既定レートで作った context では経由中の曲のピッチがずれて聞こえる（2026-11-22 実機報告：
+            //    他の操作を挟むとBGMのピッチが変わる）。レートを固定すれば context 内部の処理は常に一定になり、
+            //    ハードウェア側の変換は出力段だけで行われるため、ピッチが安定する。オプション未対応の環境では通常生成に落とす
+            let AC = window.AudioContext || window.webkitAudioContext;
+            try { return new AC({ sampleRate: 44100 }); } catch (e) { return new AC(); }
+        }
         function watchBgmCtx() {
             if (!audioCtx || audioCtx.__watched) return;
             audioCtx.__watched = true;
@@ -1338,7 +1346,7 @@
         }
         function kickAudioCtx() {
             try {
-                if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); watchBgmCtx(); }
+                if (!audioCtx) { audioCtx = newGameAudioContext(); watchBgmCtx(); }
                 if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             } catch (e) {}
         }
@@ -2548,7 +2556,7 @@
                 //    経由済みの曲は要素 volume ではなくゲイン側で音量を持つ（二重減衰を避けるため要素は 1 に保つ）。
                 try {
                     if (/^https?:$/.test(location.protocol) && !isSmartphoneAudio()) {
-                        if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+                        if (!audioCtx) { try { audioCtx = newGameAudioContext(); } catch (e) {} }
                         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                         let activeEl = bgmElementFor(activeBgm);
                         if (activeEl && !activeEl.paused && activeEl.id !== 'gameBgmAudio') ensureBgmRoutingFor(activeEl); // ゲームBGMは経由化しない（2026-11-19 ブツブツ対策）
@@ -2675,7 +2683,7 @@
 
         function playSe(type) {
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioCtx = newGameAudioContext();
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
@@ -2783,7 +2791,7 @@
         function routeElThroughGain(el, store) {
             try {
                 if (!/^https?:$/.test(location.protocol)) return null;
-                if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+                if (!audioCtx) { try { audioCtx = newGameAudioContext(); } catch (e) {} }
                 if (!audioCtx) return null;
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 if (audioCtx.state !== 'running') return null;
@@ -3014,7 +3022,7 @@
             //    context が動き出すまでは要素のまま鳴らし、running になった時点で watchBgmCtx が経由化を引き継ぐ。
             try {
                 if (/^https?:$/.test(location.protocol) && (isSmartphoneAudio() || target !== gameAudio)) {
-                    if (!audioCtx && userGestured) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); watchBgmCtx(); } catch (e) {} }
+                    if (!audioCtx && userGestured) { try { audioCtx = newGameAudioContext(); watchBgmCtx(); } catch (e) {} }
                     if (audioCtx) { watchBgmCtx(); if (audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch (e) {} } }
                     if (audioCtx && audioCtx.state === 'running') ensureBgmRoutingFor(target);
                 }
@@ -5906,16 +5914,17 @@
             h += '<div class="text-[11px] sm:text-xs font-bold text-purple-200 mt-2 tracking-[.4em]">〜 スタッフロール 〜</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 出演 ✦</div>';
             h += '<div class="mt-3 text-xs font-bold text-purple-300 tracking-widest">星めぐり学園</div>';
-            // 出演はアニメの声優クレジット風：全員分を「役名（小さく）／出演者名」の2列にそろえ、列ごとセンタリングする（2026-11-21 ユーザー指定。今回は全員、左右とも同じ名前）
+            // 出演はアニメの声優クレジット風：全員分を「役名（小さく）／出演者名」の2列にそろえ、列ごとセンタリングする（2026-11-21 ユーザー指定。基本は左右とも同じ名前）
+            // 担当声優（右側）の例外（2026-11-22 ユーザー指定）：学園長は「？？？」、作中で参加したかたる・トモコは「氷室うつろ」。不参加の隠しキャラは両側とも「？？？」のまま
             let castRows = [];
-            CHARACTERS.filter(c => !c.hidden).forEach(c => { castRows.push(c.name); });
-            castRows.push('学園長');
+            CHARACTERS.filter(c => !c.hidden).forEach(c => { castRows.push([c.name, c.name]); });
+            castRows.push(['学園長', '？？？']);
             let kataruInRoll = players.some(pl => pl.char === 'kataru' || pl.char === 'gengo');
             let tomokoInRoll = players.some(pl => pl.char === 'tomoko');
-            castRows.push(kataruInRoll ? '繰言かたる' : '？？？');
-            castRows.push(tomokoInRoll ? 'トモコ' : '？？？');
+            castRows.push(kataruInRoll ? ['繰言かたる', '氷室うつろ'] : ['？？？', '？？？']);
+            castRows.push(tomokoInRoll ? ['トモコ', '氷室うつろ'] : ['？？？', '？？？']);
             h += '<div style="display:grid;grid-template-columns:1fr 1fr;width:min(460px,90%);margin:0 auto;align-items:baseline;">';
-            castRows.forEach(nm => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="text-align:center;">' + nm + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="text-align:center;">' + nm + '</span>'; });
+            castRows.forEach(pair => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="text-align:center;">' + pair[0] + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="text-align:center;">' + pair[1] + '</span>'; });
             h += '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
             [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
