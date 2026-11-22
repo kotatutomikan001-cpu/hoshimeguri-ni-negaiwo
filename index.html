@@ -572,7 +572,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-14 ・ 607,338 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-15 ・ 607,499 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6919,7 +6919,7 @@
                         document.getElementById('currentEventEffect').innerText = '順番： ' + rolls.map((r, j) => `${j + 1}番 ${players[j].name}`).join(' → ');
                         if (summaryEl) summaryEl.innerText = '順番： ' + rolls.map((r, j) => `${j + 1}番 ${players[j].name}`).join(' → ');
                         if (tapNote) tapNote.classList.remove('hidden');
-                        orderRollLater(finishOrderRollOff, 1800);
+                        orderRollLater(finishOrderRollOff, 4500); // 結果（順番サマリー）をゆっくり読めるよう長めに残す（2026-11-22「消えるのが早すぎる」との実機報告で 1800→4500）
                     }
                 }, 1000 + i * 300);
             });
