@@ -455,6 +455,13 @@
                     <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">キャラを選ぶ</button>
                 </div>
                 <div id="lobbyPickedList" class="text-left"></div>
+                <div id="lobbyCpuLevelRow" class="flex items-center justify-center gap-1.5 mt-2 border-t border-purple-900 pt-2">
+                    <span class="text-[10px] font-black text-purple-200 whitespace-nowrap">CPUのつよさ</span>
+                    <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">よわい</button>
+                    <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">ふつう</button>
+                    <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">つよい</button>
+                </div>
+                <div id="lobbyCpuLevelNote" class="text-[9px] font-bold text-purple-300 -mt-1">CPU補充・引き継ぎ時の強さです（ゲストはホストの設定が適用されます）</div>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -563,7 +570,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-7 ・ 588,489 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-9 ・ 605,034 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -586,6 +593,17 @@
             <div class="mt-4 flex items-center justify-center select-none">
                 <button onclick="openOptions()" class="pixel-btn w-[270px] max-w-[82vw] py-3 px-2 font-black text-white rounded-lg text-base bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション（音量）</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 🎲 順番決めオーバーレイ：開始前に4人全員のダイスが転がり、止まった順に順番が決まるのを見せる -->
+    <div id="orderRollOverlay" class="fixed inset-0 z-[100004] hidden items-center justify-center p-3" style="background:rgba(10,8,40,0.88);" onclick="orderRollOverlayTap()">
+        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center">
+            <h2 class="text-lg sm:text-xl font-black text-yellow-300 mb-1">🎲 順番決め！</h2>
+            <p class="text-[11px] sm:text-xs font-bold text-indigo-200 mb-3">全員でサイコロを振って、目の大きい順に順番を決めます</p>
+            <div id="orderRollRows" class="flex flex-col gap-2"></div>
+            <p id="orderRollSummary" class="text-xs sm:text-sm font-black text-cyan-200 mt-3" style="min-height:1.4em;">サイコロを振っています…</p>
+            <p id="orderRollTapNote" class="text-[10px] font-bold text-gray-400 mt-1 hidden">タップで対戦開始</p>
         </div>
     </div>
 
@@ -813,6 +831,12 @@
                 <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto">
                     <div id="csIconGrid" class="grid grid-cols-5 gap-1.5 content-start"></div>
                     <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
+                    <div id="csCpuLevelRow" class="hidden items-center gap-1.5 mt-2">
+                        <span class="text-[10px] sm:text-xs font-black text-indigo-200 whitespace-nowrap">CPUのつよさ</span>
+                        <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">よわい</button>
+                        <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">ふつう</button>
+                        <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">つよい</button>
+                    </div>
                     <div id="csFooterBtns" class="flex gap-2 mt-auto pt-2">
                         <button id="csRandomBtn" onclick="csRandomPick()" class="whitespace-nowrap pixel-btn py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-teal-500 to-emerald-600 shadow cursor-pointer">ランダム選択</button>
                         <button id="csConfirmBtn" onclick="csConfirm()" class="whitespace-nowrap pixel-btn flex-1 py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer">✔ このキャラに決定</button>
@@ -1180,6 +1204,24 @@
         ];
         let finishedRankCount = 0;
         let goalBonuses = { 1: 1500, 2: 1000, 3: 500 };
+        // 🤖 CPUの対戦レベル（開始前に選ぶ。ふつう＝従来通りの判断）
+        let cpuLevel = 'normal';
+        try { let savedCpuLevel = localStorage.getItem('utsuro_cpu_level'); if (savedCpuLevel === 'easy' || savedCpuLevel === 'normal' || savedCpuLevel === 'hard') cpuLevel = savedCpuLevel; } catch (e) {}
+        function setCpuLevel(level) {
+            if (level !== 'easy' && level !== 'normal' && level !== 'hard') return;
+            cpuLevel = level;
+            try { localStorage.setItem('utsuro_cpu_level', level); } catch (e) {}
+            refreshCpuLevelUI();
+        }
+        function refreshCpuLevelUI() {
+            document.querySelectorAll('[data-cpulevel]').forEach(b => {
+                let on = b.getAttribute('data-cpulevel') === cpuLevel;
+                b.classList.toggle('bg-amber-400', on);
+                b.classList.toggle('text-slate-900', on);
+                b.classList.toggle('bg-slate-700', !on);
+                b.classList.toggle('text-gray-200', !on);
+            });
+        }
         // ⭐ 星のカケラ＆星の大樹ルール
         const FRAGMENTS_REQUIRED = 5;
         const STEP_JUMP_HEIGHT = 7; // 移動時ジャンプの高さ（px）。大きくすると跳ねる、小さくすると滑らか   // ゴールに必要な星のカケラの数
@@ -3284,14 +3326,18 @@
         function updateCsButtons() {
             let startBtn = document.getElementById('csStartBtn');
             let confBtn = document.getElementById('csConfirmBtn');
+            let levelRow = document.getElementById('csCpuLevelRow');
             if (csMode === 'cpu') {
                 confBtn.classList.add('hidden');
                 if (csCpuPicks[0]) startBtn.classList.remove('hidden');
                 else startBtn.classList.add('hidden');
+                if (levelRow) { levelRow.classList.remove('hidden'); levelRow.classList.add('flex'); }
+                refreshCpuLevelUI();
             } else {
                 confBtn.classList.remove('hidden');
                 confBtn.innerText = '✔ このキャラに決定';
                 startBtn.classList.add('hidden');
+                if (levelRow) { levelRow.classList.add('hidden'); levelRow.classList.remove('flex'); }
             }
         }
 
@@ -3480,6 +3526,7 @@
                     currentTurnNumber: currentTurnNumber,
                     finishedRankCount: finishedRankCount,
                     goalDeadlineDay: goalDeadlineDay,
+                    cpuLevel: cpuLevel,
                     starTiles: starTileIdxs.slice(),
                     players: players.map(p => ({
                         name: p.name, char: p.char, color: p.color, pos: p.pos,
@@ -3556,6 +3603,7 @@
                 if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
             });
             if (data.goalBonuses) goalBonuses = JSON.parse(JSON.stringify(data.goalBonuses));
+            if (data.cpuLevel === 'easy' || data.cpuLevel === 'normal' || data.cpuLevel === 'hard') cpuLevel = data.cpuLevel;
             starTileIdxs = (data.starTiles || []).slice();
             currentPlayerIndex = data.currentPlayerIndex;
             currentTurnNumber = data.currentTurnNumber;
@@ -3679,6 +3727,7 @@
             document.getElementById('onlineLobbyModal').classList.remove('hidden');
             document.getElementById('lobbyRoomCode').innerText = roomCode;
             document.getElementById('lobbyStatusText').innerText = 'サーバー接続中...';
+            refreshCpuLevelUI();
 
             drawLobbyCharPreviews();
             initPeerConnection(roomCode);
@@ -3774,6 +3823,7 @@
                             type: 'INIT_GUEST',
                             playerIndex: assignedPIdx,
                             hostChar: myChar,
+                            cpuLevel: cpuLevel,
                             onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames
                         });
                         
@@ -3901,6 +3951,7 @@
             document.getElementById('onlineLobbyModal').classList.remove('hidden');
             document.getElementById('lobbyRoomCode').innerText = 'ランダム';
             document.getElementById('lobbyMemberCount').innerText = '1 / 4';
+            refreshCpuLevelUI();
             drawLobbyCharPreviews();
             setMatchStatus('対戦相手を探しています…');
             startMatchElapsed();
@@ -4003,7 +4054,7 @@
                 let assignedPIdx = peerConnections.length;
                 conn.on('open', () => {
                     try {
-                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames });
+                        conn.send({ type: 'INIT_GUEST', playerIndex: assignedPIdx, hostChar: myChar, cpuLevel: cpuLevel, onlineMemberChars: onlineMemberChars, onlineMemberReady: onlineMemberReady, onlineMemberNames: onlineMemberNames });
                     } catch (e) {}
                     document.getElementById('lobbyMemberCount').innerText = (liveGuestCount() + 1) + ' / 4';
                     document.getElementById('lobbyStatusText').innerText = '対戦相手が見つかりました！';
@@ -4129,6 +4180,9 @@
                 } else {
                     if (data.type === 'INIT_GUEST') {
                         myPlayerIndex = data.playerIndex;
+                        // CPUのつよさはホストの設定に合わせる（自分の保存設定は書き換えない）
+                        if (data.cpuLevel) { cpuLevel = data.cpuLevel; refreshCpuLevelUI(); }
+                        document.querySelectorAll('#lobbyCpuLevelRow [data-cpulevel]').forEach(b => { b.disabled = true; b.classList.add('opacity-50', 'pointer-events-none'); });
                         if (data.onlineMemberChars) {
                             onlineMemberChars = data.onlineMemberChars;
                         }
@@ -4172,6 +4226,7 @@
                             updateLobbyCharUI();
                         }
                     } else if (data.type === 'START_GAME') {
+                        if (data.cpuLevel) { cpuLevel = data.cpuLevel; refreshCpuLevelUI(); } // ホスト切断でCPU戦に引き継ぐ場合に備え、ホストのCPUレベルに合わせる
                         if (data.mapGrid) { customMapGrid = data.mapGrid; convertCustomGridToTileCoords(); }
                         onlineGameStarted = true;
                         isRolling = false; isMoving = false; isEventResolving = false; isSubRollPending = false; turnPhase = 'idle';
@@ -4461,7 +4516,8 @@
                 playerConfigs: playerConfigs,
                 mapGrid: customMapGrid,
                 starTiles: starTileIdxs,
-                orderRolls: ord.rolls
+                orderRolls: ord.rolls,
+                cpuLevel: cpuLevel
             };
             peerConnections.forEach(c => { if (c.open) c.send({ ...startPayload, yourIndex: seatOrder.indexOf(senderPIdx(c)) }); });
 
@@ -4663,6 +4719,7 @@
             isOnlineMode = false;
             isHost = false;
             onlineGameStarted = false;
+            document.querySelectorAll('#lobbyCpuLevelRow [data-cpulevel]').forEach(b => { b.disabled = false; b.classList.remove('opacity-50', 'pointer-events-none'); });
             document.getElementById('onlineLobbyModal').classList.add('hidden');
             document.getElementById('startModal').classList.remove('hidden');
         }
@@ -6770,9 +6827,15 @@
         }
 
         // 🎲 順番決めの表示（ルール確認を閉じた直後に呼ばれる。全端末で同じ結果を表示する）
+        // 専用オーバーレイで「4人全員のダイスが実際に転がり、止まるごとに順番バッジが付く」ところまで見せる
+        const ORDER_DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        let orderRollTimers = [];
+        let orderRollAllStopped = false;
+        function orderRollLater(fn, ms) { let id = setTimeout(fn, ms); orderRollTimers.push(id); return id; }
         function showOrderRollOff() {
             if (!pendingOrderRolls || orderRollOffShowing) return;
             orderRollOffShowing = true;
+            orderRollAllStopped = false;
             let rolls = pendingOrderRolls;
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.disabled = true;
@@ -6780,12 +6843,75 @@
             document.getElementById('currentEventTitle').innerText = '【🎲 順番決め！】';
             document.getElementById('currentEventDesc').innerText = '全員でサイコロを振って、目の大きい順に順番を決めます！';
             document.getElementById('currentEventEffect').innerText = '🎲 サイコロを振っています…';
-            setTimeout(() => {
-                if (pendingOrderRolls !== rolls) return; // 既に確定済みなら古いタイマーは何もしない
-                document.getElementById('currentEventDesc').innerText = rolls.map((r, i) => `${playerLabel(players[i])}： ${r.roll}`).join(' ／ ');
-                document.getElementById('currentEventEffect').innerText = '順番： ' + rolls.map((r, i) => `${i + 1}番 ${players[i].name}`).join(' → ');
-                setTimeout(finishOrderRollOff, 2200);
-            }, 1200);
+            let ov = document.getElementById('orderRollOverlay');
+            let rowsEl = document.getElementById('orderRollRows');
+            if (!ov || !rowsEl) { // オーバーレイが無い環境向けの保険（従来のテキスト表示）
+                setTimeout(() => {
+                    if (pendingOrderRolls !== rolls) return;
+                    document.getElementById('currentEventDesc').innerText = rolls.map((r, i) => `${playerLabel(players[i])}： ${r.roll}`).join(' ／ ');
+                    document.getElementById('currentEventEffect').innerText = '順番： ' + rolls.map((r, i) => `${i + 1}番 ${players[i].name}`).join(' → ');
+                    setTimeout(finishOrderRollOff, 2200);
+                }, 1200);
+                return;
+            }
+            let summaryEl = document.getElementById('orderRollSummary');
+            let tapNote = document.getElementById('orderRollTapNote');
+            if (summaryEl) summaryEl.innerText = 'サイコロを振っています…';
+            if (tapNote) tapNote.classList.add('hidden');
+            rowsEl.innerHTML = '';
+            let diceEls = [], badgeEls = [];
+            players.forEach((p, i) => {
+                let row = document.createElement('div');
+                row.className = 'flex items-center gap-2 bg-indigo-950/80 border border-indigo-400/50 rounded-lg px-2 py-1.5';
+                row.innerHTML =
+                    '<span class="orr-badge w-11 flex-none text-sm font-black text-gray-500">？番</span>' +
+                    '<span class="relative w-9 h-9 rounded overflow-hidden bg-indigo-900 border border-indigo-300/40 flex-none"><span class="orr-ph absolute inset-0 flex items-center justify-center text-base font-black text-white/70"></span><img class="orr-img absolute inset-0 w-full h-full object-cover" alt=""></span>' +
+                    '<span class="orr-name flex-1 text-left text-sm font-black text-white truncate"></span>' +
+                    '<span class="orr-dice w-11 h-11 flex-none flex items-center justify-center rounded-lg bg-white text-slate-900 shadow" style="font-size:30px; line-height:1;">🎲</span>';
+                row.querySelector('.orr-ph').innerText = (p.name || '？').charAt(0);
+                let img = row.querySelector('.orr-img');
+                img.onerror = () => { img.style.display = 'none'; };
+                img.src = charIconUrl(p.char);
+                row.querySelector('.orr-name').innerText = playerLabel(p);
+                rowsEl.appendChild(row);
+                diceEls.push(row.querySelector('.orr-dice'));
+                badgeEls.push(row.querySelector('.orr-badge'));
+            });
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+            // 全員のダイスを転がし、1番の人から順に止めていく
+            let spinIvs = diceEls.map((el, i) => setInterval(() => {
+                el.innerText = ORDER_DICE_FACES[Math.floor(Math.random() * 6)];
+                el.style.transform = `rotate(${Math.floor(Math.random() * 29) - 14}deg)`;
+            }, 90));
+            orderRollTimers.push(...spinIvs);
+            diceEls.forEach((el, i) => {
+                orderRollLater(() => {
+                    if (pendingOrderRolls !== rolls) return; // 既に確定済みなら古いタイマーは何もしない
+                    clearInterval(spinIvs[i]);
+                    el.innerText = ORDER_DICE_FACES[(rolls[i].roll || 1) - 1];
+                    el.style.transform = 'rotate(0deg)';
+                    el.style.background = '#fde68a';
+                    let badge = badgeEls[i];
+                    badge.innerText = `${i + 1}番`;
+                    badge.classList.remove('text-gray-500');
+                    badge.classList.add('text-yellow-300');
+                    try { playSe('dice_stop'); } catch (e) {}
+                    if (i === diceEls.length - 1) {
+                        orderRollAllStopped = true;
+                        document.getElementById('currentEventDesc').innerText = rolls.map((r, j) => `${playerLabel(players[j])}： ${r.roll}`).join(' ／ ');
+                        document.getElementById('currentEventEffect').innerText = '順番： ' + rolls.map((r, j) => `${j + 1}番 ${players[j].name}`).join(' → ');
+                        if (summaryEl) summaryEl.innerText = '順番： ' + rolls.map((r, j) => `${j + 1}番 ${players[j].name}`).join(' → ');
+                        if (tapNote) tapNote.classList.remove('hidden');
+                        orderRollLater(finishOrderRollOff, 1800);
+                    }
+                }, 1000 + i * 300);
+            });
+        }
+
+        // 🎲 順番決めオーバーレイのタップ：全員のダイスが止まった後なら、待たずに対戦開始へ
+        function orderRollOverlayTap() {
+            if (orderRollAllStopped) finishOrderRollOff();
         }
 
         // 🎲 順番決めの終了：先手の手番表示にして対戦開始
@@ -6793,6 +6919,10 @@
             if (!orderRollOffPending) return;
             orderRollOffPending = false;
             orderRollOffShowing = false;
+            orderRollTimers.forEach(id => { clearTimeout(id); clearInterval(id); });
+            orderRollTimers = [];
+            let ov = document.getElementById('orderRollOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
             pendingOrderRolls = null;
             // オンラインで、自分がルールを読んでいる間に他の人が先に進めていた場合は、表示だけ整える
             let progressed = isOnlineMode && !isHost && (currentTurnNumber > 1 || players.some(p => (p.pos || 0) !== 0 || (p.listeners || 0) !== 1000 || (p.fragments || 0) > 0));
@@ -7257,8 +7387,7 @@
                             setTimeout(() => {
                                 isWaitingForBranchChoice = false;
                                 turnPhase = 'moving';
-                                let chosen = possibleNextTiles.find(c => c.tileIdx === altarTileIndex()) || possibleNextTiles[Math.floor(Math.random() * possibleNextTiles.length)];
-                                executeSingleStep(chosen.tileIdx);
+                                executeSingleStep(cpuDecideBranch(p, possibleNextTiles));
                             }, 800);
                             return;
                         }
@@ -8131,6 +8260,8 @@
         function cpuStarDists(p) { return (starTileIdxs || []).map(t => cpuDistAhead(p.pos, t)); }
         function cpuPickItem(p) {
             if (!p.items || !p.items.length) return null;
+            // よわい：約半分のターンはアイテムの使用自体を見送る
+            if (cpuLevel === 'easy' && Math.random() < 0.45) return null;
             let others = players.filter(q => q !== p && !q.finished);
             let starDs = cpuStarDists(p);
             let nearStar = starDs.length ? Math.min(...starDs) : 99;
@@ -8140,18 +8271,26 @@
                 let name = p.items[i];
                 let kind = itemEffectInfo(name).kind;
                 // 倍率アイテム（マイク・袖の下・横取り）は倍率が上がる7日目以降に使う。倍率1の間は2個以上持っている時だけ1個使う
+                // （よわいは待たずに早めに使ってしまう。つよいは横取りの発動ラインを少し下げる）
                 let copies = p.items.filter(nm => nm === name).length;
-                let multItemOk = mult >= 2 || copies >= 2;
+                let multItemOk = cpuLevel === 'easy' ? true : (mult >= 2 || copies >= 2);
+                let stealNeed = cpuLevel === 'hard' ? 1100 : 1300;
+                let warpNeed = cpuLevel === 'hard' ? 13 : 16;
                 if (kind === 'mic') { if (multItemOk) return { index: i, name }; }
                 else if (kind === 'fragment' || kind === 'listeners') return { index: i, name };
                 else if (kind === 'sode') { let tot = others.reduce((a, q) => a + (q.listeners || 0), 0); if (multItemOk && tot >= 1200) return { index: i, name }; }
-                else if (kind === 'steal') { let rich = Math.max(0, ...others.map(q => q.listeners || 0)); if (multItemOk && rich >= 1300) return { index: i, name }; }
+                else if (kind === 'steal') { let rich = Math.max(0, ...others.map(q => q.listeners || 0)); if (multItemOk && rich >= stealNeed) return { index: i, name }; }
                 else if (kind === 'shield') { if (!(p.shield > 0)) return { index: i, name }; }
                 else if (kind === 'dice') { if ((nearStar >= 4 && nearStar <= 9) || (p.fragments >= 5 && startD >= 4 && startD <= 9)) return { index: i, name }; }
                 else if (kind === 'moveDouble') { if (starDs.some(d => d >= 2 && d <= 12 && d % 2 === 0) || (p.fragments >= 5 && startD >= 2 && startD <= 12 && startD % 2 === 0)) return { index: i, name }; }
                 else if (kind === 'doubleDice') { if ((nearStar >= 2 && nearStar <= 12) || (p.fragments >= 5 && startD >= 2 && startD <= 12)) return { index: i, name }; }
-                else if (kind === 'swap') { if (nearStar >= 10 && others.some(q => { let ds = cpuStarDists(q); return ds.length && Math.min(...ds) <= 4; })) return { index: i, name }; }
-                else if (kind === 'warp') { if (nearStar >= 16) return { index: i, name }; }
+                else if (kind === 'swap') {
+                    let starSwap = nearStar >= 10 && others.some(q => { let ds = cpuStarDists(q); return ds.length && Math.min(...ds) <= 4; });
+                    // つよい：カケラ5個でゴール間近の相手とは場所を入れ替えてゴールを引き戻す
+                    let goalSwap = cpuLevel === 'hard' && startD >= 8 && others.some(q => (q.fragments || 0) >= 5 && cpuDistAhead(q.pos, 0) <= 3);
+                    if (starSwap || goalSwap) return { index: i, name };
+                }
+                else if (kind === 'warp') { if (nearStar >= warpNeed) return { index: i, name }; }
             }
             return null;
         }
@@ -8159,11 +8298,89 @@
             if (!p.items) return null;
             let idx = p.items.findIndex(nm => itemEffectInfo(nm).kind === 'cheatDice');
             if (idx < 0) return null;
+            // よわい：狙わずにランダムな目で使う（使うかどうかも気まぐれ）
+            if (cpuLevel === 'easy') {
+                if (Math.random() < 0.45) return null;
+                return { name: p.items[idx], value: 1 + Math.floor(Math.random() * 6) };
+            }
             let starDs = cpuStarDists(p).filter(d => d >= 1 && d <= 6);
             if (starDs.length) return { name: p.items[idx], value: Math.min(...starDs) };
             let startD = cpuDistAhead(p.pos, 0);
             if ((p.fragments || 0) >= 5 && startD >= 1 && startD <= 6) return { name: p.items[idx], value: startD };
+            // つよい：星もゴールも届かないときは、1〜6マス先の着地を全部評価して一番良い目を選ぶ
+            if (cpuLevel === 'hard') {
+                let bestValue = 0, bestScore = 300; // 収穫が小さいときは温存する
+                for (let v = 1; v <= 6; v++) {
+                    let s = cpuCheatLandingScore(p, v);
+                    if (s > bestScore) { bestScore = s; bestValue = v; }
+                }
+                if (bestValue > 0) return { name: p.items[idx], value: bestValue };
+            }
             return null;
+        }
+        // つよいCPU用：イカサマで「vマス進んだ場合」の着地の良し悪しを評価点換算で返す
+        function cpuCheatLandingScore(p, v) {
+            let n = tileCoords.length || 40;
+            let mult = tileAmountMultiplier();
+            let startD = cpuDistAhead(p.pos, 0);
+            // カケラ5個でスタートを通過できるならゴールへの分岐が開く（最大の収穫）
+            if ((p.fragments || 0) >= 5 && startD >= 1 && v >= startD) return 6000;
+            let land = (p.pos + v) % n;
+            let tile = tileCoords[land];
+            if (!tile) return 0;
+            let score = 0;
+            if (starTileIdxs && starTileIdxs.includes(land)) score += FRAGMENT_SCORE;
+            // 同じマスの相手からカケラを奪える（相手が盾を持っていると失敗するので割り引く）
+            let victim = players.filter(q => q !== p && !q.finished && q.pos === land && (q.fragments || 0) > 0).sort((a, b) => (b.fragments || 0) - (a.fragments || 0))[0];
+            if (victim) {
+                let guarded = (victim.items || []).some(nm => itemEffectInfo(nm).kind === 'stealGuard');
+                score += guarded ? 300 : FRAGMENT_SCORE * 0.85;
+            }
+            let avgVal = (type, fallback) => {
+                let evs = (typeof gameEvents !== 'undefined' ? gameEvents : []).filter(e => e.type === type);
+                if (!evs.length) return fallback;
+                return evs.reduce((a, e) => a + Math.abs(Number(e.val) || 0), 0) / evs.length;
+            };
+            if (tile.type === 'plus') score += 3.5 * avgVal('plus', 100) * mult;
+            else if (tile.type === 'minus') score += (p.shield > 0) ? 0 : -3.5 * avgVal('minus', 100) * mult;
+            else if (tile.type === 'white') {
+                let evs = (typeof gameEvents !== 'undefined' ? gameEvents : []).filter(e => e.type === 'white');
+                let avgW = evs.length ? evs.reduce((a, e) => a + (Number(e.val) || 0), 0) / evs.length : 0;
+                score += avgW * mult;
+            }
+            else if (tile.type === 'item') score += 700;
+            else if (tile.type === 'start') score += 150;
+            // 次の狙い（星マス／スタート）への近さも少しだけ加味する
+            if ((p.fragments || 0) >= 5) score -= 25 * cpuDistAhead(land, 0);
+            else {
+                let ds = (starTileIdxs || []).map(t => cpuDistAhead(land, t));
+                if (ds.length) score -= 25 * Math.min(...ds);
+            }
+            return score;
+        }
+        // 🤖 CPUの分岐判断（スタートで「星の大樹へ」か「周回」か）。候補に大樹マスが無い場合は従来通りランダム
+        function cpuDecideBranch(p, candidates) {
+            let altar = candidates.find(c => c.tileIdx === altarTileIndex());
+            if (!altar) return candidates[Math.floor(Math.random() * candidates.length)].tileIdx;
+            let loop = candidates.find(c => c.tileIdx !== altarTileIndex());
+            if (!loop) return altar.tileIdx;
+            // よわい：半分は勢いで周回してしまう
+            if (cpuLevel === 'easy') return Math.random() < 0.5 ? altar.tileIdx : loop.tileIdx;
+            // ふつう：従来通り、常にゴールへ
+            if (cpuLevel !== 'hard') return altar.tileIdx;
+            // つよい：締切間近なら必ずゴール。ゴール後の評価点でトップを守れるならゴール。
+            // 負けていて、近い星マスで逆転を狙えるときだけ周回する
+            if (goalDeadlineDay !== null && goalDeadlineDay - currentTurnNumber <= 2) return altar.tileIdx;
+            let nextRank = finishedRankCount + 1;
+            let bonus = goalBonuses[nextRank] || 500;
+            let fragBonus = nextRank === 1 ? 1 : 0;
+            let myGoalScore = ((p.fragments || 0) + fragBonus) * FRAGMENT_SCORE + (p.listeners || 0) + bonus;
+            let bestOther = Math.max(0, ...players.filter(q => q !== p && !q.finished).map(q => evalScoreOf(q)));
+            if (myGoalScore >= bestOther) return altar.tileIdx;
+            let starDs = cpuStarDists(p);
+            let nearStar = starDs.length ? Math.min(...starDs) : 99;
+            if (nearStar <= 7) return loop.tileIdx;
+            return altar.tileIdx;
         }
         function cpuTakeTurn() {
             if (isOnlineMode && !isHost) return;
