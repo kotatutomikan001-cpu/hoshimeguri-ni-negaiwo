@@ -572,7 +572,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-13 ・ 606,567 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-14 ・ 607,338 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -3715,6 +3715,7 @@
             cpuGameActive = true;
             saveSuspendedGame();
             playOpening();
+            if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
         }
 
         function startOnlineGame() {
@@ -4285,6 +4286,7 @@
                             btnRoll.disabled = orderRollOffPending ? true : (myPlayerIndex !== 0);
                         }
                         playOpening();
+                        if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
                     } else if (data.type === 'GAME_STATE_UPDATE') {
                         applySyncGameState(data);
                     } else if (data.type === 'DEBUG_ENDING') {
@@ -4559,6 +4561,7 @@
             turnPhase = 'idle';
             startOnlineSupportLoops();
             playOpening();
+            if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
         }
 
         // 💓 ホストは2秒ごとに最新状態を送り直し、ゲストは無音が続いたら再同期を要求する
@@ -6818,6 +6821,9 @@
             let ov = document.getElementById('openingOverlay');
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
             if (openingFromTitle) { openingFromTitle = false; showRulesPanel(); }
+            // 🎲 対戦開始時のオープニングが終わったら、そのまま順番決めの演出へ進む
+            // （これが無いと「順番決め」の表示だけ出て対戦が始まらない。2026-11-22 実機報告）
+            if (orderRollOffPending) showOrderRollOff();
         }
         function showRulesPanel(midGame) { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.remove('hidden'); r.classList.add('flex'); } let b = document.getElementById('rulesCloseBtn'); if (b) b.innerText = midGame ? '閉じる' : 'ゲームスタート'; }
         function hideRulesPanel() { let r = document.getElementById('rulesOverlay'); if (r) { r.classList.add('hidden'); r.classList.remove('flex'); } if (orderRollOffPending) showOrderRollOff(); }
