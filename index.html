@@ -177,6 +177,8 @@
             window.gtag('js', new Date());
             window.gtag('config', GA_MEASUREMENT_ID);
         }
+        // ゲーム内イベント送信用ヘルパー（測定IDが空・gtag未読込なら何もしない）
+        window.gaEvent = function (name, params) { try { if (window.gtag) window.gtag('event', name, params || {}); } catch (e) {} };
     </script>
 </head>
 <body class="flex flex-col min-h-screen sm:h-screen w-screen overflow-x-hidden sm:overflow-hidden text-white bg-slate-950">
@@ -575,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-20 ・ 613,151 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-21 ・ 614,229 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -3610,6 +3612,7 @@
             isOnlineMode = false;
             myPlayerIndex = 0;
             cpuGameActive = true;
+            gaEvent('game_resume', { mode: 'cpu' });
             data.players.forEach((sp, i) => {
                 let p = players[i];
                 p.name = sp.name; p.char = sp.char; p.color = sp.color; p.userName = '';
@@ -3724,6 +3727,7 @@
                 btnRoll.innerText = '🎲 移動！';
             }
             cpuGameActive = true;
+            gaEndingFired = false; gaEvent('game_start', { mode: 'cpu', cpu_level: cpuLevel });
             saveSuspendedGame();
             playOpening();
             if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
@@ -4296,6 +4300,7 @@
                             btnRoll.innerText = '🎲 移動！';
                             btnRoll.disabled = orderRollOffPending ? true : (myPlayerIndex !== 0);
                         }
+                        gaEndingFired = false; gaEvent('game_start', { mode: 'online', role: 'guest', cpu_level: cpuLevel });
                         playOpening();
                         if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
                     } else if (data.type === 'GAME_STATE_UPDATE') {
@@ -4571,6 +4576,7 @@
             }
             turnPhase = 'idle';
             startOnlineSupportLoops();
+            gaEndingFired = false; gaEvent('game_start', { mode: 'online', role: 'host', cpu_level: cpuLevel });
             playOpening();
             if (!openingActive && orderRollOffPending) showOrderRollOff(); // オープニング無効・台本なしの場合は直接順番決めへ
         }
@@ -6036,6 +6042,7 @@
                 openingActive = false;
                 dialogueMode = 'opening';
                 try { localStorage.setItem('utsuro_true_seen', '1'); } catch (e) {}
+                gaEvent('true_ending_reached', {});
                 showTrueEndFinale(); // まず画面全体に『星めぐりに願いを』完 を出し、その後に余韻を持たせてタイトルへ
                 return;
             }
@@ -6473,6 +6480,7 @@
             g.fillText(GAME_PAGE_URL, 600, 662);
         }
         function shareResultToX() {
+            gaEvent('share_result', { method: 'x' });
             let text = resultShareText();
             let intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
             let openIntent = () => { try { window.open(intent, '_blank'); } catch (e) {} };
@@ -8683,10 +8691,12 @@
             }
         }
 
+        let gaEndingFired = false; // GA4 の ending_reached を1対戦に1回だけ送るためのガード
         function showFinalResultModal() {
             treeBloomed = true;
             cpuGameActive = false;
             clearSuspendedGame();
+            if (!gaEndingFired) { gaEndingFired = true; let w = rankSortedPlayers()[0]; gaEvent('ending_reached', { mode: isOnlineMode ? 'online' : 'cpu', winner: w ? canonicalCharId(w.char) : '', days: currentTurnNumber }); }
             playEndingDialogue();
         }
 
