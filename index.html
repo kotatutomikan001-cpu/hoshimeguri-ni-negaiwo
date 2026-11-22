@@ -384,7 +384,10 @@
             </div>
             <div id="endingPodium" class="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-3xl lg:max-w-5xl flex-none"></div>
             <div id="endingScoreTable" class="w-full max-w-3xl lg:max-w-5xl flex-none"></div>
-            <button onclick="onEndingResultClose()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
+            <div class="flex items-center justify-center gap-2 flex-none flex-wrap">
+                <button onclick="shareResultToX()" class="py-2 px-5 font-black rounded-lg text-xs sm:text-sm shadow cursor-pointer bg-black text-white hover:bg-neutral-800">𝕏 結果を投稿</button>
+                <button onclick="onEndingResultClose()" class="pixel-btn py-2 px-5 font-black text-white rounded-lg text-xs sm:text-sm bg-purple-600 hover:bg-purple-500 shadow cursor-pointer flex-none">タイトルへ戻る</button>
+            </div>
         </div>
     </div>
 
@@ -572,7 +575,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-15 ・ 607,499 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-17 ・ 612,888 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6417,6 +6420,72 @@
         })();
 
         // リザルト画面を閉じる時：トモコ・かたるの個別エンディング以外の時は、先に隠し人物ヒントを出す
+        // 𝕏（旧Twitter）への結果投稿：結果カード画像を作り、スマホは共有シート、PCは画像ダウンロード＋投稿画面を開く
+        const GAME_PAGE_URL = 'https://kotatutomikan001-cpu.github.io/hoshimeguri-ni-negaiwo/';
+        function resultShareText() {
+            let sorted = rankSortedPlayers();
+            let marks = ['👑 1位', '2位', '3位', '4位'];
+            let lines = sorted.map((p, i) => (marks[i] || ((i + 1) + '位')) + ' ' + playerLabel(p) + '：' + evalScoreOf(p).toLocaleString() + '点（⭐' + (p.fragments || 0) + '・👥' + (p.listeners || 0).toLocaleString() + '）');
+            return '『星めぐりに願いを』対戦結果！\n' + lines.join('\n') + '\n#星めぐりに願いを #星めぐり学園\n' + GAME_PAGE_URL;
+        }
+        function rrPath(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+        function drawContainImg(g, img, x, y, w, h) { let s = Math.min(w / img.naturalWidth, h / img.naturalHeight); let dw = img.naturalWidth * s, dh = img.naturalHeight * s; g.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); }
+        function buildResultShareImage(done) {
+            let sorted = rankSortedPlayers();
+            let cv = document.createElement('canvas'); cv.width = 1200; cv.height = 675;
+            let g = cv.getContext('2d');
+            let grad = g.createLinearGradient(0, 0, 0, 675);
+            grad.addColorStop(0, '#d8b4fe'); grad.addColorStop(0.5, '#e9d5ff'); grad.addColorStop(1, '#e0e7ff');
+            g.fillStyle = grad; g.fillRect(0, 0, 1200, 675);
+            g.textAlign = 'center'; g.fillStyle = '#4c1d95';
+            g.font = '900 54px sans-serif'; g.fillText('星めぐりに願いを', 600, 84);
+            g.font = '700 26px sans-serif'; g.fillStyle = '#7e22ce'; g.fillText('〜 対戦結果 〜', 600, 126);
+            let finished = false;
+            let finish = () => { if (finished) return; finished = true; try { cv.toBlob(b => done(b), 'image/png'); } catch (e) { done(null); } };
+            setTimeout(finish, 3000); // 画像の読み込みが滞ってもテキスト投稿へ進める
+            let rowH = 118, top = 150, pending = sorted.length;
+            if (pending === 0) { finish(); return; }
+            sorted.forEach((p, i) => {
+                let y = top + i * rowH;
+                g.fillStyle = i === 0 ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.6)';
+                rrPath(g, 60, y, 1080, rowH - 14, 16); g.fill();
+                if (i === 0) { g.strokeStyle = '#facc15'; g.lineWidth = 4; rrPath(g, 60, y, 1080, rowH - 14, 16); g.stroke(); }
+                g.textAlign = 'left'; g.fillStyle = i === 0 ? '#d97706' : '#6d28d9'; g.font = '900 38px sans-serif';
+                g.fillText(i === 0 ? '👑1位' : ((i + 1) + '位'), 84, y + 68);
+                g.fillStyle = '#3b0764'; g.font = '900 35px sans-serif';
+                g.fillText(playerLabel(p), 336, y + 48);
+                g.font = '700 25px sans-serif'; g.fillStyle = '#4c1d95';
+                g.fillText('⭐ ' + (p.fragments || 0) + '　👥 ' + (p.listeners || 0).toLocaleString() + '人　評価点 ' + evalScoreOf(p).toLocaleString() + '点', 336, y + 88);
+                let img = new Image();
+                img.onload = () => { try { drawContainImg(g, img, 202, y + 6, 104, rowH - 26); } catch (e) {} if (--pending === 0) finish(); };
+                img.onerror = () => { if (--pending === 0) finish(); };
+                img.src = charStandUrl(p.char);
+            });
+            g.textAlign = 'center'; g.fillStyle = '#6d28d9'; g.font = '700 22px sans-serif';
+            g.fillText(GAME_PAGE_URL, 600, 662);
+        }
+        function shareResultToX() {
+            let text = resultShareText();
+            let intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+            let openIntent = () => { try { window.open(intent, '_blank'); } catch (e) {} };
+            try {
+                buildResultShareImage(blob => {
+                    if (blob) {
+                        let file = null;
+                        try { file = new File([blob], 'hoshimeguri-result.png', { type: 'image/png' }); } catch (e) {}
+                        if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], text }).catch(() => {}); return; }
+                        try {
+                            let a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob); a.download = 'hoshimeguri-result.png';
+                            document.body.appendChild(a); a.click(); a.remove();
+                            setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 4000);
+                        } catch (e) {}
+                    }
+                    openIntent();
+                });
+            } catch (e) { openIntent(); }
+        }
+
         function onEndingResultClose() {
             if (!kataruEndingSong && !tomokoEndingSong) { showHiddenHints(); return; }
             location.reload();
