@@ -572,7 +572,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-12 ・ 605,901 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-13 ・ 606,567 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1144,8 +1144,11 @@
         // 🖼️ キャラ画像フォルダ（index.html と同じ場所に char_assets フォルダを置く）
         const CHAR_ASSET_BASE = 'char_assets';
         const WORLD_MAP_URL = CHAR_ASSET_BASE + '/worldmap.png';
-        function charIconUrl(id) { return CHAR_ASSET_BASE + '/icons/' + id + '.png'; }
-        function charStandUrl(id) { return CHAR_ASSET_BASE + '/stand/' + id + '.png'; }
+        // 実ファイルは現行ID（kataru）で置かれているため、旧ID gengo のデータ（初期プレイヤー配列・旧セーブ等）でも
+        // ファイルが見つかるよう、ファイルURLを作る側で現行IDに寄せる（2026-11-22：リザルトでかたるの立ち絵が出ない報告）
+        function canonicalCharId(id) { return id === 'gengo' ? 'kataru' : id; }
+        function charIconUrl(id) { return CHAR_ASSET_BASE + '/icons/' + canonicalCharId(id) + '.png'; }
+        function charStandUrl(id) { return CHAR_ASSET_BASE + '/stand/' + canonicalCharId(id) + '.png'; }
         // GitHub Pages 等は大文字小文字を区別するため、.png が無ければ .PNG も試す
         function retryUpperExt(img, onFail) {
             img.onerror = () => {
@@ -1355,7 +1358,7 @@
         }
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
-        const SELECT_BGM_FACTOR = 0.6; // キャラ選択まわりのBGM（select_bgm）だけ控えめにする（2026-11-21 に 0.8、2026-11-22 に「キャラ選択時の声が聞こえにくい」との実機報告で 0.6 へ。ボイス側は収録ファイルのピーク上限（-6.5dB）×スマホ増幅2.0で頭打ちのため、BGM側を下げる）
+        const SELECT_BGM_FACTOR = 0.45; // キャラ選択まわりのBGM（select_bgm）だけ控えめにする（2026-11-21 に 0.8、2026-11-22 に「キャラ選択時の声が聞こえにくい」との実機報告で 0.6 →「もう少し落としたい」で 0.45 へ。ボイス側は収録ファイルのピーク上限（-6.5dB）×スマホ増幅2.0で頭打ちのため、BGM側を下げる）
         const ENDING_BGM_FACTOR = 1.25; // エンディング曲（スタッフロールの曲）を少しだけ大きくする（2026-11-21 ユーザー要望）
         function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingBgmAudio' || id === 'endingUtsuroBgmAudio') v = Math.min(1, v * ENDING_BGM_FACTOR); if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST * ENDING_BGM_FACTOR); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST * ENDING_BGM_FACTOR); return v; }
         let audioUnlocked = false;
@@ -2805,6 +2808,7 @@
             } catch (e) {}
         }
         function probeCharVoiceKind(charId, kind) {
+            charId = canonicalCharId(charId); // 旧ID gengo のキャラでも本物ボイス（kataru_*.mp3）を見つける
             for (let n = 1; n <= VOICE_VARIANTS; n++) {
                 const key = charId + '_' + kind + n;
                 if (charVoiceFiles[key]) continue;
@@ -2870,6 +2874,7 @@
         function playCharVoice(charId, kind) {
             // 実ボイスファイルがある時だけ再生する。無いキャラ・場面は無音。
             if (!charId) return;
+            charId = canonicalCharId(charId);
             if (kind === 'select') {
                 // カーソル移動→決定のように同じキャラの選択ボイスが続けて呼ばれても二重に鳴らさない
                 let now = Date.now();
