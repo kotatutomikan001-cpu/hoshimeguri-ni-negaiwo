@@ -455,11 +455,13 @@
                     <button onclick="openCharSelect('lobby')" class="pixel-btn px-3 py-2 rounded-lg text-xs font-black text-white bg-purple-600 hover:bg-purple-500 cursor-pointer flex-none">キャラを選ぶ</button>
                 </div>
                 <div id="lobbyPickedList" class="text-left"></div>
-                <div id="lobbyCpuLevelRow" class="flex items-center justify-center gap-1.5 mt-2 border-t border-purple-900 pt-2">
+                <div id="lobbyCpuLevelRow" class="flex flex-col gap-1 mt-2 border-t border-purple-900 pt-2">
                     <span class="text-[10px] font-black text-purple-200 whitespace-nowrap">CPUのつよさ</span>
-                    <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">よわい</button>
-                    <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">ふつう</button>
-                    <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 cursor-pointer">つよい</button>
+                    <div class="flex gap-1.5 w-full">
+                        <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 border border-purple-300/40 cursor-pointer">よわい</button>
+                        <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 border border-purple-300/40 cursor-pointer">ふつう</button>
+                        <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] font-black bg-slate-700 text-gray-200 border border-purple-300/40 cursor-pointer">つよい</button>
+                    </div>
                 </div>
                 <div id="lobbyCpuLevelNote" class="text-[9px] font-bold text-purple-300 -mt-1">CPU補充・引き継ぎ時の強さです（ゲストはホストの設定が適用されます）</div>
             </div>
@@ -570,7 +572,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-9 ・ 605,034 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-11 ・ 605,717 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -831,11 +833,13 @@
                 <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto">
                     <div id="csIconGrid" class="grid grid-cols-5 gap-1.5 content-start"></div>
                     <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
-                    <div id="csCpuLevelRow" class="hidden items-center gap-1.5 mt-2">
+                    <div id="csCpuLevelRow" class="hidden flex-col gap-1 mt-2">
                         <span class="text-[10px] sm:text-xs font-black text-indigo-200 whitespace-nowrap">CPUのつよさ</span>
-                        <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">よわい</button>
-                        <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">ふつう</button>
-                        <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="pixel-btn py-1 px-2.5 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 cursor-pointer">つよい</button>
+                        <div class="flex gap-1.5 w-full">
+                            <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">よわい</button>
+                            <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ふつう</button>
+                            <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">つよい</button>
+                        </div>
                     </div>
                     <div id="csFooterBtns" class="flex gap-2 mt-auto pt-2">
                         <button id="csRandomBtn" onclick="csRandomPick()" class="whitespace-nowrap pixel-btn py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-teal-500 to-emerald-600 shadow cursor-pointer">ランダム選択</button>
@@ -1359,12 +1363,12 @@
         let audioCtx = null;
         let userGestured = false; // 初回のタップがあったか。AudioContextはタップ前に作るとiOSで止まったままになりやすいので、作るのはタップ以降だけにする
         function newGameAudioContext() {
-            // 🔊 サンプルレートを 44100 に固定して作る。他アプリの音声再生や割り込みで iOS のハードウェア側レートが
-            //    切り替わると、既定レートで作った context では経由中の曲のピッチがずれて聞こえる（2026-11-22 実機報告：
-            //    他の操作を挟むとBGMのピッチが変わる）。レートを固定すれば context 内部の処理は常に一定になり、
-            //    ハードウェア側の変換は出力段だけで行われるため、ピッチが安定する。オプション未対応の環境では通常生成に落とす
+            // 🔊 AudioContext は端末の標準レートのまま作る（iPhone は通常 48000Hz）。
+            //    2026-11-22 に 44100 固定を試したが、実機ではピッチの揺れが残った（むしろ常時レート変換が入る形に
+            //    なっていた疑いが強い）。端末レートに合わせれば変換は「44.1kHzの曲素材→端末レート」の標準経路だけに
+            //    なり、通常の audio 要素再生と同じ条件になる。固定指定はしない
             let AC = window.AudioContext || window.webkitAudioContext;
-            try { return new AC({ sampleRate: 44100 }); } catch (e) { return new AC(); }
+            return new AC();
         }
         function watchBgmCtx() {
             if (!audioCtx || audioCtx.__watched) return;
@@ -3210,9 +3214,10 @@
         }
 
         function csHoverMystery() {
-            csCursor = '?';
-            markCsCursor();
-            refreshCsSlots();
+            // 「？」は選べるキャラではないので、カーソル（選択中のキャラ）は動かさない。
+            // 経由しただけで選んだキャラが未選択に戻ってしまうのを防ぐ（2026-11-22 実機報告）。
+            // かたる出現コマンドの「？」入力はクリック側（csRegisterCellClick）で数えるので、ここはヒント表示だけにする
+            setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）');
         }
 
         function markCsCursor() {
