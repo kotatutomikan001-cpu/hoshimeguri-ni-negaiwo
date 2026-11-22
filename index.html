@@ -202,7 +202,7 @@
             <!-- リスナー数比較 -->
             <div class="flex items-center gap-1.5 flex-none self-center select-none">
                 <button onclick="showRulesPanel(true)" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">📖 ルール</button>
-                <button onclick="openOptions()" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション</button>
+                <button onclick="openOptions()" class="pixel-btn px-2.5 py-1.5 font-black text-white rounded-lg text-[11px] sm:text-xs bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">音量調整</button>
             </div>
             <div class="hud-cards text-xs sm:text-sm font-bold">
                 <div class="hud-card bg-purple-900/80 border border-purple-400">
@@ -394,7 +394,7 @@
     <!-- 🔓 隠し人物ヒント（トモコ・かたるの個別エンディング以外の時、リザルトの後に表示） -->
     <div id="optionsOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3 z-[100006]">
         <div class="pixel-box p-5 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-purple-400 shadow-2xl flex flex-col gap-4">
-            <h2 class="text-base sm:text-lg font-black text-purple-200 tracking-wider text-center">⚙ オプション</h2>
+            <h2 class="text-base sm:text-lg font-black text-purple-200 tracking-wider text-center">音量調整</h2>
             <div>
                 <div class="text-sm font-black text-purple-100 mb-1.5">🎵 BGM</div>
                 <div class="flex gap-1.5" data-vol-row="bgm"></div>
@@ -575,7 +575,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-18 ・ 612,600 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-19 ・ 612,586 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
