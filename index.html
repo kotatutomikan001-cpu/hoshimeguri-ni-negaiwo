@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-22 ・ 614,689 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-23 ・ 616,535 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -601,6 +601,17 @@
             <div id="titleOptionsWrap" class="mt-4 flex items-center justify-center select-none">
                 <button onclick="openOptions()" class="pixel-btn w-[270px] max-w-[82vw] py-3 px-2 font-black text-white rounded-lg text-base bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション（音量）</button>
             </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌿 分岐の周回確認（ゲーム内ダイアログ。ブラウザ標準の confirm はアプリ内ブラウザ等で動かないことがあり「周回が選べない」原因になるため使わない。2026-11-23 実機報告） -->
+    <div id="branchConfirmOverlay" class="fixed inset-0 z-[100005] hidden items-center justify-center p-3" style="background:rgba(10,8,40,0.72);">
+        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center">
+            <p class="text-sm sm:text-base font-black text-yellow-200 leading-relaxed">星のカケラを5つ持っています。<br>大樹へは行かず、このまま周回コースを進みますか？</p>
+            <div class="flex gap-2 mt-4">
+                <button onclick="resolveLoopConfirm(true)" class="pixel-btn flex-1 py-2.5 px-3 font-black text-white rounded-lg text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow cursor-pointer">周回する</button>
+                <button onclick="resolveLoopConfirm(false)" class="pixel-btn flex-1 py-2.5 px-3 font-black text-white rounded-lg text-sm bg-slate-600 hover:bg-slate-500 shadow cursor-pointer">選び直す</button>
             </div>
         </div>
     </div>
@@ -4896,16 +4907,17 @@
             isWaitingForBranchChoice = true;
             const presentGuestBranch = () => {
                 showBranchSelectionUI(myPlayerIndex, candidates, req.remainingSteps, (chosenTileIdx) => {
+                    let proceed = () => {
+                        hideBranchSelectionUI();
+                        isWaitingForBranchChoice = false;
+                        guestBranchShownKey = null;
+                        if (peerConnections[0] && peerConnections[0].open) {
+                            peerConnections[0].send({ type: 'ACTION_BRANCH', playerIndex: myPlayerIndex, tileIdx: chosenTileIdx });
+                        }
+                    };
                     let isAltarBranch = candidates.some(c => c.tileIdx === tileCoords.length);
-                    if (isAltarBranch && chosenTileIdx !== tileCoords.length) {
-                        if (!confirm('星のカケラを5つ持っています。大樹へは行かず、このまま周回コースを進みますか？')) { presentGuestBranch(); return; }
-                    }
-                    hideBranchSelectionUI();
-                    isWaitingForBranchChoice = false;
-                    guestBranchShownKey = null;
-                    if (peerConnections[0] && peerConnections[0].open) {
-                        peerConnections[0].send({ type: 'ACTION_BRANCH', playerIndex: myPlayerIndex, tileIdx: chosenTileIdx });
-                    }
+                    if (isAltarBranch && chosenTileIdx !== tileCoords.length) { askLoopConfirm(ok => { if (ok) proceed(); }); return; }
+                    proceed();
                 });
             };
             presentGuestBranch();
@@ -7453,14 +7465,10 @@
                                 isWaitingForBranchChoice = true;
                                 turnPhase = 'branch';
                                 showBranchSelectionUI(pIndex, possibleNextTiles, remainingSteps, (chosenTileIdx) => {
+                                    let proceed = () => { hideBranchSelectionUI(); isWaitingForBranchChoice = false; turnPhase = 'moving'; executeSingleStep(chosenTileIdx); };
                                     let isAltarBranch = possibleNextTiles.some(c => c.tileIdx === altarTileIndex());
-                                    if (isAltarBranch && chosenTileIdx !== altarTileIndex()) {
-                                        if (!confirm('星のカケラを5つ持っています。大樹へは行かず、このまま周回コースを進みますか？')) { presentLocalBranch(); return; }
-                                    }
-                                    hideBranchSelectionUI();
-                                    isWaitingForBranchChoice = false;
-                                    turnPhase = 'moving';
-                                    executeSingleStep(chosenTileIdx);
+                                    if (isAltarBranch && chosenTileIdx !== altarTileIndex()) { askLoopConfirm(ok => { if (ok) proceed(); }); return; }
+                                    proceed();
                                 });
                             };
                             presentLocalBranch();
@@ -7652,6 +7660,23 @@
                 }
             }
             return candidates;
+        }
+
+        // 🌿 周回確認はゲーム内ダイアログで聞く（ブラウザ標準 confirm は環境によって表示されず、選択肢が出ているのに選べなくなるため）
+        let branchConfirmCallback = null;
+        function askLoopConfirm(cb) {
+            let ov = document.getElementById('branchConfirmOverlay');
+            if (!ov) { cb(true); return; }
+            branchConfirmCallback = cb;
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+        }
+        function resolveLoopConfirm(ok) {
+            let ov = document.getElementById('branchConfirmOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            let cb = branchConfirmCallback;
+            branchConfirmCallback = null;
+            if (cb) cb(ok);
         }
 
         function showBranchSelectionUI(pIndex, candidates, remainingSteps, onChoose) {
