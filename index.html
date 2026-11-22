@@ -563,7 +563,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-6 ・ 582,862 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-7 ・ 588,489 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1360,6 +1360,10 @@
         let hostDisconnectHandled = false;
         let myPlayerIndex = 0;
         let currentRoomCode = '';
+        let roomJoinGen = 0; // 部屋コード入室フローの世代（古い非同期コールバックを無効化する）
+        let roomRetryCount = 0; // 部屋への接続に失敗したときの作り直しリトライ回数
+        let roomHostWatchdog = null; // ホストのブローカー切断を見張って再接続するタイマー
+        let ROOM_JOIN_TIMEOUT_MS = 10000; // ゲスト接続が開くまでの待ち時間（過ぎたら部屋を作り直す）
         let onlineMemberChars = {};
         let onlineMemberReady = {}; // 参加者がキャラ選択で「決定」を押したかどうか（接続時の自動登録と区別する）
         let onlineMemberNames = {}; // 参加者のユーザー名（キャラ名とは別に、誰と対戦しているか判別するため）
@@ -3658,7 +3662,11 @@
         function startOnlineGame() {
             readUserNameInput();
             let roomCode = document.getElementById('roomCodeInput').value.trim();
+            // 全角英数字は半角にそろえ、空白は取り除く（同じコードを入れたのに別の部屋になる事故の対策）
+            roomCode = roomCode.replace(/[０-９ａ-ｚＡ-Ｚ]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '');
+            document.getElementById('roomCodeInput').value = roomCode;
             if (!roomCode) { alert('部屋コードを入力してください'); return; }
+            roomRetryCount = 0;
 
             if (!tileCoords || tileCoords.length === 0) {
                 convertCustomGridToTileCoords();
@@ -3676,7 +3684,32 @@
             initPeerConnection(roomCode);
         }
 
+        // ブローカー（PeerJSの仲介サーバー）との接続が切れたら、同じIDのまま登録し直す。
+        // 切れたままだと部屋IDが解放されてしまい、次に同じコードを入れた人が「新しい部屋のホスト」に
+        // なって部屋が分かれてしまう（スマホで別アプリに切り替えたとき等に起きる。2026-11-22 実機報告）
+        function recoverBrokerConnection() {
+            if (!peer || peer.destroyed || !peer.disconnected) return;
+            try { peer.reconnect(); } catch (e) {}
+        }
+
+        // ゲストとして部屋に入れなかったときの立て直し：部屋IDが残っているだけで実在しない場合があるため、
+        // 数回まで「部屋を作り直す（IDが空いていれば自分がホスト、誰か居れば今度こそゲストで入る）」を試す
+        function guestJoinFailed(gen) {
+            if (gen !== roomJoinGen || !isOnlineMode || onlineGameStarted || randomMatchActive) return;
+            roomRetryCount++;
+            if (roomRetryCount > 3 || !currentRoomCode) { handleHostDisconnect(true); return; }
+            let el = document.getElementById('lobbyStatusText');
+            if (el) el.innerText = '部屋に接続できませんでした。接続し直しています…';
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+            peerConnections = [];
+            setTimeout(() => {
+                if (gen !== roomJoinGen || !isOnlineMode || onlineGameStarted || randomMatchActive) return;
+                initPeerConnection(currentRoomCode);
+            }, 800);
+        }
+
         function initPeerConnection(roomCode) {
+            let gen = ++roomJoinGen;
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
             }
@@ -3689,16 +3722,37 @@
             
             try {
                 peer = new Peer(hostPeerId, { debug: 1 });
+                let myPeer = peer;
 
                 peer.on('open', (id) => {
                     isHost = true;
                     myPlayerIndex = 0;
+                    roomRetryCount = 0;
                     onlineMemberChars[0] = myChar;
                     onlineMemberNames[0] = myUserName;
                     updateLobbyCharUI();
-                    document.getElementById('lobbyMemberCount').innerText = `1 / 4`;
+                    document.getElementById('lobbyMemberCount').innerText = `${liveGuestCount() + 1} / 4`;
                     document.getElementById('lobbyStatusText').innerText = '部屋を作成しました。対戦相手を待っています...';
                 });
+
+                // ブローカー接続が切れたら即座に登録し直す（部屋IDを手放さない）
+                peer.on('disconnected', () => {
+                    if (gen !== roomJoinGen || !isOnlineMode) return;
+                    recoverBrokerConnection();
+                });
+
+                // 'disconnected' イベントを取りこぼす環境向けの見張り（ロビー・対戦中とも4秒ごと）
+                if (roomHostWatchdog) clearInterval(roomHostWatchdog);
+                roomHostWatchdog = setInterval(() => {
+                    if (gen !== roomJoinGen || !isOnlineMode || randomMatchActive) return;
+                    if (isHost && myPeer && myPeer.disconnected && !myPeer.destroyed) {
+                        if (!onlineGameStarted) {
+                            let el = document.getElementById('lobbyStatusText');
+                            if (el) el.innerText = '接続が切れたため、部屋に再接続しています…';
+                        }
+                        recoverBrokerConnection();
+                    }
+                }, 4000);
 
                 peer.on('connection', (conn) => {
                     if (!isHost) return;
@@ -3732,7 +3786,9 @@
 
                 peer.on('error', (err) => {
                     if (err.type === 'unavailable-id') {
-                        connectAsGuest(hostPeerId);
+                        // 対戦開始後の再接続失敗では、進行中の対戦を壊さないようゲスト化しない
+                        // （参加済みゲストとの通信はブローカーを経由しないため、そのまま続行できる）
+                        if (!onlineGameStarted) connectAsGuest(hostPeerId);
                     } else {
                         console.error('Peer error:', err);
                         document.getElementById('lobbyStatusText').innerText = '接続エラーが発生しました';
@@ -3747,20 +3803,41 @@
         function connectAsGuest(hostPeerId) {
             isHost = false;
             hostDisconnectHandled = false;
+            let gen = roomJoinGen;
+            let attempt = { failed: false };
+            const failOnce = () => { if (attempt.failed) return; attempt.failed = true; guestJoinFailed(gen); };
             // 前の接続が残っていると二重に入室してしまうため、開いている接続があれば先に片付ける
             // （開けなかった接続は相手の部屋を巻き込まないよう destroy せずに手放すだけにする）
             if (peer) { if (peer.open) { try { peer.destroy(); } catch (e) {} } peer = null; }
             peerConnections = [];
             peer = new Peer({ debug: 1 });
+            let myPeer = peer;
 
-            peer.on('open', () => {
-                let conn = peer.connect(hostPeerId, { reliable: true });
+            myPeer.on('disconnected', () => {
+                if (gen !== roomJoinGen) return;
+                try { myPeer.reconnect(); } catch (e) {}
+            });
+
+            myPeer.on('error', (err) => {
+                if (gen !== roomJoinGen) return;
+                if (err && err.type === 'peer-unavailable') failOnce(); // 部屋がブローカー上に無い
+            });
+
+            myPeer.on('open', () => {
+                if (gen !== roomJoinGen) return;
+                let conn = myPeer.connect(hostPeerId, { reliable: true });
                 peerConnections = [conn];
+                let opened = false;
+                // 部屋IDだけ残って実体が無い（ゾンビ）場合、接続は開かずエラーも来ないことがあるためタイムアウトを設ける
+                let timer = setTimeout(() => { if (!opened) failOnce(); }, ROOM_JOIN_TIMEOUT_MS);
 
                 conn.on('open', () => {
+                    opened = true;
+                    clearTimeout(timer);
+                    roomRetryCount = 0;
                     document.getElementById('lobbyStatusText').innerText = '部屋に参加しました！';
                     setupConnectionDataHandler(conn);
-                    
+
                     conn.send({
                         type: 'REGISTER_CHAR',
                         char: myChar,
@@ -3769,9 +3846,15 @@
                     });
                 });
 
-                conn.on('close', () => { handleHostDisconnect(false); });
+                conn.on('close', () => {
+                    if (!opened) { clearTimeout(timer); failOnce(); }
+                    else handleHostDisconnect(false);
+                });
 
-                conn.on('error', (e) => { handleHostDisconnect(true); });
+                conn.on('error', (e) => {
+                    if (!opened) { clearTimeout(timer); failOnce(); }
+                    else handleHostDisconnect(true);
+                });
             });
         }
 
@@ -4569,6 +4652,9 @@
 
         function leaveOnlineLobby() {
             cancelRandomMatch();
+            roomJoinGen++; // 進行中の入室リトライや再接続コールバックを無効化する
+            roomRetryCount = 0;
+            if (roomHostWatchdog) { clearInterval(roomHostWatchdog); roomHostWatchdog = null; }
             if (peer) {
                 try { peer.destroy(); } catch(e) {}
                 peer = null;
