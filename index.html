@@ -577,11 +577,12 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-21 ・ 614,229 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-22 ・ 614,689 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
             <h1 id="titleLogoFallback" class="hidden text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 mb-4">星めぐりに願いを</h1>
+            <div id="titleBtnCol">
             <div id="titleBtns">
                 <button id="titleStartBtn" onclick="closeTitleScreen()" class="pixel-btn w-[270px] max-w-[82vw] py-3 px-2 font-black text-white rounded-lg text-base bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg cursor-pointer animate-pulse">
                     TAP TO START
@@ -597,8 +598,9 @@
                     <div id="resumeGameInfo" class="hidden text-xs font-bold text-purple-900 mt-1.5"></div>
                 </div>
             </div>
-            <div class="mt-4 flex items-center justify-center select-none">
+            <div id="titleOptionsWrap" class="mt-4 flex items-center justify-center select-none">
                 <button onclick="openOptions()" class="pixel-btn w-[270px] max-w-[82vw] py-3 px-2 font-black text-white rounded-lg text-base bg-slate-700 hover:bg-slate-600 border border-purple-300/50 shadow cursor-pointer">⚙ オプション（音量）</button>
+            </div>
             </div>
         </div>
     </div>
@@ -790,9 +792,13 @@
             #titleBtns.tb-multi .tb-span button { width: auto; }
         }
         @media (orientation: landscape) and (max-height: 520px) {
-            #titleBtns { position: fixed; left: 10px; top: 50%; transform: translateY(-50%); width: 232px; display: flex; flex-direction: column; gap: 8px; z-index: 6; }
+            /* オプション（音量）ボタンも他のボタンと同じ左端の列に並べる（2026-11-22 ユーザー報告：位置が合っていなかった） */
+            #titleBtnCol { position: fixed; left: 10px; top: 50%; transform: translateY(-50%); width: 232px; display: flex; flex-direction: column; gap: 8px; z-index: 6; }
+            #titleBtns { display: flex; flex-direction: column; gap: 8px; width: 100%; }
             #titleBtns > * { margin-top: 0; width: 100%; }
             #titleBtns button { width: 100%; }
+            #titleOptionsWrap { margin-top: 0; width: 100%; }
+            #titleOptionsWrap button { width: 100%; }
         }
     </style>
     <div id="charSelectModal" class="fixed inset-0 z-[100003] hidden overflow-hidden" style="background: linear-gradient(180deg, #1b1f7a 0%, #10134d 55%, #070830 100%);">
