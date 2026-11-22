@@ -572,7 +572,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-11 ・ 605,717 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-12 ・ 605,901 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -1355,7 +1355,7 @@
         }
         const TOMOKO_BGM_BOOST = 1.5; // トモコ専用エンディング曲だけ、少し大きめに再生する
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
-        const SELECT_BGM_FACTOR = 0.8; // キャラ選択まわりのBGM（select_bgm）だけ少し控えめにする（2026-11-21 ユーザー要望「少し下げたい」）
+        const SELECT_BGM_FACTOR = 0.6; // キャラ選択まわりのBGM（select_bgm）だけ控えめにする（2026-11-21 に 0.8、2026-11-22 に「キャラ選択時の声が聞こえにくい」との実機報告で 0.6 へ。ボイス側は収録ファイルのピーク上限（-6.5dB）×スマホ増幅2.0で頭打ちのため、BGM側を下げる）
         const ENDING_BGM_FACTOR = 1.25; // エンディング曲（スタッフロールの曲）を少しだけ大きくする（2026-11-21 ユーザー要望）
         function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingBgmAudio' || id === 'endingUtsuroBgmAudio') v = Math.min(1, v * ENDING_BGM_FACTOR); if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST * ENDING_BGM_FACTOR); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST * ENDING_BGM_FACTOR); return v; }
         let audioUnlocked = false;
