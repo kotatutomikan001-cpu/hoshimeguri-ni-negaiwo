@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1122-23 ・ 616,535 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1123-1 ・ 617,936 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6455,10 +6455,16 @@
         // リザルト画面を閉じる時：トモコ・かたるの個別エンディング以外の時は、先に隠し人物ヒントを出す
         // 𝕏（旧Twitter）への結果投稿：結果カード画像を作り、スマホは共有シート、PCは画像ダウンロード＋投稿画面を開く
         const GAME_PAGE_URL = 'https://kotatutomikan001-cpu.github.io/hoshimeguri-ni-negaiwo/';
+        // 自分の操作キャラかどうか（オンライン＝自分の席、CPU戦＝人間プレイヤー）。リザルトとX投稿で「あなた」を付ける
+        function isLocalPlayer(p) {
+            if (!p) return false;
+            if (isOnlineMode) return players[myPlayerIndex] === p;
+            return !!p.isHuman;
+        }
         function resultShareText() {
             let sorted = rankSortedPlayers();
             let marks = ['👑 1位', '2位', '3位', '4位'];
-            let lines = sorted.map((p, i) => (marks[i] || ((i + 1) + '位')) + ' ' + playerLabel(p) + '：' + evalScoreOf(p).toLocaleString() + '点（⭐' + (p.fragments || 0) + '・👥' + (p.listeners || 0).toLocaleString() + '）');
+            let lines = sorted.map((p, i) => (marks[i] || ((i + 1) + '位')) + ' ' + playerLabel(p) + (isLocalPlayer(p) ? '（あなた）' : '') + '：' + evalScoreOf(p).toLocaleString() + '点（⭐' + (p.fragments || 0) + '・👥' + (p.listeners || 0).toLocaleString() + '）');
             return '『星めぐりに願いを』対戦結果！\n' + lines.join('\n') + '\n#星めぐりに願いを #星めぐり学園\n' + GAME_PAGE_URL;
         }
         function rrPath(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
@@ -6489,6 +6495,13 @@
                 g.fillText(playerLabel(p), 336, y + 48);
                 g.font = '700 25px sans-serif'; g.fillStyle = '#4c1d95';
                 g.fillText('⭐ ' + (p.fragments || 0) + '　👥 ' + (p.listeners || 0).toLocaleString() + '人　評価点 ' + evalScoreOf(p).toLocaleString() + '点', 336, y + 88);
+                if (isLocalPlayer(p)) {
+                    g.strokeStyle = '#06b6d4'; g.lineWidth = 3; rrPath(g, 64, y + 4, 1072, rowH - 22, 14); g.stroke();
+                    g.fillStyle = '#0891b2'; rrPath(g, 1000, y + 14, 124, 38, 19); g.fill();
+                    g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = '900 24px sans-serif';
+                    g.fillText('あなた', 1062, y + 41);
+                    g.textAlign = 'left';
+                }
                 let img = new Image();
                 img.onload = () => { try { drawContainImg(g, img, 202, y + 6, 104, rowH - 26); } catch (e) {} if (--pending === 0) finish(); };
                 img.onerror = () => { if (--pending === 0) finish(); };
@@ -6557,6 +6570,13 @@
                 img.src = charStandUrl(p.char);
                 if (img.naturalWidth) ph.style.display = 'none';
                 frame.append(ph, img);
+                if (isLocalPlayer(p)) {
+                    frame.classList.add('ring-2', 'ring-cyan-400');
+                    let you = document.createElement('div');
+                    you.className = 'absolute top-1 left-1 z-10 text-[10px] sm:text-xs font-black text-white bg-cyan-600/95 rounded-full px-2 py-0.5 shadow';
+                    you.textContent = 'あなた';
+                    frame.appendChild(you);
+                }
                 let nm = document.createElement('div');
                 nm.className = 'text-[11px] sm:text-sm font-black text-purple-950 text-center leading-tight';
                 nm.innerHTML = splitSurnameHtml(p.name);
@@ -6578,7 +6598,7 @@
                     let score = evalScoreOf(p);
                     return '<tr class="border-t border-purple-300/60">'
                         + '<td class="py-1 px-2 font-black whitespace-nowrap">' + (idx + 1) + '位</td>'
-                        + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + escHtml(playerLabel(p)) + '</td>'
+                        + '<td class="py-1 px-2 font-bold whitespace-nowrap">' + escHtml(playerLabel(p)) + (isLocalPlayer(p) ? ' <span class="text-cyan-700 font-black">（あなた）</span>' : '') + '</td>'
                         + '<td class="py-1 px-2 text-right whitespace-nowrap">⭐ ' + (p.fragments || 0) + '</td>'
                         + '<td class="py-1 px-2 text-right whitespace-nowrap">👥 ' + p.listeners.toLocaleString() + '</td>'
                         + '<td class="py-1 px-2 text-right font-black whitespace-nowrap">' + score.toLocaleString() + '</td></tr>';
