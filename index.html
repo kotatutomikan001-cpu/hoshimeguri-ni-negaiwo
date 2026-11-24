@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1123-2 ・ 620,183 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1124-5 ・ 646,022 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -860,6 +860,27 @@
                             <button data-cpulevel="easy" onclick="setCpuLevel('easy')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">よわい</button>
                             <button data-cpulevel="normal" onclick="setCpuLevel('normal')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ふつう</button>
                             <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">つよい</button>
+                        </div>
+                    </div>
+                    <div id="csCpuAssignRow" class="hidden flex-col gap-1 mt-2">
+                        <span class="text-[10px] sm:text-xs font-black text-indigo-200 whitespace-nowrap">対戦相手（CPU）：「選ぶ」を押してからアイコンをタップすると、その枠の相手を指定できます</span>
+                        <div class="flex gap-1.5 w-full items-center">
+                            <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">2P</span>
+                            <span id="csAssignName1" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <button id="csAssignBtn1" onclick="csSetAssignTarget(1)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
+                            <button onclick="csClearAssign(1)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
+                        </div>
+                        <div class="flex gap-1.5 w-full items-center">
+                            <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">3P</span>
+                            <span id="csAssignName2" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <button id="csAssignBtn2" onclick="csSetAssignTarget(2)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
+                            <button onclick="csClearAssign(2)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
+                        </div>
+                        <div class="flex gap-1.5 w-full items-center">
+                            <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">4P</span>
+                            <span id="csAssignName3" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <button id="csAssignBtn3" onclick="csSetAssignTarget(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
+                            <button onclick="csClearAssign(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
                         </div>
                     </div>
                     <div id="csFooterBtns" class="flex gap-2 mt-auto pt-2">
@@ -2003,6 +2024,9 @@
         let sheetEndingUtsuroScript = null; // シートから読み込んだ「うつろ優勝時（プレイヤー操作）」専用エンディング会話
         let sheetEndingKataruScript = null; // シートから読み込んだ「かたる優勝時」専用エンディング会話
         let sheetEndingTomokoScript = null; // シートから読み込んだ「トモコ優勝時」専用エンディング会話
+        let sheetEndingDekobokoScript = null; // シートから読み込んだ「凸凹カルテット」組み合わせ特別エンド会話
+        let sheetEndingUkkariScript = null; // シートから読み込んだ「うっかりゲーム部」（ひかり＋うつろ）特別エンド会話
+        let sheetEndingManshitsuScript = null; // シートから読み込んだ「いつも満室」（ミリネ＋うつろ）特別エンド会話
         let sheetTrueEndScript = null; // シートから読み込んだ「トゥルーエンド」会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
@@ -2046,6 +2070,7 @@
                 tok = tok.trim();
                 if (!tok) return;
                 if (tok.indexOf('se:') === 0 && tok.length > 3) { if (!out.includes(tok)) out.push(tok); return; }
+                if (tok === 'overlap' || tok === '重ね' || tok === '同時' || tok === 'いっせい') { if (!out.includes('overlap')) out.push('overlap'); return; }
                 for (let key in FX_ALIASES) {
                     if (key === tok || FX_ALIASES[key].includes(tok)) { if (!out.includes(key)) out.push(key); return; }
                 }
@@ -2068,13 +2093,25 @@
             let lines = [];
             for (let r = hasHeader ? 1 : 0; r < rows.length; r++) {
                 let row = rows[r];
-                let who = storySpeakerKey(row[si]);
+                let rawWho = String(row[si] || '').trim();
+                let who = storySpeakerKey(rawWho);
+                let speakers = null;
+                if (!who && rawWho) {
+                    // 話者欄に複数名（改行・「・」区切りなど）が入っていたら、全員で同時に喋る行として扱う
+                    let parts = rawWho.split(/[\n・,、＋+／\/]+/).map(s => s.trim()).filter(Boolean);
+                    if (parts.length >= 2) {
+                        let ids = parts.map(p => storySpeakerKey(p)).filter(Boolean);
+                        if (ids.length >= 2) { speakers = ids; who = ids[0]; }
+                    }
+                }
                 let text = String(row[ti] || '').trim();
                 text = text.split('\\n').join('\n');
                 if (!who) continue; // 話者不明はスキップ（本文が空の行は「無言の1行」として残す）
                 let fxRaw = fi >= 0 ? String(row[fi] || '').trim().toLowerCase() : '';
                 let line = { who: who, text: text };
+                if (speakers) line.speakers = speakers;
                 let fxToksParsed = parseFxTokens(fxRaw);
+                if (speakers && !fxToksParsed.includes('overlap')) fxToksParsed.push('overlap');
                 if (fxToksParsed.length) line.fx = fxToksParsed.join(' ');
                 lines.push(line);
             }
@@ -2378,6 +2415,99 @@
                 setEndingTomokoSheetStatus('連携を解除しました（トモコ優勝時も通常のエンディング会話になります）');
             }
         }
+        const OFFICIAL_ENDING_DEKOBOKO_SHEET_URL = ''; // 凸凹カルテット（さくら・ねめあ・るい・える）組み合わせ特別エンドの公式シート。シナリオ作成後にURLを設定すると有効になる
+        function getEffectiveEndingDekobokoSheetUrl() {
+            return OFFICIAL_ENDING_DEKOBOKO_SHEET_URL;
+        }
+        function setEndingDekobokoSheetStatus(msg) {
+            let el = document.getElementById('endingDekobokoSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingDekobokoFromSheet(manual) {
+            let savedUrl = getEffectiveEndingDekobokoSheetUrl();
+            if (!savedUrl) { if (manual) setEndingDekobokoSheetStatus('未連携です（凸凹カルテットがそろっても通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingDekobokoSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingDekobokoSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingDekobokoScript = lines;
+                try { localStorage.setItem('utsuro_ending_dekoboko_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingDekobokoSheetStatus(`✅ ${lines.length}行の「凸凹カルテット」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('凸凹カルテットシート読み込み失敗:', e);
+                setEndingDekobokoSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        const OFFICIAL_ENDING_UKKARI_SHEET_URL = ''; // うっかりゲーム部（ひかり＋うつろ）特別エンドの公式シート。シナリオ作成後にURLを設定すると有効になる
+        function getEffectiveEndingUkkariSheetUrl() {
+            return OFFICIAL_ENDING_UKKARI_SHEET_URL;
+        }
+        function setEndingUkkariSheetStatus(msg) {
+            let el = document.getElementById('endingUkkariSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingUkkariFromSheet(manual) {
+            let savedUrl = getEffectiveEndingUkkariSheetUrl();
+            if (!savedUrl) { if (manual) setEndingUkkariSheetStatus('未連携です（うっかりゲーム部がそろっても通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingUkkariSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingUkkariSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingUkkariScript = lines;
+                try { localStorage.setItem('utsuro_ending_ukkari_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingUkkariSheetStatus(`✅ ${lines.length}行の「うっかりゲーム部」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('うっかりゲーム部シート読み込み失敗:', e);
+                setEndingUkkariSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
+        const OFFICIAL_ENDING_MANSHITSU_SHEET_URL = ''; // いつも満室（ミリネ＋うつろ）特別エンドの公式シート。シナリオ作成後にURLを設定すると有効になる
+        function getEffectiveEndingManshitsuSheetUrl() {
+            return OFFICIAL_ENDING_MANSHITSU_SHEET_URL;
+        }
+        function setEndingManshitsuSheetStatus(msg) {
+            let el = document.getElementById('endingManshitsuSheetStatusText');
+            if (el) el.innerText = msg;
+        }
+        async function loadEndingManshitsuFromSheet(manual) {
+            let savedUrl = getEffectiveEndingManshitsuSheetUrl();
+            if (!savedUrl) { if (manual) setEndingManshitsuSheetStatus('未連携です（いつも満室がそろっても通常のエンディング会話になります）'); return false; }
+            let csvUrl = extractSheetCsvUrl(savedUrl);
+            if (!csvUrl) { setEndingManshitsuSheetStatus('⚠️ URLを認識できませんでした'); return false; }
+            try {
+                setEndingManshitsuSheetStatus('読み込み中...');
+                let sep = csvUrl.includes('?') ? '&' : '?';
+                let res = await fetch(csvUrl + sep + '_cb=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let text = await res.text();
+                let lines = sheetRowsToStory(parseCsvText(text));
+                if (lines.length === 0) throw new Error('有効なセリフが0行');
+                sheetEndingManshitsuScript = lines;
+                try { localStorage.setItem('utsuro_ending_manshitsu_sheet_cache', JSON.stringify(lines)); } catch (e) {}
+                setEndingManshitsuSheetStatus(`✅ ${lines.length}行の「いつも満室」会話を読み込みました`);
+                return true;
+            } catch (e) {
+                console.warn('いつも満室シート読み込み失敗:', e);
+                setEndingManshitsuSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
+                return false;
+            }
+        }
         const OFFICIAL_TRUE_END_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1phE8SRGh6zNXNYo6hOAO4AUXN8Ofi3OK5_6rjhdmPVs/edit?gid=427128988#gid=427128988'; // トゥルーエンドの公式シート
         function getPersonalEndingTrueSheetUrl() {
             try { return localStorage.getItem('utsuro_ending_true_sheet_url') || ''; } catch (e) { return ''; }
@@ -2554,6 +2684,15 @@
                 let cachedTrueEnding = localStorage.getItem('utsuro_ending_true_sheet_cache');
                 if (cachedTrueEnding) { try { sheetTrueEndScript = sanitizeOpeningLines(JSON.parse(cachedTrueEnding)); } catch (e) { sheetTrueEndScript = null; } }
                 if (personalTrueUrl || OFFICIAL_TRUE_END_SHEET_URL) loadEndingTrueFromSheet(false); // トゥルーエンドシートがあれば起動時に自動読み込み
+                let cachedDekobokoEnding = localStorage.getItem('utsuro_ending_dekoboko_sheet_cache');
+                if (cachedDekobokoEnding) { try { sheetEndingDekobokoScript = sanitizeOpeningLines(JSON.parse(cachedDekobokoEnding)); } catch (e) { sheetEndingDekobokoScript = null; } }
+                if (OFFICIAL_ENDING_DEKOBOKO_SHEET_URL) loadEndingDekobokoFromSheet(false); // 凸凹カルテットシート（公式URLが設定されたら起動時に自動読み込み）
+                let cachedUkkariEnding = localStorage.getItem('utsuro_ending_ukkari_sheet_cache');
+                if (cachedUkkariEnding) { try { sheetEndingUkkariScript = sanitizeOpeningLines(JSON.parse(cachedUkkariEnding)); } catch (e) { sheetEndingUkkariScript = null; } }
+                if (OFFICIAL_ENDING_UKKARI_SHEET_URL) loadEndingUkkariFromSheet(false); // うっかりゲーム部シート（公式URLが設定されたら起動時に自動読み込み）
+                let cachedManshitsuEnding = localStorage.getItem('utsuro_ending_manshitsu_sheet_cache');
+                if (cachedManshitsuEnding) { try { sheetEndingManshitsuScript = sanitizeOpeningLines(JSON.parse(cachedManshitsuEnding)); } catch (e) { sheetEndingManshitsuScript = null; } }
+                if (OFFICIAL_ENDING_MANSHITSU_SHEET_URL) loadEndingManshitsuFromSheet(false); // いつも満室シート（公式URLが設定されたら起動時に自動読み込み）
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3144,6 +3283,8 @@
         let csMode = 'cpu';
         let csCursor = 'utsuro';
         let csCpuPicks = [null, null, null, null];
+        let csCpuAssign = [null, null, null]; // CPU対戦相手の個別指定（2P/3P/4P）。nullならランダム
+        let csAssignTarget = 0; // 0=1Pを選んでいる最中、1〜3=その枠の対戦相手を指定中
         let csUnlocked = false;
         let csMapTapLog = [];
 
@@ -3172,6 +3313,8 @@
             csCursor = (myChar && csVisibleIds().includes(myChar)) ? myChar : 'utsuro';
             if (mode === 'cpu') {
                 csCpuPicks = [null, null, null, null];
+                csCpuAssign = [null, null, null];
+                csAssignTarget = 0;
                 document.getElementById('startModal').classList.add('hidden');
                 document.getElementById('csModeLabel').innerText = 'VS CPU';
                 setCsStatus('1Pのキャラを選んでください');
@@ -3367,21 +3510,119 @@
             let startBtn = document.getElementById('csStartBtn');
             let confBtn = document.getElementById('csConfirmBtn');
             let levelRow = document.getElementById('csCpuLevelRow');
+            let assignRow = document.getElementById('csCpuAssignRow');
             if (csMode === 'cpu') {
                 confBtn.classList.add('hidden');
                 if (csCpuPicks[0]) startBtn.classList.remove('hidden');
                 else startBtn.classList.add('hidden');
                 if (levelRow) { levelRow.classList.remove('hidden'); levelRow.classList.add('flex'); }
+                if (assignRow) { assignRow.classList.remove('hidden'); assignRow.classList.add('flex'); }
                 refreshCpuLevelUI();
             } else {
                 confBtn.classList.remove('hidden');
                 confBtn.innerText = '✔ このキャラに決定';
                 startBtn.classList.add('hidden');
                 if (levelRow) { levelRow.classList.add('hidden'); levelRow.classList.remove('flex'); }
+                if (assignRow) { assignRow.classList.add('hidden'); assignRow.classList.remove('flex'); }
+            }
+            refreshCsAssignUI();
+        }
+
+        // 対戦相手の個別指定UI（名前表示と「選ぶ」ボタンの選択中ハイライト）を最新状態にする
+        function refreshCsAssignUI() {
+            for (let i = 1; i <= 3; i++) {
+                let nm = document.getElementById('csAssignName' + i);
+                if (nm) nm.innerText = csCpuAssign[i - 1] ? charName(csCpuAssign[i - 1]) : 'ランダム';
+                let btn = document.getElementById('csAssignBtn' + i);
+                if (btn) {
+                    let active = csAssignTarget === i;
+                    btn.classList.toggle('bg-amber-500', active);
+                    btn.classList.toggle('text-black', active);
+                    btn.classList.toggle('bg-slate-700', !active);
+                    btn.classList.toggle('text-gray-200', !active);
+                    btn.innerText = active ? '選択中…' : '選ぶ';
+                }
             }
         }
 
+        // 「選ぶ」を押した枠を、次にアイコンをタップしたキャラで指定する状態にする（もう一度押すと解除）
+        function csSetAssignTarget(slot) {
+            if (csMode !== 'cpu') return;
+            csAssignTarget = (csAssignTarget === slot) ? 0 : slot;
+            refreshCsAssignUI();
+            if (csAssignTarget) setCsStatus((slot + 1) + 'P の対戦相手にしたいキャラのアイコンをタップしてください');
+            else setCsStatus('1Pのキャラを選んでください');
+        }
+
+        // その枠の指定をやめてランダムに戻す
+        function csClearAssign(slot) {
+            if (csMode !== 'cpu') return;
+            csCpuAssign[slot - 1] = null;
+            if (csAssignTarget === slot) csAssignTarget = 0;
+            csRebuildCpuPicks();
+            refreshCsSlots();
+            refreshCsAssignUI();
+            setCsStatus((slot + 1) + 'P の対戦相手をランダムに戻しました');
+        }
+
+        // 1Pと個別指定をもとに、CPU対戦相手（csCpuPicks[1..3]）を組み直す。
+        // 指定された枠は固定、残りはランダム抽選（重複なし・うつろ⇔かたるの表裏一体も避ける）。
+        // 表裏一体の都合で置けなかった指定は外して、そのキャラ名（表示名）を返す
+        function csRebuildCpuPicks() {
+            let dropped = [];
+            let used = new Set();
+            if (csCpuPicks[0]) {
+                used.add(csCpuPicks[0]);
+                let pr0 = csPairOf(csCpuPicks[0]);
+                if (pr0) used.add(pr0);
+            }
+            for (let i = 1; i <= 3; i++) {
+                let a = csCpuAssign[i - 1];
+                if (a && !used.has(a)) {
+                    csCpuPicks[i] = a;
+                    used.add(a);
+                    let pr = csPairOf(a);
+                    if (pr) used.add(pr);
+                } else {
+                    if (a && used.has(a)) { dropped.push(charName(a)); csCpuAssign[i - 1] = null; }
+                    csCpuPicks[i] = null;
+                }
+            }
+            if (!csCpuPicks[0]) return dropped; // 1P未確定の間は、ランダム枠は空のままにしておく
+            let pool = csVisibleIds().filter(id => !used.has(id));
+            for (let i = pool.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+            for (let i = 1; i <= 3; i++) {
+                if (csCpuPicks[i]) continue;
+                csCpuPicks[i] = pool.shift() || null;
+                let pr = csCpuPicks[i] ? csPairOf(csCpuPicks[i]) : null;
+                if (pr) pool = pool.filter(id => id !== pr);
+            }
+            return dropped;
+        }
+
+        // 指定中の枠へ、カーソル中のキャラを対戦相手として指定する
+        function csAssignToSlot(slot) {
+            let id = csCursor;
+            if (!id || id === '?') { setCsStatus('そのキャラは選べません'); return; }
+            if (csCpuPicks[0] === id) { setCsStatus('⚠️ ' + charName(id) + ' は 1P が使用中です'); return; }
+            let other = csCpuAssign.findIndex((a, i) => a === id && i !== slot - 1);
+            if (other >= 0) { setCsStatus('⚠️ ' + charName(id) + ' は ' + (other + 2) + 'P に指定済みです'); return; }
+            let pr = csPairOf(id);
+            if (pr && (csCpuPicks[0] === pr || csCpuAssign.some((a, i) => a === pr && i !== slot - 1))) {
+                setCsStatus('⚠️ ' + charName(id) + ' と ' + charName(pr) + ' は表裏一体なので、同じ対戦には出られません');
+                return;
+            }
+            csCpuAssign[slot - 1] = id;
+            csAssignTarget = 0;
+            csRebuildCpuPicks();
+            refreshCsSlots();
+            refreshCsAssignUI();
+            setCsStatus((slot + 1) + 'P の対戦相手を ' + charName(id) + ' に指定しました');
+        }
+
         function csRandomPick() {
+            csAssignTarget = 0; // ランダム選択は1Pの操作なので、対戦相手の指定モードは解除する
+            refreshCsAssignUI();
             let taken = csTakenByOthers();
             let ids = csVisibleIds().filter(id => taken[id] === undefined && id !== csCursor);
             ids = ids.filter(id => {
@@ -3408,18 +3649,14 @@
             }
             playCharVoice(csCursor, 'select');
             if (csMode === 'cpu') {
+                if (csAssignTarget >= 1) { csAssignToSlot(csAssignTarget); return; }
                 if (csCpuPicks[0] === csCursor) { refreshCsSlots(); return; }
                 myChar = csCursor;
                 csCpuPicks[0] = csCursor;
-                let pool = csVisibleIds().filter(id => id !== csCursor && id !== csPairOf(csCursor));
-                for (let i = pool.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-                for (let i = 1; i <= 3; i++) {
-                    csCpuPicks[i] = pool.shift();
-                    let pr = csPairOf(csCpuPicks[i]);
-                    if (pr) pool = pool.filter(id => id !== pr);
-                }
+                let dropped = csRebuildCpuPicks();
                 refreshCsSlots();
-                setCsStatus('2P: ' + charName(csCpuPicks[1]) + ' ／ 3P: ' + charName(csCpuPicks[2]) + ' ／ 4P: ' + charName(csCpuPicks[3]) + ' が参戦！');
+                refreshCsAssignUI();
+                setCsStatus('2P: ' + charName(csCpuPicks[1]) + ' ／ 3P: ' + charName(csCpuPicks[2]) + ' ／ 4P: ' + charName(csCpuPicks[3]) + ' が参戦！' + (dropped.length ? '（' + dropped.join('・') + ' は表裏一体のため対戦相手から外れました）' : ''));
                 updateCsButtons();
             } else {
                 setLobbyChar(csCursor);
@@ -5279,10 +5516,14 @@
 
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
-            let cleaned = lines.filter(l => l && typeof l.text === 'string').map(l => ({
-                who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
-                text: l.text.trim() === '' ? '' : String(l.text)
-            }));
+            let cleaned = lines.filter(l => l && typeof l.text === 'string').map(l => {
+                let out = {
+                    who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
+                    text: l.text.trim() === '' ? '' : String(l.text)
+                };
+                if (Array.isArray(l.speakers) && l.speakers.length >= 2) out.speakers = l.speakers.map(s => s === 'winner' ? 'winner' : normalizeSpeakerWho(s));
+                return out;
+            });
             return cleaned.length ? cleaned : null;
         }
 
@@ -5665,6 +5906,43 @@
             { who: "megami", text: "どうかこれからも――星めぐりの物語を、見守ってくださいね。", fx: "" },
             { who: "narration", text: "――世界は今日も、静かに回り続ける。誰かの願いと、誰かのお礼を乗せて。", fx: "gold slow" },
         ];
+        // 🎉 組み合わせ特別エンド：特定のメンバーが対戦メンバーにそろった時の専用エンディング。
+        // 発動条件は「優勝者が人間のプレイヤー」の時だけ（CPU戦・オンライン共通、補充／引き継ぎCPUの優勝は汎用エンド）。判定は playEndingDialogue 側。
+        // 組み合わせはここに足すだけで増やせる（members は4人ちょうどのセット判定、順番は不問）
+        const SPECIAL_COMBO_ENDINGS = [
+            { id: 'dekoboko', name: '凸凹カルテット', members: ['sakura', 'nemea', 'rui', 'eru'] }
+        ];
+        let activeComboEnding = null; // この対戦で発動した組み合わせ特別エンド（なければ null）
+        function matchSpecialCombo() {
+            let chars = (players || []).filter(p => p && p.char).map(p => canonicalCharId(p.char));
+            if (chars.length !== 4) return null;
+            let set = new Set(chars);
+            if (set.size !== 4) return null;
+            return SPECIAL_COMBO_ENDINGS.find(c => c.members.length === set.size && c.members.every(m => set.has(m))) || null;
+        }
+        function comboEndingScript(combo) {
+            if (!combo) return null;
+            if (combo.id === 'dekoboko') return sheetEndingDekobokoScript;
+            return null;
+        }
+        // 🎉 ユニット特別エンド（2026-11-24 ユーザー指定）：ユニットのメンバー全員が対戦に参加していて、
+        // そのメンバーを人間が操作して優勝した時に発動し、個別エンド（ひかり／うつろ等）より優先される。
+        // 優先順位はこの配列の順（うっかりゲーム部 → いつも満室 → うつろエンド）。
+        // メンバーがそろっているのにCPUが優勝したら汎用エンド。判定は playEndingDialogue 側。
+        const SPECIAL_UNIT_ENDINGS = [
+            { id: 'ukkari', name: 'うっかりゲーム部', members: ['hikari', 'utsuro'] },
+            { id: 'manshitsu', name: 'いつも満室', members: ['mirine', 'utsuro'] }
+        ];
+        function presentSpecialUnits() {
+            let chars = new Set((players || []).filter(p => p && p.char).map(p => canonicalCharId(p.char)));
+            return SPECIAL_UNIT_ENDINGS.filter(u => u.members.every(m => chars.has(m)));
+        }
+        function unitEndingScript(unit) {
+            if (!unit) return null;
+            if (unit.id === 'ukkari') return sheetEndingUkkariScript;
+            if (unit.id === 'manshitsu') return sheetEndingManshitsuScript;
+            return null;
+        }
         function playEndingDialogue() {
             let sorted = rankSortedPlayers();
             let winnerChar = sorted.length ? sorted[0].char : 'utsuro';
@@ -5673,7 +5951,31 @@
             let winnerHonor = (winnerChar === 'heru' || winnerChar === 'shakuna') ? '君' : 'ちゃん';
             let winnerIsHuman = sorted.length ? !!sorted[0].isHuman : false;
             let endScript = currentEndingScript();
-            if (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) endScript = sheetEndingHikariScript;
+            // 🎉 組み合わせ特別エンドの振り分け（2026-11-24 ユーザー指定）：
+            //   優勝者が人間のプレイヤーなら特別エンド（CPU戦・オンライン共通）。
+            //   CPUが優勝したら汎用エンド。オンラインで人数不足の補充や回線切断の引き継ぎで入ったCPUも「CPU優勝」に含む
+            //   （補充・引き継ぎの席は isHuman=false になっているので、winnerIsHuman でそのまま判定できる）
+            // （シナリオ未設定の間は特別エンドにはならず、通常のエンディング振り分けのまま）
+            let combo = matchSpecialCombo();
+            let comboScript = combo ? comboEndingScript(combo) : null;
+            activeComboEnding = null;
+            // 🎉 ユニット特別エンドの候補（メンバー全員が参加しているユニット、優先順）
+            // 発動＝優勝者がそのユニットのメンバーを操作している人間。うつろ優勝時は うっかり→いつも満室→うつろエンド の順に優先
+            let winnerId = canonicalCharId(winnerChar);
+            let presentUnits = presentSpecialUnits();
+            let fireUnit = presentUnits.find(u => { let s = unitEndingScript(u); return winnerIsHuman && u.members.includes(winnerId) && s && s.length; }) || null;
+            let unitScriptLoaded = presentUnits.some(u => { let s = unitEndingScript(u); return s && s.length; });
+            if (combo && comboScript && comboScript.length && winnerIsHuman) {
+                activeComboEnding = combo;
+                endScript = comboScript;
+            } else if (combo && !winnerIsHuman) {
+                // 組み合わせはそろったがCPU優勝 → 汎用エンド（endScript は汎用のまま、個別エンドにもしない）
+            } else if (fireUnit) {
+                activeComboEnding = fireUnit;
+                endScript = unitEndingScript(fireUnit);
+            } else if (!winnerIsHuman && unitScriptLoaded) {
+                // ユニットのメンバーはそろっていたがCPU優勝 → 汎用エンド（endScript は汎用のまま、個別エンドにもしない）
+            } else if (winnerChar === 'hikari' && sheetEndingHikariScript && sheetEndingHikariScript.length) endScript = sheetEndingHikariScript;
             else if (winnerChar === 'utsuro' && winnerIsHuman && sheetEndingUtsuroScript && sheetEndingUtsuroScript.length) endScript = sheetEndingUtsuroScript;
             else if (winnerChar === 'kataru' && winnerIsHuman && sheetEndingKataruScript && sheetEndingKataruScript.length) endScript = sheetEndingKataruScript;
             else if (winnerChar === 'tomoko' && winnerIsHuman && !players.some(p => p && p.char === 'kataru') && sheetEndingTomokoScript && sheetEndingTomokoScript.length) endScript = sheetEndingTomokoScript; // かたる参加時はうつろが夢世界にいない矛盾を避け、汎用へ
@@ -5696,7 +5998,7 @@
             activeBgm = 'endingTalk';
             attemptPlayBgm();
             let lines = endScript
-                .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
+                .map(l => ({ who: l.who === 'winner' ? winnerChar : l.who, fx: l.fx, speakers: Array.isArray(l.speakers) ? l.speakers.map(s => s === 'winner' ? winnerChar : s) : undefined, text: String(l.text || '').split('{winner_full}').join(winnerName).split('{winner_h}').join(winnerHonor).split('{winner}').join(winnerGiven) }));
             if (!lines.length) { showEndingResults(); return; }
             endingPlayLines = lines;
             try { preloadDialogueSe(endingPlayLines); } catch (e) {}
@@ -5937,7 +6239,7 @@
             clearBgmFxMute();
             activeBgm = 'endingTalk';
             attemptPlayBgm();
-            endingPlayLines = ((sheetTrueEndScript && sheetTrueEndScript.length) ? sheetTrueEndScript : TRUE_END_SCRIPT).map(l => ({ who: l.who, fx: l.fx, text: l.text }));
+            endingPlayLines = ((sheetTrueEndScript && sheetTrueEndScript.length) ? sheetTrueEndScript : TRUE_END_SCRIPT).map(l => ({ who: l.who, fx: l.fx, speakers: l.speakers, text: l.text }));
             try { preloadDialogueSe(endingPlayLines); } catch (e) {}
             dialogueMode = 'ending';
             openingIndex = 0;
@@ -6813,6 +7115,24 @@
         function dialogueTextHtml(str) {
             return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         }
+        // 🗣️ 同時セリフの本文HTML：大きな『』の中に、各人のセリフ（改行または／区切り）を大きめ・太めの文字で
+        // わざと重ねて表示し、「全員が同時に喋っていて聴き取れない」感じを出す。ずらし量・傾きは行番号で決まる固定パターン（全端末で同じ見た目）
+        function overlapDialogueHtml(text) {
+            let body = String(text || '').trim();
+            if (body.startsWith('『')) body = body.slice(1);
+            if (body.endsWith('』')) body = body.slice(0, -1);
+            let parts = body.split(/[\n／]+/).map(s => s.trim()).filter(Boolean);
+            if (!parts.length) parts = [body];
+            let tilts = [-1.6, 1.3, -0.8, 1.9, -1.1, 0.7];
+            let shifts = [0, 16, 7, 22, 5, 13];
+            let inner = parts.map((p, i) => {
+                let mt = i === 0 ? '0' : '-0.40em';
+                return '<span style="display:block; position:relative; font-size:1.38em; font-weight:900; line-height:1.02; letter-spacing:0.02em; margin-top:' + mt + '; margin-left:' + shifts[i % shifts.length] + 'px; transform:rotate(' + tilts[i % tilts.length] + 'deg); opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);">' + dialogueTextHtml(p) + '</span>';
+            }).join('');
+            return '<span style="display:block; font-size:1.7em; font-weight:900; line-height:1;">『</span>' +
+                '<span style="display:block; position:relative; padding:0 0.1em;">' + inner + '</span>' +
+                '<span style="display:block; text-align:right; font-size:1.7em; font-weight:900; line-height:1;">』</span>';
+        }
         function stopOpeningType(complete) {
             if (openingTypeTimer) { clearInterval(openingTypeTimer); openingTypeTimer = null; }
             if (complete && !openingTypeDone) {
@@ -6852,6 +7172,10 @@
             if (!line) { endOpening(); return; }
             let isNarr = line.who === 'narration';
             let fxToks = parseFxTokens(line.fx || '');
+            // 🗣️ 全員で同時に喋る行（話者が複数 or fx=overlap/重ね）：顔枠なし・名前は全員分・本文は大きな『』の中で重ねて表示する
+            let overlapSpeakers = null;
+            if (Array.isArray(line.speakers) && line.speakers.length >= 2) overlapSpeakers = line.speakers.map(s => s === 'winner' ? s : normalizeSpeakerWho(s));
+            else if (fxToks.includes('overlap')) overlapSpeakers = [normalizeSpeakerWho(line.who)];
             let ovEl = document.getElementById('openingOverlay');
             if (ovEl) {
                 ovEl.classList.remove('opening-shake');
@@ -6868,7 +7192,7 @@
             let fImg = document.getElementById('openingFaceImg');
             let fPh = document.getElementById('openingFacePh');
             if (fWrap && fImg && fPh) {
-                if (isNarr) {
+                if (isNarr || overlapSpeakers) {
                     fWrap.style.display = 'none';
                 } else {
                     let cid = normalizeSpeakerWho(line.who);
@@ -6902,11 +7226,24 @@
             // 話者アイコンの有無で本文の幅が変わる行では、先にレイアウトだけ確定させてから本文を差し替える
             // （iPhone Safari で前の行の文字が一瞬残る二重描画を抑えるため）
             void txEl.offsetWidth;
-            document.getElementById('openingSpeaker').innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
+            let spkEl = document.getElementById('openingSpeaker');
+            if (overlapSpeakers) {
+                spkEl.style.whiteSpace = 'pre-line';
+                spkEl.style.lineHeight = '1.25';
+                spkEl.innerText = overlapSpeakers.map(id => charName(id)).join('\n');
+            } else {
+                spkEl.style.whiteSpace = '';
+                spkEl.style.lineHeight = '';
+                spkEl.innerText = isNarr ? '' : (line.name || OPENING_CHAR_NAMES[line.who] || '');
+            }
             stopOpeningType(false);
             openingTypeFull = line.text || '';
             let typeChars = Array.from(openingTypeFull);
-            if (typeChars.length === 0) {
+            if (overlapSpeakers) {
+                // 同時セリフはタイプライター表示せず、最初から重ねて一気に出す
+                txEl.innerHTML = overlapDialogueHtml(openingTypeFull);
+                openingTypeDone = true;
+            } else if (typeChars.length === 0) {
                 txEl.innerHTML = '';
                 openingTypeDone = true;
             } else {
