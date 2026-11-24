@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1124-6 ・ 647,307 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1125-1 ・ 650,015 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -5931,6 +5931,7 @@
             { id: 'dekoboko', name: '凸凹カルテット', members: ['sakura', 'nemea', 'rui', 'eru'] }
         ];
         let activeComboEnding = null; // この対戦で発動した組み合わせ特別エンド（なければ null）
+        let lastEndingKind = 'generic'; // 直前に再生されたエンディングの種別（スタッフロールの専用曲・専用クレジットの出し分けに使う）
         function matchSpecialCombo() {
             let chars = (players || []).filter(p => p && p.char).map(p => canonicalCharId(p.char));
             if (chars.length !== 4) return null;
@@ -6000,6 +6001,13 @@
             utsuroEndingSong = !!(sheetEndingUtsuroScript && endScript === sheetEndingUtsuroScript);
             kataruEndingSong = !!(sheetEndingKataruScript && endScript === sheetEndingKataruScript);
             tomokoEndingSong = !!(sheetEndingTomokoScript && endScript === sheetEndingTomokoScript);
+            // 🎵 スタッフロールの出し分け用に、今回のエンディング種別を記録する
+            if (activeComboEnding) lastEndingKind = activeComboEnding.id;
+            else if (sheetEndingHikariScript && endScript === sheetEndingHikariScript) lastEndingKind = 'hikari';
+            else if (utsuroEndingSong) lastEndingKind = 'utsuro';
+            else if (kataruEndingSong) lastEndingKind = 'kataru';
+            else if (tomokoEndingSong) lastEndingKind = 'tomoko';
+            else lastEndingKind = 'generic';
             // 🌳 トゥルーエンド解放の記録: この端末で個別エンドを見たら実が1つなる（タイトル画面の樹で使う）
             try {
                 localStorage.setItem('utsuro_any_ending_seen', '1'); // どのエンディングでも、見たら樹が枯れた姿から甦る
@@ -6116,13 +6124,21 @@
             if (ts) ts.classList.add('hidden');
             endingReplayActive = true;
             endingReplayKind = kind;
-            if (kind === 'generic') {
-                // 汎用は優勝者で分岐させない：専用シートを一時的に外してから再生し、終わったら戻す
-                let saved = [sheetEndingHikariScript, sheetEndingUtsuroScript, sheetEndingKataruScript, sheetEndingTomokoScript];
-                sheetEndingHikariScript = null; sheetEndingUtsuroScript = null; sheetEndingKataruScript = null; sheetEndingTomokoScript = null;
-                try { playEndingDialogue(); } finally { sheetEndingHikariScript = saved[0]; sheetEndingUtsuroScript = saved[1]; sheetEndingKataruScript = saved[2]; sheetEndingTomokoScript = saved[3]; }
-            } else {
-                playEndingDialogue();
+            // リスト再生は指定のエンディングだけを再生する：組み合わせ／ユニット特別エンドのシートは一時的に外す
+            // （汎用・ひかり・うつろ等の顔ぶれがユニット条件と重なっても、特別エンドに化けないように）
+            let savedComboScripts = [sheetEndingDekobokoScript, sheetEndingUkkariScript, sheetEndingManshitsuScript];
+            sheetEndingDekobokoScript = null; sheetEndingUkkariScript = null; sheetEndingManshitsuScript = null;
+            try {
+                if (kind === 'generic') {
+                    // 汎用は優勝者で分岐させない：専用シートを一時的に外してから再生し、終わったら戻す
+                    let saved = [sheetEndingHikariScript, sheetEndingUtsuroScript, sheetEndingKataruScript, sheetEndingTomokoScript];
+                    sheetEndingHikariScript = null; sheetEndingUtsuroScript = null; sheetEndingKataruScript = null; sheetEndingTomokoScript = null;
+                    try { playEndingDialogue(); } finally { sheetEndingHikariScript = saved[0]; sheetEndingUtsuroScript = saved[1]; sheetEndingKataruScript = saved[2]; sheetEndingTomokoScript = saved[3]; }
+                } else {
+                    playEndingDialogue();
+                }
+            } finally {
+                sheetEndingDekobokoScript = savedComboScripts[0]; sheetEndingUkkariScript = savedComboScripts[1]; sheetEndingManshitsuScript = savedComboScripts[2];
             }
         }
 
@@ -6415,6 +6431,23 @@
             if (!isSmartphoneDevice()) return;
             document.querySelectorAll('.bgm-vol-control').forEach(el => el.classList.add('hidden'));
         }
+        // 🎵 スタッフロールの使用楽曲：3番目にエンディング種別が付いた曲は、そのエンディングのロールにだけ曲名・アーティスト名が出る（2026-11-25 ユーザー指定）。
+        // エンディングが増えたら、そのエンディングの専用曲をここへ種別付きで足すだけでよい（null＝全エンディング共通）
+        const STAFF_ROLL_SONGS = [
+            ['星めぐりに願いを', '', null],
+            ['星めぐりに願いを（希望の光remix）', '', null],
+            ['晴色カレイドスコープ', 'まんぼう二等兵', null],
+            ['もういくつ寝るとクリスマス', 'まんぼう二等兵', null],
+            ['おきらくシュガー', 'まんぼう二等兵', 'generic'],
+            ['星屑のシェルター', 'ゆうきわたる', null],
+            ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon', 'utsuro'],
+            ['やさしい愛', 'Particle-Music', 'kataru'],
+            ['からかいの裏側', 'トモコ', 'tomoko']
+        ];
+        // 🎬 エンディング専用の追加スタッフクレジット（そのエンディングのロールにだけ出る。増えたらここに足す）
+        const ENDING_EXTRA_STAFF = {
+            dekoboko: [['監修', 'ふぇる']]
+        };
         function buildStaffRollHtml() {
             let sorted = rankSortedPlayers();
             let winner = sorted[0];
@@ -6439,9 +6472,11 @@
             castRows.forEach(pair => { h += '<span class="text-xs sm:text-sm font-bold text-purple-200 ' + castLead + '" style="text-align:center;">' + pair[0] + '</span><span class="text-lg sm:text-xl font-bold text-white ' + castLead + '" style="text-align:center;">' + pair[1] + '</span>'; });
             h += '</div>';
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ スタッフ ✦</div>';
-            [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']].forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
+            let staffRows = [['プロデューサー', 'hiro-pon'], ['ディレクター', 'hiro-pon'], ['ゲームデザイン', 'hiro-pon'], ['シナリオライター', 'hiro-pon'], ['タイトルロゴ・イラスト', 'hiro-pon'], ['マップデザイン', 'ミニうつろ'], ['メインプログラマー', 'ミニうつろ']];
+            (ENDING_EXTRA_STAFF[lastEndingKind] || []).forEach(st => staffRows.push(st)); // エンディング専用クレジット（例：凸凹カルテットの「監修　ふぇる」）
+            staffRows.forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
-            [['星めぐりに願いを', ''], ['星めぐりに願いを（希望の光remix）', ''], ['晴色カレイドスコープ', 'まんぼう二等兵'], ['もういくつ寝るとクリスマス', 'まんぼう二等兵'], ['おきらくシュガー', 'まんぼう二等兵'], ['星屑のシェルター', 'ゆうきわたる'], ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon'], ['やさしい愛', 'Particle-Music'], ['からかいの裏側', 'トモコ']].forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + (sm[1] ? ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span>' : '') + '</div>'; });
+            STAFF_ROLL_SONGS.filter(sm => !sm[2] || sm[2] === lastEndingKind).forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + (sm[1] ? ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span>' : '') + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             let maskReplayMembers = endingReplayActive; // エンディングリスト再生時は「今回の対戦メンバー」を優勝者以外ーーーにする（2026-11-19 ユーザー指定。当初は汎用のみ→全エンドに拡大）
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + ((maskReplayMembers && pl !== winner) ? 'ーーー' : pl.name + (pl.isHuman ? '' : '（CPU）')) + '</div>'; });
