@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1125-4 ・ 653,242 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1125-5 ・ 653,724 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6492,7 +6492,10 @@
             (ENDING_EXTRA_STAFF[lastEndingKind] || []).forEach(st => staffRows.push(st)); // エンディング専用クレジット（例：凸凹カルテットの「監修　ふぇる」）
             staffRows.forEach(st => { h += '<div class="text-lg sm:text-xl font-bold text-white ' + staffLead + '"><span class="text-xs sm:text-sm font-bold text-purple-200">' + st[0] + '　</span>' + st[1] + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 使用楽曲 ✦</div>';
-            STAFF_ROLL_SONGS.filter(sm => !sm[2] || sm[2] === lastEndingKind).forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + (sm[1] ? ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span>' : '') + '</div>'; });
+            let rollSongs = STAFF_ROLL_SONGS.filter(sm => !sm[2] || sm[2] === lastEndingKind);
+            let ownSongIdx = rollSongs.findIndex(sm => sm[2] && sm[2] === lastEndingKind);
+            if (ownSongIdx !== -1) rollSongs.push(rollSongs.splice(ownSongIdx, 1)[0]); // そのエンディングの曲（スタッフロールで流れる曲）は一番最後に置く
+            rollSongs.forEach(sm => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.1]">' + sm[0] + (sm[1] ? ' <span class="text-xs sm:text-sm font-bold text-purple-200">／ ' + sm[1] + '</span>' : '') + '</div>'; });
             h += '<div class="mt-14 text-sm font-black text-yellow-200/90 tracking-[.35em]">✦ 今回の対戦メンバー ✦</div>';
             let maskReplayMembers = endingReplayActive; // エンディングリスト再生時は「今回の対戦メンバー」を優勝者以外ーーーにする（2026-11-19 ユーザー指定。当初は汎用のみ→全エンドに拡大）
             players.forEach((pl, i) => { h += '<div class="text-lg sm:text-xl font-bold text-white leading-[2.8]">' + (i + 1) + 'P　' + ((maskReplayMembers && pl !== winner) ? 'ーーー' : pl.name + (pl.isHuman ? '' : '（CPU）')) + '</div>'; });
@@ -7185,7 +7188,8 @@
             return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         }
         // 🗣️ 同時セリフの本文HTML：大きな『』の中に、各人のセリフ（改行または／区切り）を大きめ・太めの文字で重ねて表示する。
-        // 綺麗に揃える（2026-11-25 ユーザー指定）：横ずらし・傾きは付けず左端をそろえ、重なりはごく浅くする。
+        // 配置（2026-11-25 ユーザー指定）：横軸（左端）は揃えたまま文字同士が重なるように置く。傾き・横ずらしは付けない。
+        // セリフが『』の外にはみ出ないよう、本文はカッコの内側に余白を取って収める。
         // 全員が同じセリフを言う行（ユニゾン）は、同じ文を何度も重ねず1回だけ大きく表示する。
         function overlapDialogueHtml(text) {
             let body = String(text || '').trim();
@@ -7195,11 +7199,11 @@
             if (!parts.length) parts = [body];
             if (parts.length > 1 && parts.every(p => p === parts[0])) parts = [parts[0]]; // ユニゾン（全員同じセリフ）は1回だけ
             let inner = parts.map((p, i) => {
-                let mt = i === 0 ? '0' : '-0.08em';
-                return '<span style="display:block; position:relative; font-size:1.38em; font-weight:900; line-height:1.15; letter-spacing:0.02em; margin-top:' + mt + '; opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);">' + dialogueTextHtml(p) + '</span>';
+                let mt = i === 0 ? '0' : '-0.38em';
+                return '<span style="display:block; position:relative; font-size:1.38em; font-weight:900; line-height:1.02; letter-spacing:0.02em; margin-top:' + mt + '; overflow-wrap:anywhere; opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);">' + dialogueTextHtml(p) + '</span>';
             }).join('');
             return '<span style="display:block; font-size:1.7em; font-weight:900; line-height:1;">『</span>' +
-                '<span style="display:block; position:relative; padding:0 0.1em;">' + inner + '</span>' +
+                '<span style="display:block; position:relative; padding:0 1.1em;">' + inner + '</span>' +
                 '<span style="display:block; text-align:right; font-size:1.7em; font-weight:900; line-height:1;">』</span>';
         }
         function stopOpeningType(complete) {
