@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1124-5 ・ 646,022 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1124-6 ・ 647,307 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -851,7 +851,7 @@
                         <div id="csSlotName1" class="text-[10px] font-black text-white text-center truncate mt-0.5">---</div>
                     </div>
                 </div>
-                <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto">
+                <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
                     <div id="csIconGrid" class="grid grid-cols-5 gap-1.5 content-start"></div>
                     <p class="text-[10px] text-indigo-200 font-bold mt-2 leading-relaxed">アイコンにカーソルを合わせると左右に立ち絵が出ます。タップでプレビュー、選んでいるアイコンをもう一度タップ（または「決定」）で確定。</p>
                     <div id="csCpuLevelRow" class="hidden flex-col gap-1 mt-2">
@@ -862,23 +862,23 @@
                             <button data-cpulevel="hard" onclick="setCpuLevel('hard')" class="flex-1 whitespace-nowrap py-1 px-1 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">つよい</button>
                         </div>
                     </div>
-                    <div id="csCpuAssignRow" class="hidden flex-col gap-1 mt-2">
-                        <span class="text-[10px] sm:text-xs font-black text-indigo-200 whitespace-nowrap">対戦相手（CPU）：「選ぶ」を押してからアイコンをタップすると、その枠の相手を指定できます</span>
-                        <div class="flex gap-1.5 w-full items-center">
+                    <div id="csCpuAssignRow" class="hidden flex-col gap-1 mt-2 min-w-0 w-full">
+                        <span class="text-[10px] sm:text-xs font-black text-indigo-200 leading-snug">対戦相手（CPU）：「選ぶ」を押してからアイコンをタップすると、その枠の相手を指定できます</span>
+                        <div class="flex flex-wrap gap-1.5 w-full items-center">
                             <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">2P</span>
-                            <span id="csAssignName1" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <span id="csAssignName1" class="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
                             <button id="csAssignBtn1" onclick="csSetAssignTarget(1)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
                             <button onclick="csClearAssign(1)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
                         </div>
-                        <div class="flex gap-1.5 w-full items-center">
+                        <div class="flex flex-wrap gap-1.5 w-full items-center">
                             <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">3P</span>
-                            <span id="csAssignName2" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <span id="csAssignName2" class="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
                             <button id="csAssignBtn2" onclick="csSetAssignTarget(2)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
                             <button onclick="csClearAssign(2)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
                         </div>
-                        <div class="flex gap-1.5 w-full items-center">
+                        <div class="flex flex-wrap gap-1.5 w-full items-center">
                             <span class="text-[10px] sm:text-xs font-black text-yellow-300 whitespace-nowrap">4P</span>
-                            <span id="csAssignName3" class="flex-1 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
+                            <span id="csAssignName3" class="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-bold text-white">ランダム</span>
                             <button id="csAssignBtn3" onclick="csSetAssignTarget(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
                             <button onclick="csClearAssign(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
                         </div>
@@ -3285,6 +3285,7 @@
         let csCpuPicks = [null, null, null, null];
         let csCpuAssign = [null, null, null]; // CPU対戦相手の個別指定（2P/3P/4P）。nullならランダム
         let csAssignTarget = 0; // 0=1Pを選んでいる最中、1〜3=その枠の対戦相手を指定中
+        let csCursorBeforeAssign = null; // 指定モードに入る前の1Pカーソル（指定中に1Pの立ち絵が一緒に変わらないよう退避する）
         let csUnlocked = false;
         let csMapTapLog = [];
 
@@ -3315,6 +3316,7 @@
                 csCpuPicks = [null, null, null, null];
                 csCpuAssign = [null, null, null];
                 csAssignTarget = 0;
+                csCursorBeforeAssign = null;
                 document.getElementById('startModal').classList.add('hidden');
                 document.getElementById('csModeLabel').innerText = 'VS CPU';
                 setCsStatus('1Pのキャラを選んでください');
@@ -3454,7 +3456,9 @@
         function refreshCsSlots() {
             let assignments;
             if (csMode === 'cpu') {
-                assignments = [csCpuPicks[0] || (csCursor === '?' ? null : csCursor), csCpuPicks[1], csCpuPicks[2], csCpuPicks[3]];
+                // 対戦相手の指定中は、1Pのプレビューを指定前のキャラで固定する（CPUを選ぶたびに1Pまで変わって見えないように）
+                let previewId = (csAssignTarget >= 1 && csCursorBeforeAssign) ? csCursorBeforeAssign : csCursor;
+                assignments = [csCpuPicks[0] || (previewId === '?' ? null : previewId), csCpuPicks[1], csCpuPicks[2], csCpuPicks[3]];
             } else {
                 assignments = [0, 1, 2, 3].map(i => i === myPlayerIndex ? (csCursor === '?' ? null : csCursor) : (onlineMemberChars[i] || null));
             }
@@ -3545,20 +3549,32 @@
             }
         }
 
+        // 指定モードを終えたら、1Pのカーソルを指定前のキャラへ戻す
+        function csRestoreCursorAfterAssign() {
+            if (csCursorBeforeAssign) { csCursor = csCursorBeforeAssign; csCursorBeforeAssign = null; markCsCursor(); }
+        }
+
         // 「選ぶ」を押した枠を、次にアイコンをタップしたキャラで指定する状態にする（もう一度押すと解除）
         function csSetAssignTarget(slot) {
             if (csMode !== 'cpu') return;
-            csAssignTarget = (csAssignTarget === slot) ? 0 : slot;
+            if (csAssignTarget === slot) {
+                csAssignTarget = 0;
+                csRestoreCursorAfterAssign();
+                refreshCsSlots();
+                setCsStatus('1Pのキャラを選んでください');
+            } else {
+                if (!csAssignTarget) csCursorBeforeAssign = csCursor; // 指定開始時に1Pのカーソルを退避（枠を切り替えても元のまま）
+                csAssignTarget = slot;
+                setCsStatus((slot + 1) + 'P の対戦相手にしたいキャラのアイコンをタップしてください');
+            }
             refreshCsAssignUI();
-            if (csAssignTarget) setCsStatus((slot + 1) + 'P の対戦相手にしたいキャラのアイコンをタップしてください');
-            else setCsStatus('1Pのキャラを選んでください');
         }
 
         // その枠の指定をやめてランダムに戻す
         function csClearAssign(slot) {
             if (csMode !== 'cpu') return;
             csCpuAssign[slot - 1] = null;
-            if (csAssignTarget === slot) csAssignTarget = 0;
+            if (csAssignTarget === slot) { csAssignTarget = 0; csRestoreCursorAfterAssign(); }
             csRebuildCpuPicks();
             refreshCsSlots();
             refreshCsAssignUI();
@@ -3614,6 +3630,7 @@
             }
             csCpuAssign[slot - 1] = id;
             csAssignTarget = 0;
+            csRestoreCursorAfterAssign();
             csRebuildCpuPicks();
             refreshCsSlots();
             refreshCsAssignUI();
@@ -3622,6 +3639,7 @@
 
         function csRandomPick() {
             csAssignTarget = 0; // ランダム選択は1Pの操作なので、対戦相手の指定モードは解除する
+            csCursorBeforeAssign = null;
             refreshCsAssignUI();
             let taken = csTakenByOthers();
             let ids = csVisibleIds().filter(id => taken[id] === undefined && id !== csCursor);
