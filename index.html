@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1125-2 ・ 650,189 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1125-3 ・ 653,201 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -651,6 +651,9 @@
                 <button id="endingListUtsuroBtn" onclick="playEndingReplay('utsuro')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うつろエンド</button>
                 <button id="endingListKataruBtn" onclick="playEndingReplay('kataru')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">かたるエンド</button>
                 <button id="endingListTomokoBtn" onclick="playEndingReplay('tomoko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">トモコエンド</button>
+                <button id="endingListDekobokoBtn" onclick="playEndingReplay('dekoboko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">凸凹カルテットエンド</button>
+                <button id="endingListUkkariBtn" onclick="playEndingReplay('ukkari')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うっかりゲーム部エンド</button>
+                <button id="endingListManshitsuBtn" onclick="playEndingReplay('manshitsu')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">いつも満室エンド</button>
             </div>
             <button onclick="closeEndingList()" class="el-back pixel-btn mt-7 py-2.5 px-8 font-black text-white rounded-lg text-sm bg-gradient-to-r from-slate-600 to-slate-700 shadow cursor-pointer">タイトルへ戻る</button>
             <div class="mt-6"><button onclick="clearEndingClearData()" class="text-xs font-bold text-red-300/70 underline underline-offset-2 hover:text-red-200 cursor-pointer">クリアデータを消す</button></div>
@@ -6002,7 +6005,7 @@
             kataruEndingSong = !!(sheetEndingKataruScript && endScript === sheetEndingKataruScript);
             tomokoEndingSong = !!(sheetEndingTomokoScript && endScript === sheetEndingTomokoScript);
             // 🎵 スタッフロールの出し分け用に、今回のエンディング種別を記録する
-            if (activeComboEnding) lastEndingKind = activeComboEnding.id;
+            if (activeComboEnding) { lastEndingKind = activeComboEnding.id; markSpecialEndingSeen(activeComboEnding.id); } // 特別エンドはエンディングリストの解放も記録
             else if (sheetEndingHikariScript && endScript === sheetEndingHikariScript) lastEndingKind = 'hikari';
             else if (utsuroEndingSong) lastEndingKind = 'utsuro';
             else if (kataruEndingSong) lastEndingKind = 'kataru';
@@ -6048,16 +6051,23 @@
             hikari: { lineup: ['hikari', 'utsuro', 'shano', 'mirine'] },
             utsuro: { lineup: ['utsuro', 'hikari', 'shano', 'mirine'] },
             kataru: { lineup: ['kataru', 'hikari', 'shano', 'mirine'] }, // うつろは器なので同席しない
-            tomoko: { lineup: ['tomoko', 'utsuro', 'hikari', 'shano'] }  // かたるがいる編成にはしない（本編のガードと整合）
+            tomoko: { lineup: ['tomoko', 'utsuro', 'hikari', 'shano'] },  // かたるがいる編成にはしない（本編のガードと整合）
+            dekoboko: { lineup: ['sakura', 'nemea', 'rui', 'eru'] }, // 凸凹カルテット（優勝者はさくら役）
+            ukkari: { lineup: ['hikari', 'utsuro', 'shano', 'ritsu'] }, // うっかりゲーム部（優勝者はひかり役。ミリネを入れない＝満室側が混ざらない）
+            manshitsu: { lineup: ['mirine', 'utsuro', 'shano', 'ritsu'] } // いつも満室（優勝者はミリネ役。ひかりを入れない＝ゲーム部側が混ざらない）
         };
         function isHikariEndingSeen() { try { return localStorage.getItem('utsuro_hikari_seen') === '1'; } catch (e) { return false; } }
-        const ENDING_LIST_BUTTONS = { generic: 'endingListGenericBtn', hikari: 'endingListHikariBtn', utsuro: 'endingListUtsuroBtn', kataru: 'endingListKataruBtn', tomoko: 'endingListTomokoBtn' };
-        const ENDING_LIST_LABELS = { generic: '汎用エンド', hikari: 'ひかりエンド', utsuro: 'うつろエンド', kataru: 'かたるエンド', tomoko: 'トモコエンド' };
+        // 組み合わせ／ユニット特別エンドを見た記録（リスト解放用）
+        function readSpecialEndingsSeen() { try { return JSON.parse(localStorage.getItem('utsuro_special_endings_seen') || '{}') || {}; } catch (e) { return {}; } }
+        function markSpecialEndingSeen(id) { try { let s = readSpecialEndingsSeen(); if (!s[id]) { s[id] = true; localStorage.setItem('utsuro_special_endings_seen', JSON.stringify(s)); } } catch (e) {} }
+        const ENDING_LIST_BUTTONS = { generic: 'endingListGenericBtn', hikari: 'endingListHikariBtn', utsuro: 'endingListUtsuroBtn', kataru: 'endingListKataruBtn', tomoko: 'endingListTomokoBtn', dekoboko: 'endingListDekobokoBtn', ukkari: 'endingListUkkariBtn', manshitsu: 'endingListManshitsuBtn' };
+        const ENDING_LIST_LABELS = { generic: '汎用エンド', hikari: 'ひかりエンド', utsuro: 'うつろエンド', kataru: 'かたるエンド', tomoko: 'トモコエンド', dekoboko: '凸凹カルテットエンド', ukkari: 'うっかりゲーム部エンド', manshitsu: 'いつも満室エンド' };
         // そのエンディングを本編（または再生）で見たことがあるか＝リストで解放されているか
         function endingUnlocked(kind) {
             try {
                 if (kind === 'generic') return localStorage.getItem('utsuro_any_ending_seen') === '1';
                 if (kind === 'hikari') return localStorage.getItem('utsuro_hikari_seen') === '1';
+                if (kind === 'dekoboko' || kind === 'ukkari' || kind === 'manshitsu') return !!readSpecialEndingsSeen()[kind];
                 return !!readTrueProgress()[kind];
             } catch (e) { return false; }
         }
@@ -6102,6 +6112,9 @@
                 else if (kind === 'utsuro' && !sheetEndingUtsuroScript) await Promise.race([loadEndingUtsuroFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
                 else if (kind === 'kataru' && !sheetEndingKataruScript) await Promise.race([loadEndingKataruFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
                 else if (kind === 'tomoko' && !sheetEndingTomokoScript) await Promise.race([loadEndingTomokoFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'dekoboko' && !sheetEndingDekobokoScript) await Promise.race([loadEndingDekobokoFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'ukkari' && !sheetEndingUkkariScript) await Promise.race([loadEndingUkkariFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
+                else if (kind === 'manshitsu' && !sheetEndingManshitsuScript) await Promise.race([loadEndingManshitsuFromSheet(false), new Promise(r => setTimeout(r, 3000))]);
             } catch (e) {}
             // 疑似メンバーを組む：1位＝そのエンドの主役（{winner}置換・ロールの出演/優勝表示・専用分岐の条件を満たすため）
             def.lineup.forEach((cid, i) => {
@@ -6127,7 +6140,9 @@
             // リスト再生は指定のエンディングだけを再生する：組み合わせ／ユニット特別エンドのシートは一時的に外す
             // （汎用・ひかり・うつろ等の顔ぶれがユニット条件と重なっても、特別エンドに化けないように）
             let savedComboScripts = [sheetEndingDekobokoScript, sheetEndingUkkariScript, sheetEndingManshitsuScript];
-            sheetEndingDekobokoScript = null; sheetEndingUkkariScript = null; sheetEndingManshitsuScript = null;
+            sheetEndingDekobokoScript = (kind === 'dekoboko') ? savedComboScripts[0] : null;
+            sheetEndingUkkariScript = (kind === 'ukkari') ? savedComboScripts[1] : null;
+            sheetEndingManshitsuScript = (kind === 'manshitsu') ? savedComboScripts[2] : null;
             try {
                 if (kind === 'generic') {
                     // 汎用は優勝者で分岐させない：専用シートを一時的に外してから再生し、終わったら戻す
@@ -6254,6 +6269,7 @@
                 localStorage.removeItem('utsuro_true_seen');
                 localStorage.removeItem('utsuro_any_ending_seen');
                 localStorage.removeItem('utsuro_hikari_seen');
+                localStorage.removeItem('utsuro_special_endings_seen');
             } catch (e) {}
             refreshTitleTree();
             refreshTitleTheme();
@@ -7169,18 +7185,18 @@
             return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         }
         // 🗣️ 同時セリフの本文HTML：大きな『』の中に、各人のセリフ（改行または／区切り）を大きめ・太めの文字で
-        // わざと重ねて表示し、「全員が同時に喋っていて聴き取れない」感じを出す。ずらし量・傾きは行番号で決まる固定パターン（全端末で同じ見た目）
+        // わざと重ねて表示し、「全員が同時に喋っている」感じを出す。ずらし量は行番号で決まる固定パターン（全端末で同じ見た目）。
+        // 傾きは付けない（四人のセリフが重なる時に読みにくくなるため。2026-11-25 ユーザー指定）
         function overlapDialogueHtml(text) {
             let body = String(text || '').trim();
             if (body.startsWith('『')) body = body.slice(1);
             if (body.endsWith('』')) body = body.slice(0, -1);
             let parts = body.split(/[\n／]+/).map(s => s.trim()).filter(Boolean);
             if (!parts.length) parts = [body];
-            let tilts = [-1.6, 1.3, -0.8, 1.9, -1.1, 0.7];
             let shifts = [0, 16, 7, 22, 5, 13];
             let inner = parts.map((p, i) => {
                 let mt = i === 0 ? '0' : '-0.40em';
-                return '<span style="display:block; position:relative; font-size:1.38em; font-weight:900; line-height:1.02; letter-spacing:0.02em; margin-top:' + mt + '; margin-left:' + shifts[i % shifts.length] + 'px; transform:rotate(' + tilts[i % tilts.length] + 'deg); opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);">' + dialogueTextHtml(p) + '</span>';
+                return '<span style="display:block; position:relative; font-size:1.38em; font-weight:900; line-height:1.02; letter-spacing:0.02em; margin-top:' + mt + '; margin-left:' + shifts[i % shifts.length] + 'px; opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);">' + dialogueTextHtml(p) + '</span>';
             }).join('');
             return '<span style="display:block; font-size:1.7em; font-weight:900; line-height:1;">『</span>' +
                 '<span style="display:block; position:relative; padding:0 0.1em;">' + inner + '</span>' +
