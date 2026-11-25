@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-1 ・ 657,151 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-2 ・ 657,501 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2065,7 +2065,7 @@
             });
             return byPart ? byPart.id : null;
         }
-        const FX_ALIASES = { shake: ['shake', '揺れ', '地震'], white: ['white', '白', 'ホワイト', 'whiteout'], normal: ['normal', 'off', '元に戻す', 'もどす', '戻す', 'clear'], gold: ['gold', '金', 'ゴールド', 'きん'], yellow: ['yellow', '黄', '黄色', 'イエロー'], pink: ['pink', 'ピンク', '桜', 'さくら'], blue: ['blue', '青', '水色', 'あお'], rainbow: ['rainbow', '虹', '虹色', 'レインボー'], slow: ['slow', 'ゆっくり', 'スロー'], sway: ['sway', 'ゆらゆら', '揺さぶる', 'ゆさぶる', 'ゆさゆさ'], black: ['black', '黒', 'ブラック', '暗闇', '真っ暗'], bgmoff: ['bgmoff', 'bgm-off', 'bgmstop', 'bgm-stop', 'bgm停止', 'BGM停止', '音楽停止', '音楽オフ', 'bgmオフ'], dust: ['dust', 'stardust', 'diamond-dust', 'ダスト', '星屑', 'ほしくず', 'ダイヤモンドダスト', 'キラキラ', 'きらきら'] };
+        const FX_ALIASES = { shake: ['shake', '揺れ', '地震'], white: ['white', '白', 'ホワイト', 'whiteout'], normal: ['normal', 'off', '元に戻す', 'もどす', '戻す', 'clear'], gold: ['gold', '金', 'ゴールド', 'きん'], yellow: ['yellow', '黄', '黄色', 'イエロー'], pink: ['pink', 'ピンク', '桜', 'さくら'], blue: ['blue', '青', '水色', 'あお'], rainbow: ['rainbow', '虹', '虹色', 'レインボー'], slow: ['slow', 'ゆっくり', 'スロー'], sway: ['sway', 'ゆらゆら', '揺さぶる', 'ゆさぶる', 'ゆさゆさ'], black: ['black', '黒', 'ブラック', '暗闇', '真っ暗'], bgmoff: ['bgmoff', 'bgm-off', 'bgmstop', 'bgm-stop', 'bgm停止', 'BGM停止', '音楽停止', '音楽オフ', 'bgmオフ'], dust: ['dust', 'stardust', 'diamond-dust', 'ダスト', '星屑', 'ほしくず', 'ダイヤモンドダスト', 'キラキラ', 'きらきら'], dustoff: ['dustoff', 'dust-off', 'duststop', '星屑止め', '星屑停止', '星屑オフ', 'ダスト止め', 'ダスト停止', 'ダストオフ'] };
         function parseFxTokens(raw) {
             if (!raw) return [];
             let out = [];
@@ -7296,7 +7296,8 @@
                 if (bgFx !== undefined) setOpeningBg(bgFx);
                 if (fxToks.includes('bgmoff')) fadeOutBgmByFx();
                 fxToks.forEach(t => { if (t.indexOf('se:') === 0) playDialogueSe(t.slice(3)); });
-                if (fxToks.includes('dust') || isStardustReturnLine(line)) startOpeningDust(); // 一度出たら会話シーンが終わるまで流れ続ける（かたるエンドの星屑を長く見せるため。2026-11-20 ユーザー指定）。停止はシーン終了時（clearOpeningBg等）で行う
+                if (fxToks.includes('dustoff')) stopOpeningDust(); // fx「星屑止め」（dustoff）と書いた行で、その行から星屑を止める（1126-2、ユーザー指定）
+                else if (fxToks.includes('dust') || isStardustReturnLine(line)) startOpeningDust(); // 一度出たら会話シーンが終わるまで流れ続ける（かたるエンドの星屑を長く見せるため。2026-11-20 ユーザー指定）。停止はシーン終了時（clearOpeningBg等）でも行う
             }
             let fWrap = document.getElementById('openingFaceWrap');
             let fImg = document.getElementById('openingFaceImg');
