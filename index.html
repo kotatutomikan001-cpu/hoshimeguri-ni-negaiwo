@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-3 ・ 658,000 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-4 ・ 659,595 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -928,6 +928,7 @@
     <audio id="endingUtsuroBgmAudio" src="ending_utsuro_bgm.mp3" preload="auto"></audio>
     <audio id="endingKataruBgmAudio" src="ending_kataru_bgm.mp3" preload="auto"></audio>
     <audio id="endingTomokoBgmAudio" src="ending_tomoko_bgm.mp3" preload="auto"></audio>
+    <audio id="endingDekobokoBgmAudio" src="ending_dekoboko_bgm.mp3" preload="auto"></audio>
     <audio id="endingTalkBgmAudio" src="ending_talk_bgm.mp3" preload="auto" loop></audio>
     <audio id="titleBgmAudio" src="title_bgm.mp3" loop preload="auto"></audio>
     <!-- src の ?v=remix はキャッシュ対策：ファイル名が同じまま中身（神無月→希望の光remix）を差し替えたため、端末に残った古いキャッシュを読み続けないようURLを変えている。今後また同名で差し替える時はこの目印を変える -->
@@ -1405,7 +1406,7 @@
         const KATARU_BGM_BOOST = 1.5; // かたる専用エンディング曲だけ、少し大きめに再生する
         const SELECT_BGM_FACTOR = 0.45; // キャラ選択まわりのBGM（select_bgm）だけ控えめにする（2026-11-21 に 0.8、2026-11-22 に「キャラ選択時の声が聞こえにくい」との実機報告で 0.6 →「もう少し落としたい」で 0.45 へ。ボイス側は収録ファイルのピーク上限（-6.5dB）×スマホ増幅2.0で頭打ちのため、BGM側を下げる）
         const ENDING_BGM_FACTOR = 1.25; // エンディング曲（スタッフロールの曲）を少しだけ大きくする（2026-11-21 ユーザー要望）
-        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingBgmAudio' || id === 'endingUtsuroBgmAudio') v = Math.min(1, v * ENDING_BGM_FACTOR); if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST * ENDING_BGM_FACTOR); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST * ENDING_BGM_FACTOR); return v; }
+        function bgmVolFor(id) { let v = currentBgmVolume; if (id === 'selectBgmAudio') v = v * SELECT_BGM_FACTOR; if (id === 'endingBgmAudio' || id === 'endingUtsuroBgmAudio' || id === 'endingDekobokoBgmAudio') v = Math.min(1, v * ENDING_BGM_FACTOR); if (id === 'endingTomokoBgmAudio') v = Math.min(1, v * TOMOKO_BGM_BOOST * ENDING_BGM_FACTOR); if (id === 'endingKataruBgmAudio') v = Math.min(1, v * KATARU_BGM_BOOST * ENDING_BGM_FACTOR); return v; }
         let audioUnlocked = false;
         let activeBgm = 'select';
         let audioCtx = null;
@@ -2789,7 +2790,7 @@
                         if (activeEl && !activeEl.paused && activeEl.id !== 'gameBgmAudio') ensureBgmRoutingFor(activeEl); // ゲームBGMは経由化しない（2026-11-19 ブツブツ対策）
                     }
                 } catch (e) {}
-                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
+                ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingDekobokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
                     let el = document.getElementById(id);
                     if (!el) return;
                     let g = bgmGains[id];
@@ -2873,6 +2874,9 @@
                     } else if (activeBgm === 'endingTomoko') {
                         const endingTomokoAudio = document.getElementById('endingTomokoBgmAudio');
                         if (endingTomokoAudio && endingTomokoAudio.paused) { endingTomokoAudio.volume = bgmGains[endingTomokoAudio.id] ? 1 : bgmVolFor(endingTomokoAudio.id); endingTomokoAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
+                    } else if (activeBgm === 'endingDekoboko') {
+                        const endingDekobokoAudio = document.getElementById('endingDekobokoBgmAudio');
+                        if (endingDekobokoAudio && endingDekobokoAudio.paused) { endingDekobokoAudio.volume = bgmGains[endingDekobokoAudio.id] ? 1 : bgmVolFor(endingDekobokoAudio.id); endingDekobokoAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
                     } else if (activeBgm === 'endingTalk') {
                         const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
                         if (endingTalkAudio && endingTalkAudio.paused) { endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume; endingTalkAudio.play().then(() => { audioUnlocked = true; }).catch(() => {}); }
@@ -3108,7 +3112,7 @@
             } catch (e) { /* 経由できない環境では従来の volume 制御のまま */ }
         }
         function bgmElementFor(kind) {
-            let map = { select: 'selectBgmAudio', game: 'gameBgmAudio', ending: 'endingBgmAudio', endingUtsuro: 'endingUtsuroBgmAudio', endingKataru: 'endingKataruBgmAudio', endingTomoko: 'endingTomokoBgmAudio', endingTalk: 'endingTalkBgmAudio', title: 'titleBgmAudio', titleGold: 'titleGoldBgmAudio' };
+            let map = { select: 'selectBgmAudio', game: 'gameBgmAudio', ending: 'endingBgmAudio', endingUtsuro: 'endingUtsuroBgmAudio', endingKataru: 'endingKataruBgmAudio', endingTomoko: 'endingTomokoBgmAudio', endingDekoboko: 'endingDekobokoBgmAudio', endingTalk: 'endingTalkBgmAudio', title: 'titleBgmAudio', titleGold: 'titleGoldBgmAudio' };
             return document.getElementById(map[kind] || 'selectBgmAudio');
         }
         // 🔊 セリフの fx「se:<名前>」で、その行の表示と同時に se_<名前>.mp3 を1回鳴らす（会話専用SE）
@@ -3157,7 +3161,7 @@
         }
 
         function stopAllBgm() {
-            ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
+            ['selectBgmAudio', 'gameBgmAudio', 'endingBgmAudio', 'endingUtsuroBgmAudio', 'endingKataruBgmAudio', 'endingTomokoBgmAudio', 'endingDekobokoBgmAudio', 'endingTalkBgmAudio', 'titleBgmAudio', 'titleGoldBgmAudio'].forEach(id => {
                 let a = document.getElementById(id);
                 if (a) { try { a.pause(); } catch (e) {} }
             });
@@ -3185,9 +3189,10 @@
         let utsuroEndingSong = false; // 直前のエンディング会話が「うつろ優勝時（プレイヤー操作）」専用だったか
         let kataruEndingSong = false; // 直前のエンディング会話が「かたる優勝時」専用だったか
         let tomokoEndingSong = false; // 直前のエンディング会話が「トモコ優勝時（プレイヤー操作）」専用だったか
+        let dekobokoEndingSong = false; // 直前のエンディング会話が「凸凹カルテット」専用だったか（専用曲「みんなで」ending_dekoboko_bgm.mp3）
         function playEndingBgm() {
             clearBgmFxMute();
-            activeBgm = utsuroEndingSong ? 'endingUtsuro' : (kataruEndingSong ? 'endingKataru' : (tomokoEndingSong ? 'endingTomoko' : 'ending'));
+            activeBgm = dekobokoEndingSong ? 'endingDekoboko' : (utsuroEndingSong ? 'endingUtsuro' : (kataruEndingSong ? 'endingKataru' : (tomokoEndingSong ? 'endingTomoko' : 'ending')));
             attemptPlayBgm();
         }
         (function () {
@@ -3199,6 +3204,8 @@
             if (ka) ka.addEventListener('error', () => { if (activeBgm === 'endingKataru') { activeBgm = 'ending'; attemptPlayBgm(); } }, true);
             const tma = document.getElementById('endingTomokoBgmAudio');
             if (tma) tma.addEventListener('error', () => { if (activeBgm === 'endingTomoko') { activeBgm = 'ending'; attemptPlayBgm(); } }, true);
+            const dba = document.getElementById('endingDekobokoBgmAudio');
+            if (dba) dba.addEventListener('error', () => { if (activeBgm === 'endingDekoboko') { activeBgm = 'ending'; attemptPlayBgm(); } }, true);
             const ta = document.getElementById('endingTalkBgmAudio');
             if (ta) ta.addEventListener('error', () => { if (activeBgm === 'endingTalk') { activeBgm = 'game'; attemptPlayBgm(); } }, true);
             const tba = document.getElementById('titleBgmAudio');
@@ -3214,6 +3221,7 @@
             const endingUtsuroAudio = document.getElementById('endingUtsuroBgmAudio');
             const endingKataruAudio = document.getElementById('endingKataruBgmAudio');
             const endingTomokoAudio = document.getElementById('endingTomokoBgmAudio');
+            const endingDekobokoAudio = document.getElementById('endingDekobokoBgmAudio');
             const endingTalkAudio = document.getElementById('endingTalkBgmAudio');
             const titleAudio = document.getElementById('titleBgmAudio');
             const titleGoldAudio = document.getElementById('titleGoldBgmAudio');
@@ -3227,6 +3235,7 @@
             if (endingUtsuroAudio) endingUtsuroAudio.volume = bgmGains[endingUtsuroAudio.id] ? 1 : currentBgmVolume;
             if (endingKataruAudio) endingKataruAudio.volume = bgmGains[endingKataruAudio.id] ? 1 : bgmVolFor(endingKataruAudio.id);
             if (endingTomokoAudio) endingTomokoAudio.volume = bgmGains[endingTomokoAudio.id] ? 1 : bgmVolFor(endingTomokoAudio.id);
+            if (endingDekobokoAudio) endingDekobokoAudio.volume = bgmGains[endingDekobokoAudio.id] ? 1 : bgmVolFor(endingDekobokoAudio.id);
             if (endingTalkAudio) endingTalkAudio.volume = bgmGains[endingTalkAudio.id] ? 1 : currentBgmVolume;
             if (titleAudio) titleAudio.volume = bgmGains[titleAudio.id] ? 1 : currentBgmVolume;
             if (titleGoldAudio) titleGoldAudio.volume = bgmGains[titleGoldAudio.id] ? 1 : currentBgmVolume;
@@ -3237,6 +3246,7 @@
             else if (activeBgm === 'endingUtsuro' && endingUtsuroAudio) target = endingUtsuroAudio;
             else if (activeBgm === 'endingKataru' && endingKataruAudio) target = endingKataruAudio;
             else if (activeBgm === 'endingTomoko' && endingTomokoAudio) target = endingTomokoAudio;
+            else if (activeBgm === 'endingDekoboko' && endingDekobokoAudio) target = endingDekobokoAudio;
             else if (activeBgm === 'endingTalk' && endingTalkAudio) target = endingTalkAudio;
             else if (activeBgm === 'title' && titleAudio) target = titleAudio;
             else if (activeBgm === 'titleGold' && titleGoldAudio) target = titleGoldAudio;
@@ -6006,6 +6016,7 @@
             utsuroEndingSong = !!(sheetEndingUtsuroScript && endScript === sheetEndingUtsuroScript);
             kataruEndingSong = !!(sheetEndingKataruScript && endScript === sheetEndingKataruScript);
             tomokoEndingSong = !!(sheetEndingTomokoScript && endScript === sheetEndingTomokoScript);
+            dekobokoEndingSong = !!(sheetEndingDekobokoScript && endScript === sheetEndingDekobokoScript);
             // 🎵 スタッフロールの出し分け用に、今回のエンディング種別を記録する
             if (activeComboEnding) { lastEndingKind = activeComboEnding.id; markSpecialEndingSeen(activeComboEnding.id); } // 特別エンドはエンディングリストの解放も記録
             else if (sheetEndingHikariScript && endScript === sheetEndingHikariScript) lastEndingKind = 'hikari';
@@ -6460,7 +6471,8 @@
             ['星屑のシェルター', 'ゆうきわたる', null],
             ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon', 'utsuro'],
             ['やさしい愛', 'Particle-Music', 'kataru'],
-            ['からかいの裏側', 'トモコ', 'tomoko']
+            ['からかいの裏側', 'トモコ', 'tomoko'],
+            ['みんなで', '', 'dekoboko']
         ];
         // 🎬 エンディング専用の追加スタッフクレジット（そのエンディングのロールにだけ出る。増えたらここに足す）
         // 1125-9：凸凹カルテットの「監修　ふぇる」はユーザー指定で削除。現在は登録なし。
