@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-4 ・ 659,595 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-5 ・ 659,430 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -7223,14 +7223,13 @@
                 let lh = layered ? '1.02' : '1.15';
                 return '<span style="display:block; position:relative; text-align:center; font-size:' + fs + '; font-weight:900; line-height:' + lh + '; letter-spacing:0.02em; margin-top:' + mt + '; overflow-wrap:anywhere; opacity:0.92; text-shadow:0 2px 6px rgba(0,0,0,0.85);" class="overlap-part">' + dialogueTextHtml(p) + '</span>';
             }).join('');
-            // 全体は中央寄せのグループ（1126-3、ユーザー指定）：カッコがセリフの塊のすぐ外側に寄り添い、
-            // 4人分のセリフはその内側に中央寄せで納まる。グループ幅は一番長いパートに合わせる。
-            return '<span style="display:block; text-align:center;">' +
-                '<span style="display:inline-block; max-width:100%; vertical-align:top;">' +
+            // カッコはテキストエリアの両端まで広げる（1126-5、実機フィードバックで1126-3の「塊に寄り添う」から変更）：
+            // 『は左端・』は右端に置き、4人分のセリフはその内側に中央寄せで納まる。
+            return '<span style="display:block; position:relative; padding:0 1.1em;">' +
                 '<span style="display:block; text-align:left; font-size:1.7em; font-weight:900; line-height:1;">『</span>' +
-                '<span style="display:block; position:relative; padding:0 1.1em;">' + inner + '</span>' +
+                inner +
                 '<span style="display:block; text-align:right; font-size:1.7em; font-weight:900; line-height:1;">』</span>' +
-                '</span></span>';
+                '</span>';
         }
         // 同時セリフの文字サイズ自動調整：折り返しているパートがあれば、全パートの文字を一律に縮小して1行に収める。
         // 折り返しの判定は実測（パートの高さが1行分を超えたら折り返し）。レイアウトの無い環境では何もしない。
