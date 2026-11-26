@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-5 ・ 659,430 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-6 ・ 687,623 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -616,6 +616,15 @@
         </div>
     </div>
 
+    <!-- ✨ スキル選択オーバーレイ（シャノの描き直し・るいの両声類で使う汎用の選択ダイアログ） -->
+    <div id="skillChoiceOverlay" class="fixed inset-0 z-[100006] hidden items-center justify-center p-3" style="background:rgba(10,8,40,0.72);">
+        <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-sm w-full bg-slate-900 border-2 border-amber-300 shadow-2xl text-center">
+            <p id="skillChoiceTitle" class="text-sm sm:text-base font-black text-amber-200 leading-relaxed"></p>
+            <p id="skillChoiceDesc" class="text-[11px] sm:text-xs font-bold text-indigo-200 leading-relaxed mt-1"></p>
+            <div id="skillChoiceBtns" class="flex flex-col gap-2 mt-4"></div>
+        </div>
+    </div>
+
     <!-- 🎲 順番決めオーバーレイ：開始前に4人全員のダイスが転がり、止まった順に順番が決まるのを見せる -->
     <div id="orderRollOverlay" class="fixed inset-0 z-[100004] hidden items-center justify-center p-3" style="background:rgba(10,8,40,0.88);" onclick="orderRollOverlayTap()">
         <div class="pixel-box p-4 sm:p-6 rounded-xl max-w-md w-full bg-slate-900 border-2 border-yellow-400 shadow-2xl text-center">
@@ -635,6 +644,7 @@
             <div class="mt-4"><div class="font-black text-yellow-100">⚔️ 奪い合い</div><div class="text-sm sm:text-base leading-relaxed mt-1">他のプレイヤーと同じマスに止まると、相手が星のカケラを持っていれば1個奪えます。自分のいるマスに相手が止まると、逆に奪われてしまいます。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🗺️ マスの種類</div><div class="text-sm sm:text-base leading-relaxed mt-1">🔵 プラスマス（青）： サイコロの目が大きいほど、リスナーが増える<br>🔴 マイナスマス（赤）： サイコロの目が小さいほど、リスナーが減る<br>⚪ 白マス： 書かれた数字の分だけ、リスナーが増えたり減ったりする<br>🟡 アイテムマス（黄）： アイテムが1個もらえる（アイテムは自分の番に、サイコロを振る前に使えます。1ターンに1つまで）<br>※ 日数が進むと、6日ごとにリスナーの増減する倍率が上がっていきます（×1 → ×2 → ×3 …）<br>※ スタートを通過するとリスナー＋300人（星のカケラが5個未満の時）</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🎁 アイテムの効果</div><div class="text-sm sm:text-base leading-relaxed mt-1">デジタルフラワースタンド： テンション倍増で、次のサイコロの目×2のマス進める<br>ASMR用マイク： サイコロを振って出た目×200人のリスナーが増える（7日目から2倍、13日目から3倍と増えていく）<br>袖の下： サイコロを振って、出た目×100人を他のプレイヤー全員から自分のリスナーに移す（7日目から2倍、13日目から3倍と増えていく）<br>横取りチャーム： 一番リスナーの多い相手から300人を奪う（7日目から2倍、13日目から3倍と増えていく）<br>コラボ配信（乗っ取り）： ゴール済みの人以外の誰かとランダムで場所を入れ替わる<br>イカサマダイス： 使うと好きな目を選んで進める<br>例のワープする土管： 使うとマップ上のどこかへワープする<br>ネットサーフィン（物理）： 移動用のサイコロがそのターンだけ2つになる（合計分進む）<br>影分身（等身大スタンドポップ）： 次のマイナスを1回肩代わりする<br>金盾： 持っているだけで星のカケラを奪われるのを3回防ぐ（使い切ると消える）。盾は金盾・銀盾あわせて1つだけ持てる<br>銀盾： 持っているだけで星のカケラを奪われるのを1回防ぐ（使い切ると消える）。盾は金盾・銀盾あわせて1つだけ持てる</div></div>
+            <div class="mt-4"><div class="font-black text-yellow-100">✨ 固有スキル</div><div class="text-sm sm:text-base leading-relaxed mt-1">キャラごとに1つずつ、特別なスキルがあります。<br>帝「ライブペイント」： 赤マスに止まると、そのマスを青マスに塗り替えてリスナー+100（塗ったマスはその対戦中ずっと青マス）<br>ひかり「神の光」： アイテムマスで、30%でもう1つアイテムが引ける<br>さくら「アンコール」： 青マスでリスナーを得た時、30%でもう一度同じだけ得る<br>ねめあ「可愛い咆哮がおー！」： 自分のターン開始時、20%で他の全員から50人ずつリスナーを集める<br>るい「両声類」： 対戦相手のスキルを1つコピーして使う（対戦開始時に選ぶ）<br>蝶「裕福なひきにーと」： 自分のターン開始時、所持リスナーの1%が不労所得として増える（7日目から2倍、13日目から3倍と増えていく。最大250人）<br>ヘル「追跡者」： 移動中に他のプレイヤーを追い越すたび、その相手から200人奪う<br>シャクナ「なんでやねん！」： 他のプレイヤーがリスナーを得た時、その10%をもらう（1回最大200人）<br>ミリネ「物語は終わらない」： 誰かがゴールした後の期間、全てのマス効果が2倍<br>ゆに「耳かきASMR」： アイテムマスで20%でASMR用マイクも入手。マイクの効果が2倍<br>える「ほろ酔い」： 全てのマス効果が0.5〜2倍にぶれる<br>うつろ「ごしゅの心配」： マスの効果でリスナーが減った時、減った分の50%が新たに集まる<br>シャノ「描き直し」： アイテムマスで、アイテムを2つ引いて好きな方を1つ選べる<br>りつ「血の匂い」： 他のプレイヤーが赤マスで減った時、その実損失の30%（最大300人）を吸う<br>かたる「繰言」： 白マスに止まると、そのイベントが他の全員にも起きる<br>トモコ「特異点」： 全員が対象の効果を受けない</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🌳 ゴール（星の大樹）</div><div class="text-sm sm:text-base leading-relaxed mt-1">星のカケラを5個以上持ってスタートに戻ると、大樹への道が選べます。⬇️ 大樹へ進めばゴール、⬅️ 左へ進めばゴールせずに周回を続けられます（周回してカケラをもっと集めることもできます）。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">⌛ ゲームの終わり</div><div class="text-sm sm:text-base leading-relaxed mt-1">最初の一人がゴールすると、そこから10日（10ラウンド）でゲーム終了です。まだゴールしていない人は、その時点の成績で順位が決まります。全員がゴールしても終了します。</div></div>
             <div class="mt-4"><div class="font-black text-yellow-100">🏆 順位と評価点</div><div class="text-sm sm:text-base leading-relaxed mt-1">順位は評価点で決まります。<br>評価点 ＝ 星のカケラ × 5,000 ＋ リスナー数<br>早くゴールした人にはボーナスがあります（1位は星のカケラ+1個とリスナー+1,500人／2位 リスナー+1,000人／3位 リスナー+500人）。</div></div>
@@ -885,6 +895,10 @@
                             <button id="csAssignBtn3" onclick="csSetAssignTarget(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">選ぶ</button>
                             <button onclick="csClearAssign(3)" class="whitespace-nowrap py-1 px-2 rounded-md text-[10px] sm:text-xs font-black bg-slate-700 text-gray-200 border border-indigo-300/40 cursor-pointer">ランダムに戻す</button>
                         </div>
+                    </div>
+                    <div id="csSkillInfo" class="mt-2 rounded-lg border border-amber-300/40 bg-black/40 px-2.5 py-2 flex-none">
+                        <div class="text-[10px] sm:text-xs font-black text-amber-200">✨ 固有スキル</div>
+                        <div id="csSkillText" class="text-[11px] sm:text-sm font-bold text-white leading-snug mt-0.5">-</div>
                     </div>
                     <div id="csFooterBtns" class="flex gap-2 mt-auto pt-2">
                         <button id="csRandomBtn" onclick="csRandomPick()" class="whitespace-nowrap pixel-btn py-2 px-3 font-black text-white rounded-lg text-xs sm:text-sm bg-gradient-to-r from-teal-500 to-emerald-600 shadow cursor-pointer">ランダム選択</button>
@@ -1296,6 +1310,156 @@
         }
         function tileAmountMultiplier() {
             return 1 + Math.floor((currentTurnNumber - 1) / 6);
+        }
+
+        // ✨ キャラ固有スキル（2026-11-26 ユーザーと全16人分を決定・実装）
+        // 判定はすべてホスト側（オンラインでもホストが解決して同期する）。p.skillChar = 実際に効いているスキルのキャラID。
+        // 通常は自分のキャラと一致。るい「両声類」だけは対戦開始時に選んだコピー先のキャラIDが入り、未選択の間は null（スキルなし）。
+        const CHAR_SKILLS = {
+            mikado: { name: 'ライブペイント', desc: '赤マスに止まると、そのマスを青マスに塗り替えてリスナー+100（塗ったマスはその対戦中ずっと青マス）' },
+            hikari: { name: '神の光', desc: 'アイテムマスで、30%でもう1つアイテムが引ける' },
+            sakura: { name: 'アンコール', desc: '青マスでリスナーを得た時、30%でもう一度同じだけ得る' },
+            nemea: { name: '可愛い咆哮がおー！', desc: '自分のターン開始時、20%で他の全員から50人ずつリスナーを集める' },
+            rui: { name: '両声類', desc: '対戦相手のスキルを1つコピーして使う（対戦開始時に選ぶ）' },
+            tefu: { name: '裕福なひきにーと', desc: '自分のターン開始時、所持リスナーの1%が不労所得として増える（7日目から2倍、13日目から3倍と増えていく。最大250人）' },
+            heru: { name: '追跡者', desc: '移動中に他のプレイヤーを追い越すたび、その相手から200人奪う' },
+            shakuna: { name: 'なんでやねん！', desc: '他のプレイヤーがリスナーを得た時、その10%をもらう（1回最大200人）' },
+            mirine: { name: '物語は終わらない', desc: '誰かがゴールした後の期間、全てのマス効果が2倍' },
+            yuni: { name: '耳かきASMR', desc: 'アイテムマスで20%でASMR用マイクも入手。マイクの効果が2倍' },
+            eru: { name: 'ほろ酔い', desc: '全てのマス効果が0.5〜2倍にぶれる' },
+            utsuro: { name: 'ごしゅの心配', desc: 'マスの効果でリスナーが減った時、減った分の50%が新たに集まる' },
+            shano: { name: '描き直し', desc: 'アイテムマスで、アイテムを2つ引いて好きな方を1つ選べる' },
+            ritsu: { name: '血の匂い', desc: '他のプレイヤーが赤マスで減った時、その実損失の30%（最大300人）を吸う' },
+            kataru: { name: '繰言', desc: '白マスに止まると、そのイベントが他の全員にも起きる' },
+            tomoko: { name: '特異点', desc: '全員が対象の効果を受けない' }
+        };
+        let paintedTileIdxs = [];      // 帝「ライブペイント」で青に塗り替えられたマスのインデックス（対戦中のみ・同期対象）
+        let paintedOrigTypes = {};     // 塗り替え前のマス種別（次マッチ開始時に戻すため）
+        let skillChoiceDeferAdvance = false; // シャノの選択待ちの間、イベント自動送りを止める
+
+        function effSkillChar(p) {
+            if (!p || !p.char) return null;
+            if (p.char === 'rui') return p.skillChar || null;
+            return (p.skillChar !== undefined && p.skillChar !== null) ? p.skillChar : p.char;
+        }
+        function hasSkill(p, charId) { return effSkillChar(p) === charId; }
+        function skillIsGroupExempt(p) { return hasSkill(p, 'tomoko'); } // トモコ「特異点」：全員対象の効果を受けない
+        function updateListenerLabel(p) {
+            let el = document.getElementById(`p${players.indexOf(p) + 1}Listeners`);
+            if (el) el.innerText = `${(p.listeners || 0).toLocaleString()}人`;
+        }
+        // シャクナ「なんでやねん！」：他のプレイヤーがリスナーを得た時、その10%（最大200）をもらう。スキル由来の増加には反応しない（呼び出し側で付け分ける）
+        function skillOnGain(gainer, amount) {
+            if (!gainer || !(amount > 0)) return '';
+            let sh = players.find(q => q !== gainer && !q.finished && effSkillChar(q) === 'shakuna');
+            if (!sh) return '';
+            let cut = Math.min(200, Math.floor(amount * 0.1));
+            if (cut <= 0) return '';
+            sh.listeners = (sh.listeners || 0) + cut;
+            updateListenerLabel(sh);
+            return `スキル「なんでやねん！」で${sh.name}さんが${cut.toLocaleString()}人獲得`;
+        }
+        function paintTilePlus(idx) {
+            if (!tileCoords[idx]) return;
+            if (!(idx in paintedOrigTypes)) paintedOrigTypes[idx] = tileCoords[idx].type;
+            tileCoords[idx].type = 'plus';
+            if (!paintedTileIdxs.includes(idx)) paintedTileIdxs.push(idx);
+        }
+        function resetPaintedTiles() {
+            paintedTileIdxs.forEach(idx => { if (tileCoords[idx] && (idx in paintedOrigTypes)) tileCoords[idx].type = paintedOrigTypes[idx]; });
+            paintedTileIdxs = [];
+            paintedOrigTypes = {};
+        }
+        // 対戦開始時のスキル初期化：るい（CPU）はランダムにコピー先を決め、人間のるいは未選択（選択UIを出す）
+        function initSkillState() {
+            resetPaintedTiles();
+            players.forEach(p => {
+                if (!p.char) { p.skillChar = null; return; }
+                if (p.char === 'rui') {
+                    if (p.isHuman) p.skillChar = null;
+                    else {
+                        let others = players.filter(q => q !== p && q.char).map(q => q.char);
+                        p.skillChar = others.length ? others[Math.floor(Math.random() * others.length)] : null;
+                    }
+                } else p.skillChar = p.char;
+            });
+        }
+        // アイテムを1つランダムに引く（シートにアイテム行があればそこから、無ければ内蔵プール）
+        function drawRandomItemName() {
+            let itemEvents = gameEvents.filter(e => e.type === 'item');
+            if (itemEvents.length) {
+                let ev = itemEvents[Math.floor(Math.random() * itemEvents.length)];
+                return ev.itemName || '⚡ スパチャブースター';
+            }
+            let poolEv = DEFAULT_ITEM_POOL[Math.floor(Math.random() * DEFAULT_ITEM_POOL.length)];
+            return poolEv.itemName;
+        }
+        // ✨ 汎用のスキル選択ダイアログ（シャノの描き直し・るいの両声類）
+        let skillChoiceCallback = null;
+        function showSkillChoice(title, desc, options, cb) {
+            let ov = document.getElementById('skillChoiceOverlay');
+            if (!ov) { if (cb && options && options[0]) cb(options[0].value); return; }
+            document.getElementById('skillChoiceTitle').innerText = title || '';
+            document.getElementById('skillChoiceDesc').innerText = desc || '';
+            let btns = document.getElementById('skillChoiceBtns');
+            btns.innerHTML = '';
+            skillChoiceCallback = cb;
+            (options || []).forEach(opt => {
+                let b = document.createElement('button');
+                b.className = 'pixel-btn w-full py-2.5 px-3 font-black text-white rounded-lg text-sm bg-gradient-to-r from-amber-500 to-orange-600 shadow cursor-pointer';
+                b.innerText = opt.label;
+                b.onclick = () => { let f = skillChoiceCallback; hideSkillChoice(); if (f) f(opt.value); };
+                btns.appendChild(b);
+            });
+            ov.classList.remove('hidden');
+            ov.classList.add('flex');
+        }
+        function hideSkillChoice() {
+            let ov = document.getElementById('skillChoiceOverlay');
+            if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+            skillChoiceCallback = null;
+        }
+        // るい「両声類」：自分のるいが未選択なら、コピー先の選択を出す（オンラインではホストへ通知）
+        function maybePromptRuiPick() {
+            let me = players[myPlayerIndex];
+            if (!me || me.char !== 'rui' || me.skillChar) return;
+            let others = players.filter(q => q !== me && q.char && CHAR_SKILLS[q.char]);
+            if (!others.length) return;
+            showSkillChoice('✨ 両声類：コピーするスキルを選んでください', '対戦に参加しているキャラの中から、コピーして使うスキルを1つ選びます', others.map(q => ({ label: `${charName(q.char)}「${CHAR_SKILLS[q.char].name}」`, value: q.char })), (picked) => {
+                me.skillChar = picked;
+                if (isOnlineMode && !isHost && peerConnections[0] && peerConnections[0].open) {
+                    peerConnections[0].send({ type: 'ACTION_SKILL_PICK', skillChar: picked });
+                }
+                if (isOnlineMode && isHost) broadcastGameState(true);
+            });
+        }
+        // ターン開始時スキル（てふの不労所得・ねめあの咆哮）。解決はホスト側のみ。発動したら注記文字列を返す
+        function applyTurnStartSkills(p) {
+            if (!p || p.finished) return '';
+            if (isOnlineMode && !isHost) return '';
+            let notes = [];
+            if (hasSkill(p, 'tefu')) {
+                let gain = Math.min(250, Math.floor((p.listeners || 0) * 0.01) * tileAmountMultiplier());
+                if (gain > 0) {
+                    p.listeners += gain;
+                    updateListenerLabel(p);
+                    notes.push(`スキル「裕福なひきにーと」：不労所得でリスナー +${gain.toLocaleString()}人`);
+                }
+            }
+            if (hasSkill(p, 'nemea') && Math.random() < 0.2) {
+                let total = 0;
+                players.forEach(q => {
+                    if (q === p || q.finished || skillIsGroupExempt(q)) return;
+                    let take = Math.min(50, Math.max(0, q.listeners || 0));
+                    if (take > 0) { q.listeners -= take; updateListenerLabel(q); total += take; }
+                });
+                if (total > 0) {
+                    p.listeners += total;
+                    updateListenerLabel(p);
+                    notes.push(`スキル「可愛い咆哮がおー！」：みんなからリスナー${total.toLocaleString()}人が集まった！`);
+                }
+            }
+            return notes.join(' ');
         }
 
         let currentPlayerIndex = 0;
@@ -3415,6 +3579,16 @@
             setCsStatus('？？？ まだ何者か分からない…（世界地図に秘密があるらしい）');
         }
 
+        // ✨ キャラ選択の下部パネル：カーソルを合わせているキャラの固有スキル説明を出す（2026-11-26 ユーザー指定）
+        function updateCsSkillInfo() {
+            let el = document.getElementById('csSkillText');
+            if (!el) return;
+            if (csCursor === '?') { el.innerText = '？？？：スキルはまだ分からない…'; return; }
+            let sk = CHAR_SKILLS[csCursor];
+            if (!sk) { el.innerText = '-'; return; }
+            el.innerText = `${charName(csCursor)}「${sk.name}」：${sk.desc}`;
+        }
+
         function markCsCursor() {
             csVisibleIds().forEach(id => {
                 let btn = document.getElementById('csIcon_' + id);
@@ -3422,6 +3596,7 @@
             });
             let mb = document.getElementById('csIcon_mystery');
             if (mb) mb.classList.toggle('cs-cursor', csCursor === '?');
+            updateCsSkillInfo();
         }
 
         function charStandScale(id) { if (id === 'shano') return 1; if (id === 'tomoko') return 0.75; if (id === 'kataru') return 1.45; if (id === 'shakuna' || id === 'heru') return 1.6; return 1.4; }
@@ -3838,11 +4013,13 @@
                     goalDeadlineDay: goalDeadlineDay,
                     cpuLevel: cpuLevel,
                     starTiles: starTileIdxs.slice(),
+                    paintedTiles: paintedTileIdxs.slice(),
                     players: players.map(p => ({
                         name: p.name, char: p.char, color: p.color, pos: p.pos,
                         listeners: p.listeners, fragments: p.fragments,
                         items: (p.items || []).slice(), diceBonus: p.diceBonus || 0, doubleDice: !!p.doubleDice, moveDouble: !!p.moveDouble,
                         shield: p.shield || 0, finished: !!p.finished, rank: p.rank || 0,
+                        skillChar: p.skillChar || null,
                         isHuman: !!p.isHuman, lastVisitedTileIndex: p.lastVisitedTileIndex
                     }))
                 };
@@ -3907,6 +4084,7 @@
                 p.items = (sp.items || []).slice(); p.diceBonus = sp.diceBonus || 0; p.doubleDice = !!sp.doubleDice; p.moveDouble = !!sp.moveDouble;
                 p.shield = sp.shield || 0; p.finished = !!sp.finished; p.rank = sp.rank || 0;
                 p.isHuman = !!sp.isHuman;
+                p.skillChar = (sp.skillChar !== undefined && sp.skillChar !== null) ? sp.skillChar : (sp.char === 'rui' ? null : sp.char);
                 p.lastVisitedTileIndex = (typeof sp.lastVisitedTileIndex === 'number') ? sp.lastVisitedTileIndex : tileCoords.length - 1;
                 let tile = tileCoords[p.pos] || tileCoords[0];
                 p.renderX = tile.x; p.renderY = tile.y; p.goshuX = tile.x; p.goshuY = tile.y; p.offsetX = 0;
@@ -3916,6 +4094,8 @@
             if (data.goalBonuses) goalBonuses = JSON.parse(JSON.stringify(data.goalBonuses));
             if (data.cpuLevel === 'easy' || data.cpuLevel === 'normal' || data.cpuLevel === 'hard') cpuLevel = data.cpuLevel;
             starTileIdxs = (data.starTiles || []).slice();
+            resetPaintedTiles();
+            (data.paintedTiles || []).forEach(idx => paintTilePlus(idx));
             currentPlayerIndex = data.currentPlayerIndex;
             currentTurnNumber = data.currentTurnNumber;
             finishedRankCount = data.finishedRankCount || 0;
@@ -3986,6 +4166,7 @@
                 pendingOrderRolls = ord.rolls.map(roll => ({ roll }));
                 orderRollOffPending = true;
             }
+            initSkillState();
 
             document.getElementById('charSelectModal').classList.add('hidden');
             document.getElementById('gameStatusText').innerText = 'VS CPU (4人対戦中)';
@@ -4483,6 +4664,14 @@
                             pendingBranchInfo = null;
                             resolver(data.tileIdx);
                         }
+                    } else if (data.type === 'ACTION_SKILL_PICK') {
+                        // るい「両声類」のコピー先選択（送信者本人の分だけ受け付ける）
+                        let senderIndex = senderPlayIndex(conn);
+                        let rp = players[senderIndex];
+                        if (rp && rp.char === 'rui' && typeof data.skillChar === 'string' && data.skillChar !== 'rui' && players.some(q => q !== rp && q.char === data.skillChar)) {
+                            rp.skillChar = data.skillChar;
+                            broadcastGameState(true);
+                        }
                     } else if (data.type === 'REQUEST_SYNC') {
                         broadcastGameState(true);
                     } else if (data.type === 'DEBUG_ENDING') {
@@ -4558,7 +4747,9 @@
                                 players[idx].color = charColor(cfg.char);
                                 players[idx].isHuman = cfg.isHuman;
                                 players[idx].userName = cfg.userName || '';
+                                players[idx].skillChar = (cfg.char === 'rui') ? (cfg.skillChar || null) : cfg.char;
                             });
+                            paintedTileIdxs = []; paintedOrigTypes = {};
 
                             applyHudNames();
                         }
@@ -4824,6 +5015,8 @@
             });
 
             applyHudNames();
+            initSkillState();
+            playerConfigs.forEach((cfg, idx) => { cfg.skillChar = players[idx].skillChar || null; });
 
             initStarGame();
             let startPayload = {
@@ -5068,6 +5261,7 @@
                         players[idx].listeners = pSync.listeners;
                         players[idx].finished = pSync.finished;
                         players[idx].rank = pSync.rank;
+                        if (pSync.skillChar !== undefined) players[idx].skillChar = pSync.skillChar;
                         
                         if (pSync.renderX !== undefined && pSync.renderY !== undefined) {
                             if (!isHost && players[idx].renderX !== undefined) {
@@ -5102,6 +5296,10 @@
             }
 
             if (data.starTiles) { starTileIdxs = data.starTiles; updateFragmentUI(); }
+            if (data.paintedTiles) {
+                data.paintedTiles.forEach(idx => { if (tileCoords[idx] && tileCoords[idx].type !== 'plus') paintTilePlus(idx); });
+                paintedTileIdxs = data.paintedTiles.slice();
+            }
 
             if (data.currentDiceVal !== undefined) {
                 currentDiceVal = data.currentDiceVal;
@@ -5231,6 +5429,7 @@
                 eventDesc: document.getElementById('currentEventDesc').innerText,
                 eventEffect: document.getElementById('currentEventEffect').innerText,
                 starTiles: starTileIdxs,
+                paintedTiles: paintedTileIdxs.slice(),
                 players: players.map(p => ({
                     items: p.items || [],
                     diceBonus: p.diceBonus || 0,
@@ -5245,7 +5444,8 @@
                     jumpY: p.jumpY,
                     listeners: p.listeners,
                     finished: p.finished,
-                    rank: p.rank
+                    rank: p.rank,
+                    skillChar: p.skillChar || null
                 }))
             };
 
@@ -7547,6 +7747,10 @@
                 if (btnRoll) btnRoll.disabled = true;
                 if (!isOnlineMode || isHost) setTimeout(() => { cpuTakeTurn(); }, 1500);
             }
+            // ✨ 最初の手番もターン開始時スキルの対象にする＋るいのコピー先選択を出す
+            let startNote0 = applyTurnStartSkills(activePlayer);
+            if (startNote0) document.getElementById('currentEventDesc').innerText += ' ' + startNote0;
+            maybePromptRuiPick();
             updateItemUI();
             if (isOnlineMode && isHost) broadcastGameState(true);
         }
@@ -8014,6 +8218,22 @@
                 let toTile = tileCoords[p.pos];
                 remainingSteps--;
 
+                // ✨ ヘル「追跡者」：移動中に他のプレイヤーのいるマスを通過するたび、その相手から200人奪う
+                if (hasSkill(p, 'heru')) {
+                    players.forEach(q => {
+                        if (q !== p && !q.finished && q.pos === toTileIdx) {
+                            let take = Math.min(200, Math.max(0, q.listeners || 0));
+                            if (take > 0) {
+                                q.listeners -= take;
+                                p.listeners += take;
+                                updateListenerLabel(q);
+                                updateListenerLabel(p);
+                                p._skillNote = (p._skillNote || '') + `スキル「追跡者」で${q.name}さんから${take.toLocaleString()}人を奪った！ `;
+                            }
+                        }
+                    });
+                }
+
                 // ⛩️ 星の大樹（スタートマス）に到達
                 if (toTileIdx === 0 && !p.finished) {
                     if ((p.fragments || 0) >= FRAGMENTS_REQUIRED) {
@@ -8423,6 +8643,9 @@
                 }
             }
 
+            // ✨ 移動中に起きたスキルの注記（ヘルの追跡者など）を先頭に付ける
+            if (p._skillNote) { preDesc = p._skillNote.trim() + (preDesc ? ' ' + preDesc : ''); p._skillNote = ''; }
+
             // ⛩️ 星の大樹（スタートマス）にちょうど止まった（カケラ不足で通過した場合は移動中に周回ボーナス済み）
             // ※奪い合いを先に処理してからここに来るので、スタートマスでも同じマスの相手からカケラを奪える
             if (tile.type === 'start') {
@@ -8478,19 +8701,82 @@
 
                 if (tile.type === 'item') {
                     let itemGot = event.itemName || '⚡ スパチャブースター';
-                    let gainRes = addPlayerItem(pIndex, itemGot);
-                    document.getElementById('currentEventEffect').innerText = (gainRes && gainRes.note) ? gainRes.note : `獲得アイテム: ${itemGot}`;
+                    let effectEl = document.getElementById('currentEventEffect');
+                    if (hasSkill(p, 'shano')) {
+                        // ✨ シャノ「描き直し」：2つ引いて好きな方を1つ選ぶ（自分の端末で操作できる時だけ選択UI、他は自動選択）
+                        let candA = itemGot;
+                        let candB = drawRandomItemName();
+                        if (candB === candA) candB = drawRandomItemName();
+                        let canChoose = candB !== candA && ((!isOnlineMode && p.isHuman) || (isOnlineMode && isHost && myPlayerIndex === pIndex));
+                        if (canChoose) {
+                            skillChoiceDeferAdvance = true;
+                            effectEl.innerText = 'スキル「描き直し」：2つのアイテムから1つ選べます';
+                            let completeShanoPick = (picked) => {
+                                let gr = addPlayerItem(pIndex, picked);
+                                effectEl.innerText = ((gr && gr.note) ? gr.note : `獲得アイテム: ${picked}`) + '（描き直しで選んだ）';
+                                updateItemUI();
+                                broadcastGameState(true);
+                                skillChoiceDeferAdvance = false;
+                                if (!isOnlineMode || isHost) scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
+                            };
+                            showSkillChoice('🎨 描き直し', `${p.name}さんは、2つのアイテムから好きな方を1つ選べます`, [{ label: candA, value: candA }, { label: candB, value: candB }], completeShanoPick);
+                            setTimeout(() => { if (skillChoiceDeferAdvance) { hideSkillChoice(); completeShanoPick(candA); } }, 30000);
+                        } else {
+                            let picked = [candA, candB][Math.floor(Math.random() * 2)];
+                            let gr = addPlayerItem(pIndex, picked);
+                            effectEl.innerText = ((gr && gr.note) ? gr.note : `獲得アイテム: ${picked}`) + '（描き直しで選んだ）';
+                        }
+                    } else {
+                        let gainRes = addPlayerItem(pIndex, itemGot);
+                        let txt = (gainRes && gainRes.note) ? gainRes.note : `獲得アイテム: ${itemGot}`;
+                        // ✨ ひかり「神の光」：30%でもう1つ引ける
+                        if (hasSkill(p, 'hikari') && Math.random() < 0.3) {
+                            let item2 = drawRandomItemName();
+                            let gr2 = addPlayerItem(pIndex, item2);
+                            txt += ` スキル「神の光」でもう1つ引けた！ ${item2}` + ((gr2 && gr2.note) ? `（${gr2.note}）` : '');
+                        }
+                        // ✨ ゆに「耳かきASMR」：20%でASMR用マイクも入手
+                        if (hasSkill(p, 'yuni') && Math.random() < 0.2) {
+                            let gr3 = addPlayerItem(pIndex, '🎤 ASMR用マイク');
+                            txt += (gr3 && gr3.gained) ? ' スキル「耳かきASMR」でASMR用マイクも手に入れた！' : ' スキル「耳かきASMR」が発動したが、マイクは手に入らなかった';
+                        }
+                        effectEl.innerText = txt;
+                    }
                 } else if (tile.type === 'white') {
                     let evVal = (Number(event.val) || 0) * tileAmountMultiplier();
+                    let skillNotes = [];
+                    // ✨ える「ほろ酔い」／ミリネ「物語は終わらない」
+                    if (evVal !== 0 && hasSkill(p, 'eru')) { let f = 0.5 + Math.random() * 1.5; evVal = Math.round(evVal * f); skillNotes.push(`スキル「ほろ酔い」で効果が×${f.toFixed(1)}にぶれた！`); }
+                    if (evVal !== 0 && hasSkill(p, 'mirine') && goalDeadlineDay !== null) { evVal *= 2; skillNotes.push('スキル「物語は終わらない」でマス効果2倍！'); }
                     if (evVal !== 0) {
                         let shielded = false;
                         if (evVal < 0 && (p.shield || 0) > 0) { p.shield--; shielded = true; }
+                        let beforeL = p.listeners;
                         if (!shielded) {
                             p.listeners = Math.max(0, p.listeners + evVal);
                             document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
                             playCharVoice(p.char, evVal > 0 ? 'plus' : 'minus');
                         }
-                        document.getElementById('currentEventEffect').innerText = shielded ? '👥 影分身がマイナスを肩代わりした！' : `リスナー ${evVal > 0 ? '+' : ''}${evVal.toLocaleString()}人`;
+                        let delta = p.listeners - beforeL;
+                        if (!shielded && delta < 0 && hasSkill(p, 'utsuro')) {
+                            let rec = Math.floor((-delta) / 2);
+                            if (rec > 0) { p.listeners += rec; updateListenerLabel(p); skillNotes.push(`スキル「ごしゅの心配」で${rec.toLocaleString()}人が新たに集まった！`); }
+                        }
+                        if (!shielded && delta > 0) { let sn = skillOnGain(p, delta); if (sn) skillNotes.push(sn); }
+                        // ✨ かたる「繰言」：同じイベントが他の全員にも起きる（トモコ「特異点」は対象外）
+                        if (hasSkill(p, 'kataru')) {
+                            let spreadCount = 0;
+                            players.forEach(q => {
+                                if (q === p || q.finished || skillIsGroupExempt(q)) return;
+                                if (evVal < 0 && (q.shield || 0) > 0) { q.shield--; return; }
+                                let bq = q.listeners;
+                                q.listeners = Math.max(0, q.listeners + evVal);
+                                if (q.listeners !== bq) spreadCount++;
+                                updateListenerLabel(q);
+                            });
+                            if (spreadCount > 0) skillNotes.push('スキル「繰言」で、同じイベントが他の全員にも起きた！');
+                        }
+                        document.getElementById('currentEventEffect').innerText = (shielded ? '👥 影分身がマイナスを肩代わりした！' : `リスナー ${evVal > 0 ? '+' : ''}${evVal.toLocaleString()}人`) + (skillNotes.length ? ' ' + skillNotes.join(' ') : '');
                     } else {
                         document.getElementById('currentEventEffect').innerText = '変化なし';
                     }
@@ -8501,7 +8787,8 @@
                 isEventResolving = true;
                 broadcastGameState(true);
                 if (!isOnlineMode || isHost) {
-                    scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
+                    // シャノの選択待ちの間は進めない（選択完了時に completeShanoPick が進める）
+                    if (!skillChoiceDeferAdvance) scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
                 }
             }
         }
@@ -8552,12 +8839,16 @@
             if (!p) { turnPhase = 'idle'; return; }
             let mult = tileAmountMultiplier();
             let gain = roll * 200 * mult;
+            let micNotes = [];
+            // ✨ ゆに「耳かきASMR」：マイクの効果が2倍
+            if (hasSkill(p, 'yuni')) { gain *= 2; micNotes.push('スキル「耳かきASMR」で効果2倍！'); }
             p.listeners += gain;
+            let snM = skillOnGain(p, gain); if (snM) micNotes.push(snM);
             let lEl = document.getElementById(`p${pIndex + 1}Listeners`);
             if (lEl) lEl.innerText = `${p.listeners.toLocaleString()}人`;
             document.getElementById('currentEventTitle').innerText = '【🎤 ASMR用マイク】';
             document.getElementById('currentEventDesc').innerText = `${p.name}さんのASMR配信…サイコロの目は「${roll}」${mult > 1 ? `（${currentTurnNumber}日目なので×${mult}）` : ''}！`;
-            document.getElementById('currentEventEffect').innerText = `リスナー +${gain.toLocaleString()}人！続けて移動のサイコロを振れる。`;
+            document.getElementById('currentEventEffect').innerText = `リスナー +${gain.toLocaleString()}人！続けて移動のサイコロを振れる。` + (micNotes.length ? ' ' + micNotes.join(' ') : '');
             turnPhase = 'idle';
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) { btnRoll.disabled = false; btnRoll.innerText = '🎲 移動！'; }
@@ -8575,6 +8866,7 @@
             let parts = [];
             players.forEach(q => {
                 if (q === p || q.finished) return;
+                if (skillIsGroupExempt(q)) return; // ✨ トモコ「特異点」：全員対象の効果を受けない
                 let take = Math.min(per, Math.max(0, q.listeners));
                 if (take > 0) { q.listeners -= take; total += take; parts.push(`${q.name}さんから${take.toLocaleString()}人`); }
                 let tEl = document.getElementById(`p${players.indexOf(q) + 1}Listeners`);
@@ -8605,20 +8897,72 @@
             // 赤マスは「出目が小さいほど大きく減る」：減る量は (7 - 出目) × 基準値（出目1で×6、出目6で×1）。2026-11-17 ユーザー指定でこの式に戻した
             let val = (type === 'plus' ? diceRoll * baseVal : -((7 - diceRoll) * baseVal)) * tileAmountMultiplier();
 
+            // ✨ 帝「ライブペイント」：赤マスを青マスに塗り替える（マイナスは受けず、+100。そのマスは対戦中ずっと青マスになる）
+            if (type === 'minus' && hasSkill(p, 'mikado') && !paintedTileIdxs.includes(p.pos)) {
+                paintTilePlus(p.pos);
+                p.listeners += 100;
+                updateListenerLabel(p);
+                playCharVoice(p.char, 'plus');
+                document.getElementById('currentEventTitle').innerText = '【🎨 ライブペイント】';
+                document.getElementById('currentEventDesc').innerText = `${p.name}さんが赤マスを青マスに塗り替えた！このマスは対戦中ずっと青マスになります`;
+                document.getElementById('currentEventEffect').innerText = 'リスナー +100人';
+                let btnRollP = document.getElementById('btnRoll');
+                if (btnRollP) btnRollP.innerText = '🎲 移動！';
+                let drtP = document.getElementById('diceResultText');
+                if (drtP) drtP.innerText = `🎲 出目 ${diceRoll}（マス効果）`;
+                isEventResolving = true;
+                broadcastGameState(true);
+                if (!isOnlineMode || isHost) {
+                    scheduleEventAdvance(3000, () => { isEventResolving = false; nextTurn(); });
+                }
+                return;
+            }
+
+            let skillNotes = [];
+            // ✨ える「ほろ酔い」／ミリネ「物語は終わらない」
+            if (val !== 0 && hasSkill(p, 'eru')) { let f = 0.5 + Math.random() * 1.5; val = Math.round(val * f); skillNotes.push(`スキル「ほろ酔い」で効果が×${f.toFixed(1)}にぶれた！`); }
+            if (val !== 0 && hasSkill(p, 'mirine') && goalDeadlineDay !== null) { val *= 2; skillNotes.push('スキル「物語は終わらない」でマス効果2倍！'); }
+
             let shielded = false;
             if (type === 'minus' && (p.shield || 0) > 0) {
                 p.shield--;
                 shielded = true;
             }
+            let beforeL = p.listeners;
             if (!shielded) {
                 p.listeners = Math.max(0, p.listeners + val);
                 document.getElementById(`p${pIndex + 1}Listeners`).innerText = `${p.listeners.toLocaleString()}人`;
                 playCharVoice(p.char, val > 0 ? 'plus' : 'minus');
             }
+            let delta = p.listeners - beforeL;
+            if (!shielded && delta > 0) {
+                // ✨ さくら「アンコール」：青マスで得た時、30%でもう一度同じだけ得る
+                if (type === 'plus' && hasSkill(p, 'sakura') && Math.random() < 0.3) {
+                    p.listeners += delta;
+                    updateListenerLabel(p);
+                    skillNotes.push(`スキル「アンコール」！もう一度 +${delta.toLocaleString()}人`);
+                    let snE = skillOnGain(p, delta); if (snE) skillNotes.push(snE);
+                }
+                let sn = skillOnGain(p, delta); if (sn) skillNotes.push(sn);
+            }
+            if (!shielded && type === 'minus' && delta < 0) {
+                let netLoss = -delta;
+                // ✨ うつろ「ごしゅの心配」：減った分の50%が新たに集まる（りつの計算はこの後の実損失で）
+                if (hasSkill(p, 'utsuro')) {
+                    let rec = Math.floor(netLoss / 2);
+                    if (rec > 0) { p.listeners += rec; updateListenerLabel(p); netLoss -= rec; skillNotes.push(`スキル「ごしゅの心配」で${rec.toLocaleString()}人が新たに集まった！`); }
+                }
+                // ✨ りつ「血の匂い」：実損失の30%（最大300）を吸う
+                let ri = players.find(q => q !== p && !q.finished && effSkillChar(q) === 'ritsu');
+                if (ri && netLoss > 0) {
+                    let suck = Math.min(300, Math.floor(netLoss * 0.3));
+                    if (suck > 0) { ri.listeners += suck; updateListenerLabel(ri); skillNotes.push(`スキル「血の匂い」で${ri.name}さんが${suck.toLocaleString()}人吸い取った`); }
+                }
+            }
 
             document.getElementById('currentEventTitle').innerText = `${event.title} (出目: ${diceRoll})`;
             document.getElementById('currentEventDesc').innerText = event.desc;
-            document.getElementById('currentEventEffect').innerText = shielded ? '👥 影分身がマイナスを肩代わりした！' : (type === 'minus' ? `リスナー ${val.toLocaleString()}人（小さい目ほど大きく減る）` : `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`);
+            document.getElementById('currentEventEffect').innerText = (shielded ? '👥 影分身がマイナスを肩代わりした！' : (type === 'minus' ? `リスナー ${val.toLocaleString()}人（小さい目ほど大きく減る）` : `リスナー ${val > 0 ? '+' : ''}${val.toLocaleString()}人`)) + (skillNotes.length ? ' ' + skillNotes.join(' ') : '');
             
             let btnRoll = document.getElementById('btnRoll');
             if (btnRoll) btnRoll.innerText = '🎲 移動！';
@@ -8755,6 +9099,11 @@
                     setTimeout(() => { cpuTakeTurn(); }, 1500);
                 }
             }
+
+            // ✨ ターン開始時スキル（てふ・ねめあ）
+            let skillStartNote = applyTurnStartSkills(activePlayer);
+            if (skillStartNote) document.getElementById('currentEventDesc').innerText += ' ' + skillStartNote;
+            if (activePlayer && players[myPlayerIndex] === activePlayer) maybePromptRuiPick();
 
             if (goalDeadlineDay !== null && !deadlineEndTriggered) {
                 let rest = goalDeadlineDay - currentTurnNumber;
@@ -9087,6 +9436,7 @@
             if (info.kind === 'listeners') {
                 p.listeners += info.val;
                 effectText = `リスナー +${info.val.toLocaleString()}人`;
+                let snI = skillOnGain(p, info.val); if (snI) effectText += ' ' + snI;
             } else if (info.kind === 'dice') {
                 p.diceBonus = (p.diceBonus || 0) + info.val;
                 effectText = `次のサイコロ +${info.val}マス（合計 +${p.diceBonus}マス）`;
@@ -9104,6 +9454,7 @@
                     target.listeners -= take;
                     p.listeners += take;
                     effectText = `${target.name}さんからリスナー ${take.toLocaleString()}人を奪った`;
+                    let snS = skillOnGain(p, take); if (snS) effectText += ' ' + snS;
                     let tEl = document.getElementById(`p${players.indexOf(target) + 1}Listeners`);
                     if (tEl) tEl.innerText = `${target.listeners.toLocaleString()}人`;
                 } else {
