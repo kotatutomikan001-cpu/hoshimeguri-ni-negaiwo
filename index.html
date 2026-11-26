@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-6 ・ 687,623 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1126-7 ・ 690,138 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -992,6 +992,14 @@
                                 <span class="text-xs text-pink-300 font-bold">3位:</span>
                                 <input type="number" id="goalBonus3rd" value="500" step="100" class="w-full bg-slate-900 border border-pink-400 rounded px-1 py-0.5 text-xs text-pink-300 font-bold text-right">
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-pink-950/90 p-2 rounded-lg border border-pink-600 flex flex-col gap-1.5">
+                        <span class="text-xs text-pink-300 font-bold">🎉 凸凹カルテットエンド（開発用）</span>
+                        <span class="text-[11px] text-gray-300 leading-snug">シナリオが完成するまで、通常の端末では発動しません（メンバーがそろって優勝しても汎用エンドになり、エンディングリストでも開きません）。作っている本人の端末でだけ見たい時はここをONにしてください。この端末にだけ効きます。</span>
+                        <div class="flex items-center gap-1.5">
+                            <button id="dbgDekobokoDevBtn" onclick="toggleDekobokoDev()" class="px-2 py-1 text-xs bg-pink-700 hover:bg-pink-600 text-white rounded font-bold shadow">OFF（発動しません）</button>
                         </div>
                     </div>
 
@@ -1722,6 +1730,7 @@
         }
         function openDebugMenu() {
             document.getElementById('debugModal').classList.remove('hidden');
+            try { refreshDekobokoDevBtn(); } catch (e) {}
             setMapTool(selectedMapTool);
             renderDebugEvents();
             renderOpeningEditor();
@@ -6156,9 +6165,16 @@
         }
         function comboEndingScript(combo) {
             if (!combo) return null;
-            if (combo.id === 'dekoboko') return sheetEndingDekobokoScript;
+            if (combo.id === 'dekoboko') return dekobokoDevEnabled() ? sheetEndingDekobokoScript : null; // 完成するまで開発フラグOFFの端末では発動しない
             return null;
         }
+        // 🎉 凸凹カルテットエンドはシナリオ完成まで「作っている本人の端末だけ」で見られるようにする（2026-11-26 ユーザー指定）。
+        // 端末ローカルの開発フラグ（localStorage utsuro_dekoboko_dev）がONの端末でのみ発動・リスト解放される。
+        // OFFの端末では、メンバーがそろって人間が優勝しても汎用エンドになり、エンディングリストでも「？？？」のまま。
+        // ON/OFFはデバッグモーダルのトグルで切り替える。
+        function dekobokoDevEnabled() { try { return localStorage.getItem('utsuro_dekoboko_dev') === '1'; } catch (e) { return false; } }
+        function refreshDekobokoDevBtn() { let b = document.getElementById('dbgDekobokoDevBtn'); if (b) b.textContent = dekobokoDevEnabled() ? 'ON（この端末では発動します）' : 'OFF（発動しません）'; }
+        function toggleDekobokoDev() { try { if (dekobokoDevEnabled()) localStorage.removeItem('utsuro_dekoboko_dev'); else localStorage.setItem('utsuro_dekoboko_dev', '1'); } catch (e) {} refreshDekobokoDevBtn(); try { refreshEndingListButtons(); } catch (e) {} }
         // 🎉 ユニット特別エンド（2026-11-24 ユーザー指定）：ユニットのメンバー全員が対戦に参加していて、
         // そのメンバーを人間が操作して優勝した時に発動し、個別エンド（ひかり／うつろ等）より優先される。
         // 優先順位はこの配列の順（うっかりゲーム部 → いつも満室 → うつろエンド）。
@@ -6280,7 +6296,8 @@
             try {
                 if (kind === 'generic') return localStorage.getItem('utsuro_any_ending_seen') === '1';
                 if (kind === 'hikari') return localStorage.getItem('utsuro_hikari_seen') === '1';
-                if (kind === 'dekoboko' || kind === 'ukkari' || kind === 'manshitsu') return !!readSpecialEndingsSeen()[kind];
+                if (kind === 'dekoboko') return dekobokoDevEnabled() && !!readSpecialEndingsSeen()[kind]; // 開発フラグOFFの端末では見た記録があっても解放されない
+                if (kind === 'ukkari' || kind === 'manshitsu') return !!readSpecialEndingsSeen()[kind];
                 return !!readTrueProgress()[kind];
             } catch (e) { return false; }
         }
