@@ -359,6 +359,7 @@
             <div id="deadlineBannerSub" class="text-base sm:text-xl font-bold text-yellow-200 mt-1"></div>
         </div>
     </div>
+    <div id="endingLingerOverlay" class="fixed inset-0 z-[100004] hidden pointer-events-none" style="background:#000; opacity:0; transition: opacity 1.4s ease;"></div>
     <div id="staffRollOverlay" class="fixed inset-0 z-[100002] hidden overflow-hidden" style="background: radial-gradient(ellipse at 50% 28%, #2e1065 0%, #1e1b4b 55%, #070830 100%);" onclick="onStaffRollTap()">
         <div id="staffRollInner" class="absolute left-0 right-0 top-0 mx-auto w-full max-w-xl px-6 text-center will-change-transform"></div>
         <div id="staffRollFinale" class="absolute left-0 right-0 top-1/2 flex items-center justify-center pointer-events-none" style="height: 64vh; transform: translateY(80vh);">
@@ -582,7 +583,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-5 ・ 694,737 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-6 ・ 696,369 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -3383,7 +3384,7 @@
         let utsuroEndingSong = false; // 直前のエンディング会話が「うつろ優勝時（プレイヤー操作）」専用だったか
         let kataruEndingSong = false; // 直前のエンディング会話が「かたる優勝時」専用だったか
         let tomokoEndingSong = false; // 直前のエンディング会話が「トモコ優勝時（プレイヤー操作）」専用だったか
-        let dekobokoEndingSong = false; // 直前のエンディング会話が「凸凹カルテット」専用だったか（専用曲「みんなで」ending_dekoboko_bgm.mp3）
+        let dekobokoEndingSong = false; // 直前のエンディング会話が「凸凹カルテット」専用だったか（専用曲「みんなで一緒に」ending_dekoboko_bgm.mp3）
         function playEndingBgm() {
             clearBgmFxMute();
             activeBgm = dekobokoEndingSong ? 'endingDekoboko' : (utsuroEndingSong ? 'endingUtsuro' : (kataruEndingSong ? 'endingKataru' : (tomokoEndingSong ? 'endingTomoko' : 'ending')));
@@ -6673,9 +6674,37 @@
             stopOpeningRing();
             openingActive = false;
             dialogueMode = 'opening';
+            if (lastEndingKind === 'dekoboko' && !dekobokoLingerActive) {
+                // 🕯️ 凸凹カルテットエンドだけ、スタッフロールの前に余韻を持たせる（2026-11-28 ユーザー要望）：
+                // 会話画面がゆっくり暗転し、少し間を置いてからロールが始まる。歓声SEの尾もここで聞ける。
+                dekobokoLingerActive = true;
+                startDekobokoLinger(() => {
+                    let ov2 = document.getElementById('openingOverlay');
+                    if (ov2) { ov2.classList.add('hidden'); ov2.classList.remove('flex'); }
+                    dekobokoLingerActive = false;
+                    startStaffRoll();
+                });
+                return;
+            }
             let ov = document.getElementById('openingOverlay');
             if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
             startStaffRoll();
+        }
+
+        let dekobokoLingerActive = false;
+        function startDekobokoLinger(done) {
+            let lg = document.getElementById('endingLingerOverlay');
+            if (!lg) { if (done) done(); return; }
+            lg.classList.remove('hidden');
+            lg.style.opacity = '0';
+            requestAnimationFrame(() => { requestAnimationFrame(() => { lg.style.opacity = '1'; }); });
+            setTimeout(() => {
+                if (done) done();
+                setTimeout(() => {
+                    lg.style.opacity = '0';
+                    setTimeout(() => { lg.classList.add('hidden'); }, 1400);
+                }, 80);
+            }, 3600);
         }
 
         let staffRollTimer = null;
@@ -6713,7 +6742,7 @@
             ['こころの居場所', '原案：氷室うつろ note ・ 補作詞：hiro-pon', 'utsuro'],
             ['やさしい愛', 'Particle-Music', 'kataru'],
             ['からかいの裏側', 'トモコ', 'tomoko'],
-            ['みんなで', '', 'dekoboko']
+            ['みんなで一緒に', '', 'dekoboko']
         ];
         // 🎬 エンディング専用の追加スタッフクレジット（そのエンディングのロールにだけ出る。増えたらここに足す）
         // 1125-9：凸凹カルテットの「監修　ふぇる」はユーザー指定で削除。現在は登録なし。
