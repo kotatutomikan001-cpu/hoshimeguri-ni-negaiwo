@@ -582,7 +582,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-3 ・ 695,311 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-4 ・ 694,731 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -785,10 +785,8 @@
         @keyframes ringWobble { 0%, 100% { transform: rotate(0deg) translate(0, 0); } 20% { transform: rotate(-2.2deg) translate(-1.2%, 0.8%); } 45% { transform: rotate(1.8deg) translate(1.1%, -0.7%); } 70% { transform: rotate(-1.3deg) translate(-0.7%, -0.5%); } }
         .opening-ring.weak { filter: brightness(0.55) saturate(0.75); }
         #openingRingLayer.show .opening-ring { animation: ringForm 2.6s ease-out forwards, ringPulse 3.8s ease-in-out 2.6s infinite; }
-        .opening-ring::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 130deg, rgba(255, 255, 255, 0.9) 180deg, transparent 230deg, transparent 360deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); animation: ringSpin 10s linear infinite; }
         @keyframes ringForm { 0% { opacity: 0; transform: scale(0.55); } 55% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
         @keyframes ringPulse { 0%, 100% { box-shadow: 0 0 24px 6px rgba(255, 230, 150, 0.75), 0 0 90px 30px rgba(255, 215, 120, 0.35), inset 0 0 24px 6px rgba(255, 230, 150, 0.55); } 50% { box-shadow: 0 0 34px 10px rgba(255, 236, 170, 0.95), 0 0 120px 44px rgba(255, 220, 130, 0.5), inset 0 0 30px 8px rgba(255, 236, 170, 0.7); } }
-        @keyframes ringSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes treeTwinkle { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
         .tree-twinkle { animation: treeTwinkle 2.8s ease-in-out infinite; }
         @keyframes treeLightPulse { 0%, 100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.22); opacity: 1; } }
