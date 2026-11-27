@@ -577,7 +577,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1127-5 ・ 688,120 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1127-6 ・ 689,543 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2275,6 +2275,11 @@
                 let rawWho = String(row[si] || '').trim();
                 let who = storySpeakerKey(rawWho);
                 let speakers = null;
+                if (!who && ['四人共', '四人とも', '全員', '全員共', 'みんな', 'all', 'everyone'].includes(rawWho.toLowerCase())) {
+                    // 「四人共」「全員」と書いたら、その対戦の参加者全員で同時に喋る行にする（実メンバーへの展開は表示時。2026-11-27 ユーザー指定）
+                    speakers = ['__all__'];
+                    who = '__all__';
+                }
                 if (!who && rawWho) {
                     // 話者欄に複数名（改行・「・」区切りなど）が入っていたら、全員で同時に喋る行として扱う
                     let parts = rawWho.split(/[\n・,、＋+／\/]+/).map(s => s.trim()).filter(Boolean);
@@ -5759,11 +5764,12 @@
         function sanitizeOpeningLines(lines) {
             if (!Array.isArray(lines)) return null;
             let cleaned = lines.filter(l => l && typeof l.text === 'string').map(l => {
+                let keepWho = (w) => w === 'winner' ? 'winner' : (w === '__all__' ? '__all__' : normalizeSpeakerWho(w)); // '__all__'（四人共／全員）は参加者全員を指す特別トークンとして保持する
                 let out = {
-                    who: l.who === 'winner' ? 'winner' : normalizeSpeakerWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
+                    who: keepWho(l.who), fx: parseFxTokens(l.fx || '').join(' ') || undefined,
                     text: l.text.trim() === '' ? '' : String(l.text)
                 };
-                if (Array.isArray(l.speakers) && l.speakers.length >= 2) out.speakers = l.speakers.map(s => s === 'winner' ? 'winner' : normalizeSpeakerWho(s));
+                if (Array.isArray(l.speakers) && (l.speakers.length >= 2 || l.speakers.includes('__all__'))) out.speakers = l.speakers.map(keepWho);
                 return out;
             });
             return cleaned.length ? cleaned : null;
@@ -7509,6 +7515,18 @@
             if (b) b.innerText = dialogueAuto ? '⏸ 自動送り ON' : '▶ 自動送り OFF';
         }
 
+        // 「四人共／全員」行（speakers の '__all__'）を、その対戦の参加者全員に展開する
+        function expandAllSpeakers(list) {
+            if (!Array.isArray(list) || !list.includes('__all__')) return list;
+            let ids = [];
+            (typeof players !== 'undefined' && Array.isArray(players) ? players : []).forEach(p => { if (p && p.char && !ids.includes(p.char)) ids.push(p.char); });
+            let out = [];
+            list.forEach(s => {
+                if (s === '__all__') ids.forEach(id => { if (!out.includes(id)) out.push(id); });
+                else if (!out.includes(s)) out.push(s);
+            });
+            return out;
+        }
         function renderOpeningLine() {
             clearOpeningAuto();
             let line = dialogueLines()[openingIndex];
@@ -7517,7 +7535,8 @@
             let fxToks = parseFxTokens(line.fx || '');
             // 🗣️ 全員で同時に喋る行（話者が複数 or fx=overlap/重ね）：顔枠なし・名前は全員分・本文は大きな『』の中で重ねて表示する
             let overlapSpeakers = null;
-            if (Array.isArray(line.speakers) && line.speakers.length >= 2) overlapSpeakers = line.speakers.map(s => s === 'winner' ? s : normalizeSpeakerWho(s));
+            let lineSpeakers = Array.isArray(line.speakers) ? expandAllSpeakers(line.speakers) : line.speakers;
+            if (Array.isArray(lineSpeakers) && lineSpeakers.length >= 2) overlapSpeakers = lineSpeakers.map(s => s === 'winner' ? s : normalizeSpeakerWho(s));
             else if (fxToks.includes('overlap')) overlapSpeakers = [normalizeSpeakerWho(line.who)];
             let ovEl = document.getElementById('openingOverlay');
             if (ovEl) {
