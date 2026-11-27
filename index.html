@@ -582,7 +582,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-2 ・ 695,311 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-3 ・ 695,311 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -779,7 +779,7 @@
         /* 💫 光の輪：fx「光の輪」で画面上部に光の輪が形作られる演出（会話専用、1128-1） */
         #openingRingLayer { display: flex; align-items: flex-start; justify-content: center; padding-top: 4vh; opacity: 0; transition: opacity 0.9s ease; }
         #openingRingLayer.show { opacity: 1; }
-        .opening-ring { position: relative; width: 46vmin; height: 46vmin; border-radius: 50%; border: 4px solid rgba(255, 244, 190, 0.95); box-shadow: 0 0 24px 6px rgba(255, 230, 150, 0.75), 0 0 90px 30px rgba(255, 215, 120, 0.35), inset 0 0 24px 6px rgba(255, 230, 150, 0.55); opacity: 0; transform: scale(0.55); transition: filter 1.2s ease; }
+        .opening-ring { position: relative; width: 54vmin; height: 33vmin; border-radius: 50%; border: 4px solid rgba(255, 244, 190, 0.95); box-shadow: 0 0 24px 6px rgba(255, 230, 150, 0.75), 0 0 90px 30px rgba(255, 215, 120, 0.35), inset 0 0 24px 6px rgba(255, 230, 150, 0.55); opacity: 0; transform: scale(0.55); transition: filter 1.2s ease; }
         /* 輪の状態（1128-2）：「輪揺れ」＝ぐらぐら揺れる（ラッパー側を揺らして形成アニメと競合させない）、「輪弱」＝光が弱まる */
         .opening-ring-wrap.shake { animation: ringWobble 0.9s ease-in-out infinite; }
         @keyframes ringWobble { 0%, 100% { transform: rotate(0deg) translate(0, 0); } 20% { transform: rotate(-2.2deg) translate(-1.2%, 0.8%); } 45% { transform: rotate(1.8deg) translate(1.1%, -0.7%); } 70% { transform: rotate(-1.3deg) translate(-0.7%, -0.5%); } }
