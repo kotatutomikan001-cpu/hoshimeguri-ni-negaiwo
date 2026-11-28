@@ -3,6 +3,10 @@
 // ※このファイルは固定版：ゲームのバージョンが上がっても書き換えないこと。
 //   （2026-11-20に1回だけ例外修正：キャラボイスが無音プレースホルダーのまま保存され、
 //     差し替えても再生されない問題への対処。CACHE_NAMEは据え置き）
+//   （2026-11-28に2回目の例外修正：MP3も同名差し替えが反映されない問題への対処。
+//     有効化時に保存済みMP3を一度だけ消去し、MP3も1日以上古ければ裏側で取り直す
+//     ようにした。金タイトルの曲が旧曲のまま流れ続けたのが発覚のきっかけ。
+//     CACHE_NAMEは据え置き）
 //   ページ本体はオンライン時に必ず最新を取りに行き（取得できたら保存も更新）、
 //   画像などの素材は保存を優先しつつ、1日以上古ければ裏側で最新に差し替える。
 //   そのため index.html だけ差し替えれば、プレイヤー側は自動で最新版になる。
@@ -62,9 +66,11 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(keys.map((k) => (k === CACHE_NAME ? null : caches.delete(k))));
     // キャラボイスは保存対象外（下のfetch参照）。旧版で保存されてしまった分はここで消す。
+    // MP3（BGM・SE）も、2026-11-28の例外修正の有効化時に一度だけ消す：同名で差し替えた
+    // 新しい曲が、古い保存のせいでいつまでも再生されない問題への対処（金タイトルの曲で発覚）。
     const ownCache = await caches.open(CACHE_NAME);
     const ownReqs = await ownCache.keys();
-    await Promise.all(ownReqs.filter((r) => r.url.includes('/char_assets/voice/')).map((r) => ownCache.delete(r)));
+    await Promise.all(ownReqs.filter((r) => r.url.includes('/char_assets/voice/') || new URL(r.url).pathname.endsWith('.mp3')).map((r) => ownCache.delete(r)));
     await self.clients.claim();
   })());
 });
@@ -103,9 +109,9 @@ self.addEventListener('fetch', (event) => {
       const cache = await caches.open(CACHE_NAME);
       const hit = await cache.match(req, { ignoreSearch: true });
       if (hit) {
-        // 画像など差し替わることのある素材は、保存が1日以上古ければ裏側で最新を取り直す
-        // （音楽ファイルとCDNは対象外：容量が大きく、差し替え頻度も低いため）
-        const isRevalidatable = url.origin === self.location.origin && !url.pathname.endsWith('.mp3');
+        // 画像・音楽など差し替わることのある素材は、保存が1日以上古ければ裏側で最新を取り直す
+        // （CDNは対象外。MP3は2026-11-28の例外修正で対象に含めた：同名差し替えを反映させるため）
+        const isRevalidatable = url.origin === self.location.origin;
         if (isRevalidatable) {
           const dateHdr = hit.headers.get('Date');
           const age = dateHdr ? (Date.now() - Date.parse(dateHdr)) : Infinity;
