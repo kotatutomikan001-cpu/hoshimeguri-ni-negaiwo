@@ -583,7 +583,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-9 ・ 700,205 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-10 ・ 700,276 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -6697,14 +6697,14 @@
             stopOpeningRing();
             openingActive = false;
             dialogueMode = 'opening';
-            if (lastEndingKind === 'dekoboko' && !dekobokoLingerActive) {
-                // 🕯️ 凸凹カルテットエンドだけ、スタッフロールの前に余韻を持たせる（2026-11-28 ユーザー要望）：
+            if (['dekoboko', 'ukkari', 'manshitsu'].includes(lastEndingKind) && !endingLingerActive) {
+                // 🕯️ 特別エンド（凸凹カルテット／うっかりゲーム部／今日も満室）はスタッフロールの前に余韻を持たせる（2026-11-28 ユーザー要望）：
                 // 会話画面がゆっくり暗転し、少し間を置いてからロールが始まる。歓声SEの尾もここで聞ける。
-                dekobokoLingerActive = true;
-                startDekobokoLinger(() => {
+                endingLingerActive = true;
+                startEndingLinger(() => {
                     let ov2 = document.getElementById('openingOverlay');
                     if (ov2) { ov2.classList.add('hidden'); ov2.classList.remove('flex'); }
-                    dekobokoLingerActive = false;
+                    endingLingerActive = false;
                     startStaffRoll();
                 });
                 return;
@@ -6714,8 +6714,8 @@
             startStaffRoll();
         }
 
-        let dekobokoLingerActive = false;
-        function startDekobokoLinger(done) {
+        let endingLingerActive = false;
+        function startEndingLinger(done) {
             let lg = document.getElementById('endingLingerOverlay');
             if (!lg) { if (done) done(); return; }
             lg.classList.remove('hidden');
