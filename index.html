@@ -583,7 +583,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-6 ・ 696,369 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-8 ・ 696,390 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -669,7 +669,7 @@
                 <button id="endingListTomokoBtn" onclick="playEndingReplay('tomoko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">トモコエンド</button>
                 <button id="endingListDekobokoBtn" onclick="playEndingReplay('dekoboko')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">凸凹カルテットエンド</button>
                 <button id="endingListUkkariBtn" onclick="playEndingReplay('ukkari')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">うっかりゲーム部エンド</button>
-                <button id="endingListManshitsuBtn" onclick="playEndingReplay('manshitsu')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">いつも満室エンド</button>
+                <button id="endingListManshitsuBtn" onclick="playEndingReplay('manshitsu')" class="pixel-btn w-full py-3 px-6 font-black text-white rounded-lg text-base bg-gradient-to-r from-indigo-600 to-purple-700 shadow cursor-pointer">今日も満室エンド</button>
             </div>
             <button onclick="closeEndingList()" class="el-back pixel-btn mt-7 py-2.5 px-8 font-black text-white rounded-lg text-sm bg-gradient-to-r from-slate-600 to-slate-700 shadow cursor-pointer">タイトルへ戻る</button>
             <div class="mt-6"><button onclick="clearEndingClearData()" class="text-xs font-bold text-red-300/70 underline underline-offset-2 hover:text-red-200 cursor-pointer">クリアデータを消す</button></div>
@@ -2220,7 +2220,7 @@
         let sheetEndingTomokoScript = null; // シートから読み込んだ「トモコ優勝時」専用エンディング会話
         let sheetEndingDekobokoScript = null; // シートから読み込んだ「凸凹カルテット」組み合わせ特別エンド会話
         let sheetEndingUkkariScript = null; // シートから読み込んだ「うっかりゲーム部」（ひかり＋うつろ）特別エンド会話
-        let sheetEndingManshitsuScript = null; // シートから読み込んだ「いつも満室」（ミリネ＋うつろ）特別エンド会話
+        let sheetEndingManshitsuScript = null; // シートから読み込んだ「今日も満室」（ミリネ＋うつろ）特別エンド会話
         let sheetTrueEndScript = null; // シートから読み込んだ「トゥルーエンド」会話
         function storySpeakerKey(raw) {
             let s = String(raw || '').trim();
@@ -2678,7 +2678,7 @@
                 return false;
             }
         }
-        const OFFICIAL_ENDING_MANSHITSU_SHEET_URL = ''; // いつも満室（ミリネ＋うつろ）特別エンドの公式シート。シナリオ作成後にURLを設定すると有効になる
+        const OFFICIAL_ENDING_MANSHITSU_SHEET_URL = ''; // 今日も満室（ミリネ＋うつろ）特別エンドの公式シート。シナリオ作成後にURLを設定すると有効になる
         function getEffectiveEndingManshitsuSheetUrl() {
             return OFFICIAL_ENDING_MANSHITSU_SHEET_URL;
         }
@@ -2688,7 +2688,7 @@
         }
         async function loadEndingManshitsuFromSheet(manual) {
             let savedUrl = getEffectiveEndingManshitsuSheetUrl();
-            if (!savedUrl) { if (manual) setEndingManshitsuSheetStatus('未連携です（いつも満室がそろっても通常のエンディング会話になります）'); return false; }
+            if (!savedUrl) { if (manual) setEndingManshitsuSheetStatus('未連携です（今日も満室がそろっても通常のエンディング会話になります）'); return false; }
             let csvUrl = extractSheetCsvUrl(savedUrl);
             if (!csvUrl) { setEndingManshitsuSheetStatus('⚠️ URLを認識できませんでした'); return false; }
             try {
@@ -2701,10 +2701,10 @@
                 if (lines.length === 0) throw new Error('有効なセリフが0行');
                 sheetEndingManshitsuScript = lines;
                 try { localStorage.setItem('utsuro_ending_manshitsu_sheet_cache', JSON.stringify(lines)); } catch (e) {}
-                setEndingManshitsuSheetStatus(`✅ ${lines.length}行の「いつも満室」会話を読み込みました`);
+                setEndingManshitsuSheetStatus(`✅ ${lines.length}行の「今日も満室」会話を読み込みました`);
                 return true;
             } catch (e) {
-                console.warn('いつも満室シート読み込み失敗:', e);
+                console.warn('今日も満室シート読み込み失敗:', e);
                 setEndingManshitsuSheetStatus('⚠️ 読み込み失敗（通常のエンディング会話で継続します）');
                 return false;
             }
@@ -2893,7 +2893,7 @@
                 if (OFFICIAL_ENDING_UKKARI_SHEET_URL) loadEndingUkkariFromSheet(false); // うっかりゲーム部シート（公式URLが設定されたら起動時に自動読み込み）
                 let cachedManshitsuEnding = localStorage.getItem('utsuro_ending_manshitsu_sheet_cache');
                 if (cachedManshitsuEnding) { try { sheetEndingManshitsuScript = sanitizeOpeningLines(JSON.parse(cachedManshitsuEnding)); } catch (e) { sheetEndingManshitsuScript = null; } }
-                if (OFFICIAL_ENDING_MANSHITSU_SHEET_URL) loadEndingManshitsuFromSheet(false); // いつも満室シート（公式URLが設定されたら起動時に自動読み込み）
+                if (OFFICIAL_ENDING_MANSHITSU_SHEET_URL) loadEndingManshitsuFromSheet(false); // 今日も満室シート（公式URLが設定されたら起動時に自動読み込み）
             } catch (e) {
                 gameEvents = JSON.parse(JSON.stringify(defaultEvents));
             }
@@ -3462,7 +3462,7 @@
                 }
             } catch (e) {}
             if (bgmGains[target.id]) { try { bgmGains[target.id].gain.value = bgmVolFor(target.id); } catch (e) {} }
-            let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTomokoAudio, endingTalkAudio, titleAudio, titleGoldAudio].filter(a => a && a !== target);
+            let others = [selectAudio, gameAudio, endingAudio, endingUtsuroAudio, endingKataruAudio, endingTomokoAudio, endingDekobokoAudio, endingTalkAudio, titleAudio, titleGoldAudio].filter(a => a && a !== target);
             others.forEach(a => { a.pause(); a.currentTime = 0; });
             // スマホ対策：タップで保留になっていた play() が遅れて効くと、止めたはずの前のBGMが被って再生されることがある。
             // 少し置いてから「今鳴らすべき曲以外」をもう一度止め直す（その間に曲が切り替わっていたら、新しい対象は止めない）
@@ -6200,11 +6200,11 @@
         function toggleDekobokoDev() { try { if (dekobokoDevEnabled()) localStorage.removeItem('utsuro_dekoboko_dev'); else localStorage.setItem('utsuro_dekoboko_dev', '1'); } catch (e) {} refreshDekobokoDevBtn(); try { refreshEndingListButtons(); } catch (e) {} }
         // 🎉 ユニット特別エンド（2026-11-24 ユーザー指定）：ユニットのメンバー全員が対戦に参加していて、
         // そのメンバーを人間が操作して優勝した時に発動し、個別エンド（ひかり／うつろ等）より優先される。
-        // 優先順位はこの配列の順（うっかりゲーム部 → いつも満室 → うつろエンド）。
+        // 優先順位はこの配列の順（うっかりゲーム部 → 今日も満室 → うつろエンド）。
         // メンバーがそろっているのにCPUが優勝したら汎用エンド。判定は playEndingDialogue 側。
         const SPECIAL_UNIT_ENDINGS = [
             { id: 'ukkari', name: 'うっかりゲーム部', members: ['hikari', 'utsuro'] },
-            { id: 'manshitsu', name: 'いつも満室', members: ['mirine', 'utsuro'] }
+            { id: 'manshitsu', name: '今日も満室', members: ['mirine', 'utsuro'] }
         ];
         function presentSpecialUnits() {
             let chars = new Set((players || []).filter(p => p && p.char).map(p => canonicalCharId(p.char)));
@@ -6233,7 +6233,7 @@
             let comboScript = combo ? comboEndingScript(combo) : null;
             activeComboEnding = null;
             // 🎉 ユニット特別エンドの候補（メンバー全員が参加しているユニット、優先順）
-            // 発動＝優勝者がそのユニットのメンバーを操作している人間。うつろ優勝時は うっかり→いつも満室→うつろエンド の順に優先
+            // 発動＝優勝者がそのユニットのメンバーを操作している人間。うつろ優勝時は うっかり→今日も満室→うつろエンド の順に優先
             let winnerId = canonicalCharId(winnerChar);
             let presentUnits = presentSpecialUnits();
             let fireUnit = presentUnits.find(u => { let s = unitEndingScript(u); return winnerIsHuman && u.members.includes(winnerId) && s && s.length; }) || null;
@@ -6306,14 +6306,14 @@
             tomoko: { lineup: ['tomoko', 'utsuro', 'hikari', 'shano'] },  // かたるがいる編成にはしない（本編のガードと整合）
             dekoboko: { lineup: ['sakura', 'nemea', 'rui', 'eru'] }, // 凸凹カルテット（優勝者はさくら役）
             ukkari: { lineup: ['hikari', 'utsuro', 'shano', 'ritsu'] }, // うっかりゲーム部（優勝者はひかり役。ミリネを入れない＝満室側が混ざらない）
-            manshitsu: { lineup: ['mirine', 'utsuro', 'shano', 'ritsu'] } // いつも満室（優勝者はミリネ役。ひかりを入れない＝ゲーム部側が混ざらない）
+            manshitsu: { lineup: ['mirine', 'utsuro', 'shano', 'ritsu'] } // 今日も満室（優勝者はミリネ役。ひかりを入れない＝ゲーム部側が混ざらない）
         };
         function isHikariEndingSeen() { try { return localStorage.getItem('utsuro_hikari_seen') === '1'; } catch (e) { return false; } }
         // 組み合わせ／ユニット特別エンドを見た記録（リスト解放用）
         function readSpecialEndingsSeen() { try { return JSON.parse(localStorage.getItem('utsuro_special_endings_seen') || '{}') || {}; } catch (e) { return {}; } }
         function markSpecialEndingSeen(id) { try { let s = readSpecialEndingsSeen(); if (!s[id]) { s[id] = true; localStorage.setItem('utsuro_special_endings_seen', JSON.stringify(s)); } } catch (e) {} }
         const ENDING_LIST_BUTTONS = { generic: 'endingListGenericBtn', hikari: 'endingListHikariBtn', utsuro: 'endingListUtsuroBtn', kataru: 'endingListKataruBtn', tomoko: 'endingListTomokoBtn', dekoboko: 'endingListDekobokoBtn', ukkari: 'endingListUkkariBtn', manshitsu: 'endingListManshitsuBtn' };
-        const ENDING_LIST_LABELS = { generic: '汎用エンド', hikari: 'ひかりエンド', utsuro: 'うつろエンド', kataru: 'かたるエンド', tomoko: 'トモコエンド', dekoboko: '凸凹カルテットエンド', ukkari: 'うっかりゲーム部エンド', manshitsu: 'いつも満室エンド' };
+        const ENDING_LIST_LABELS = { generic: '汎用エンド', hikari: 'ひかりエンド', utsuro: 'うつろエンド', kataru: 'かたるエンド', tomoko: 'トモコエンド', dekoboko: '凸凹カルテットエンド', ukkari: 'うっかりゲーム部エンド', manshitsu: '今日も満室エンド' };
         // そのエンディングを本編（または再生）で見たことがあるか＝リストで解放されているか
         function endingUnlocked(kind) {
             try {
