@@ -583,7 +583,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-11 ・ 703,581 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-12 ・ 704,018 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2286,6 +2286,7 @@
                 if (tok === 'overlap' || tok === '重ね' || tok === '同時' || tok === 'いっせい') { if (!out.includes('overlap')) out.push('overlap'); return; }
                 if (tok === 'layer' || tok === '重ねる' || tok === 'かさねる' || tok === 'レイヤー') { if (!out.includes('layer')) out.push('layer'); return; }
                 if (tok === 'small' || tok === '小さめ' || tok === '小') { if (!out.includes('small')) out.push('small'); return; }
+                if (tok === 'big' || tok === '大きめ' || tok === '特大' || tok === '大') { if (!out.includes('big')) out.push('big'); return; }
                 for (let key in FX_ALIASES) {
                     if (key === tok || FX_ALIASES[key].includes(tok)) { if (!out.includes(key)) out.push(key); return; }
                 }
@@ -7568,14 +7569,15 @@
         // 使い分け（1125-8、ユーザー指定）：シートの fx に「重ねる」（layer / かさねる / レイヤー）と書いた行だけ、
         // パート同士を縦に重ねる旧来の見せ方にする。指定が無ければ並べる（1125-7の方式）。
         // 文字サイズ指定（1125-9、ユーザー指定）：fx に「小さめ」（small / 小）と書いた行は、文字を0.85倍（1.17em）で出す。
-        function overlapDialogueHtml(text, layered, small) {
+        // 特大指定（1128-12、ユーザー指定）：fx に「大きめ」（big / 特大 / 大）と書いた行は、文字を1.9emで出す（最後の叫びなど見せ場用）。小さめと同時指定なら大きめ優先。
+        function overlapDialogueHtml(text, layered, small, big) {
             let body = String(text || '').trim();
             if (body.startsWith('『')) body = body.slice(1);
             if (body.endsWith('』')) body = body.slice(0, -1);
             let parts = body.split(/[\n／]+/).map(s => s.trim()).filter(Boolean);
             if (!parts.length) parts = [body];
             if (parts.length > 1 && parts.every(p => p === parts[0])) parts = [parts[0]]; // ユニゾン（全員同じセリフ）は1回だけ
-            let fs = small ? '1.17em' : '1.38em';
+            let fs = big ? '1.9em' : (small ? '1.17em' : '1.38em');
             let inner = parts.map((p, i) => {
                 let mt = i === 0 ? '0' : (layered ? '-0.38em' : '0.12em');
                 let lh = layered ? '1.02' : '1.15';
@@ -7745,7 +7747,7 @@
             let typeChars = Array.from(openingTypeFull);
             if (overlapSpeakers) {
                 // 同時セリフはタイプライター表示せず、最初から重ねて一気に出す
-                txEl.innerHTML = overlapDialogueHtml(openingTypeFull, fxToks.includes('layer'), fxToks.includes('small'));
+                txEl.innerHTML = overlapDialogueHtml(openingTypeFull, fxToks.includes('layer'), fxToks.includes('small'), fxToks.includes('big'));
                 fitOverlapDialogue(); // 長いセリフは1行に収まるよう文字サイズを実測調整（1125-6）
                 requestAnimationFrame(fitOverlapDialogue); // フォント読み込み後の再測
                 openingTypeDone = true;
