@@ -583,7 +583,7 @@
             <img id="titleLightImgKataru" src="title_light_kataru.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
             <img id="titleLightImgTomoko" src="title_light_tomoko.png" alt="" class="hidden absolute inset-0 w-full h-full" draggable="false">
         </div>
-        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-13 ・ 698,524 bytes</div>
+        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-purple-950/40 select-none">ver. index-1128-14 ・ 698,934 bytes</div>
         <div id="titleGoldCredit" class="absolute bottom-2 left-3 text-[10px] font-bold text-purple-950/40 select-none">♫ 星めぐりに願いを</div>
         <div class="relative text-center max-w-2xl w-full max-h-full overflow-y-auto py-2">
             <img id="titleLogoImg" src="title_logo.png" alt="星めぐりに願いを" class="w-full h-auto max-h-[60dvh] object-contain mx-auto mb-2 select-none" draggable="false" onerror="if(!this.dataset.triedUpper){this.dataset.triedUpper='1';this.src='title_logo.PNG';}else{this.classList.add('hidden');document.getElementById('titleLogoFallback').classList.remove('hidden');}">
@@ -2261,6 +2261,7 @@
                 if (tok === 'layer' || tok === '重ねる' || tok === 'かさねる' || tok === 'レイヤー') { if (!out.includes('layer')) out.push('layer'); return; }
                 if (tok === 'small' || tok === '小さめ' || tok === '小') { if (!out.includes('small')) out.push('small'); return; }
                 if (tok === 'big' || tok === '大きめ' || tok === '特大' || tok === '大') { if (!out.includes('big')) out.push('big'); return; }
+                if (tok === 'hold' || tok === '間' || tok === 'ため' || tok === 'ポーズ') { if (!out.includes('hold')) out.push('hold'); return; }
                 for (let key in FX_ALIASES) {
                     if (key === tok || FX_ALIASES[key].includes(tok)) { if (!out.includes(key)) out.push(key); return; }
                 }
@@ -7604,6 +7605,7 @@
             let line = lines[openingIndex];
             if (!line) return;
             let wait = Math.min(1000 + String(line.text || '').length * 60, 6000);
+            if (parseFxTokens(line.fx).includes('hold')) wait += 3000; // fx「間」（hold / ため）：自動送りの時だけ、その行で3秒長く止まって余韻を作る（1128-14、ユーザー指定）。タップ送りには影響しない
             openingAutoTimer = setTimeout(() => { openingAutoTimer = null; advanceOpening(); }, wait);
         }
         function toggleDialogueAuto() {
